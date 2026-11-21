@@ -35,19 +35,24 @@ export default function Header() {
                 {/* Mobile Hamburger Toggle Button */}
                 <button
                     onClick={toggleMenu}
-                    className="flex md:hidden p-2 text-background-dark hover:text-primary transition-colors focus:outline-none"
+                    className="flex md:hidden p-2 text-background-dark hover:text-primary transition-colors focus:outline-none cursor-pointer"
                     aria-label="Toggle navigation menu"
+                    aria-expanded={isOpen}
                 >
-                    <span className="material-symbols-outlined text-2xl font-bold">
+                    <span className="material-symbols-outlined text-2xl font-bold transition-transform duration-200">
                         {isOpen ? 'close' : 'menu'}
                     </span>
                 </button>
             </div>
 
-            {/* Mobile Dropdown Panel */}
-            {isOpen && (
-                <div className="md:hidden border-t-2 border-background-dark bg-background shadow-block transition-all duration-300">
-                    <nav className="flex flex-col p-6 space-y-4">
+            {/* Mobile Dropdown Panel with Smooth CSS Grid Transition */}
+            <div
+                className={`md:hidden grid transition-[grid-template-rows] duration-300 ease-out bg-background shadow-block ${
+                    isOpen ? "grid-rows-[1fr] border-t-2 border-background-dark" : "grid-rows-[0fr] border-t-0"
+                }`}
+            >
+                <div className="overflow-hidden">
+                    <nav className={`flex flex-col p-6 space-y-4 transition-opacity duration-200 ${isOpen ? "opacity-100" : "opacity-0"}`}>
                         <Link
                             onClick={closeMenu}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all font-bold ${
@@ -98,7 +103,7 @@ export default function Header() {
                         </Link>
                     </nav>
                 </div>
-            )}
+            </div>
         </header>
     );
 }

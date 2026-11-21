@@ -1372,23 +1372,25 @@ export default function Home() {
                                 ].map((item, idx) => (
                                     <div
                                         key={item.q}
-                                        className="bg-white border-2 border-background-dark rounded-2xl overflow-hidden shadow-block-sm transition-all"
+                                        className="bg-white border-2 border-background-dark rounded-2xl overflow-hidden shadow-block-sm transition-all duration-200"
                                     >
                                         <button
                                             onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                                            className="w-full p-5 text-left flex justify-between items-center gap-4 hover:bg-background/20 transition-colors"
+                                            className="w-full p-5 text-left flex justify-between items-center gap-4 hover:bg-background/20 transition-colors cursor-pointer"
                                             aria-expanded={openFaq === idx}
                                         >
                                             <span className="font-extrabold text-background-dark text-base">{item.q}</span>
-                                            <span className={`material-symbols-outlined transition-transform duration-300 text-background-dark/60 ${openFaq === idx ? "rotate-180 text-primary" : ""}`}>
+                                            <span className={`material-symbols-outlined transition-transform duration-300 ease-out text-background-dark/60 flex-shrink-0 ml-2 ${openFaq === idx ? "rotate-180 text-primary" : ""}`}>
                                                 expand_more
                                             </span>
                                         </button>
-                                        {openFaq === idx && (
-                                            <div className="px-5 pb-5 pt-1 text-sm text-background-dark/75 leading-relaxed font-medium border-t border-background-dark/10">
-                                                {item.a}
+                                        <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${openFaq === idx ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+                                            <div className="overflow-hidden">
+                                                <div className={`px-5 pb-5 pt-1 text-sm text-background-dark/75 leading-relaxed font-medium border-t border-background-dark/10 transition-opacity duration-200 ${openFaq === idx ? "opacity-100" : "opacity-0"}`}>
+                                                    {item.a}
+                                                </div>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>

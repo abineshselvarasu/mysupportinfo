@@ -583,19 +583,25 @@ export default function BufferbloatPage() {
                                 >
                                     <button
                                         onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                                        className="w-full p-5 text-left flex justify-between items-center gap-4 hover:bg-background/20 transition-colors"
+                                        className="w-full p-5 text-left flex justify-between items-center gap-4 hover:bg-background/20 transition-colors cursor-pointer"
                                         aria-expanded={openFaq === index}
                                     >
                                         <span className="font-extrabold text-background-dark text-base">{item.q}</span>
-                                        <span className={`material-symbols-outlined transition-transform duration-300 text-background-dark/60 ${openFaq === index ? "rotate-180 text-primary" : ""}`}>
+                                        <span className={`material-symbols-outlined transition-transform duration-300 ease-out text-background-dark/60 flex-shrink-0 ml-2 ${openFaq === index ? "rotate-180 text-primary" : ""}`}>
                                             expand_more
                                         </span>
                                     </button>
-                                    {openFaq === index && (
-                                        <div className="px-5 pb-5 pt-1 text-sm text-background-dark/75 leading-relaxed font-medium border-t border-background-dark/10">
-                                            {item.a}
+                                    <div
+                                        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                                            openFaq === index ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                                        }`}
+                                    >
+                                        <div className="overflow-hidden">
+                                            <div className={`px-5 pb-5 pt-1 text-sm text-background-dark/75 leading-relaxed font-medium border-t border-background-dark/10 transition-opacity duration-200 ${openFaq === index ? "opacity-100" : "opacity-0"}`}>
+                                                {item.a}
+                                            </div>
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
