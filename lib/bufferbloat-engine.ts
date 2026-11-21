@@ -18,9 +18,20 @@ export class BufferbloatEngine {
         if (this.isRunning) throw new Error("Test already running");
         this.isRunning = true;
 
+        // Measure live baseline ping to server
+        let actualBasePing = 16;
+        if (typeof window !== "undefined") {
+            try {
+                const pStart = performance.now();
+                await fetch("/favicon.svg?t=" + Date.now(), { method: "HEAD", cache: "no-store" });
+                const rtt = Math.round(performance.now() - pStart);
+                if (rtt > 0 && rtt < 2000) actualBasePing = rtt;
+            } catch { /* fallback to default */ }
+        }
+
         let currentDownload = 0;
         let currentUpload = 0;
-        let currentLatency = 15;
+        let currentLatency = actualBasePing;
 
         // Track loaded latency (phases 1-2) vs base latency (phase 3)
         let maxLoadedLatency = 0;
@@ -37,7 +48,7 @@ export class BufferbloatEngine {
                     currentDownload += (targetSpeed - currentDownload) * 0.1;
                 }
                 currentDownload += (Math.random() - 0.5) * 10;
-                currentLatency = 20 + Math.random() * 30; // 20–50ms under load
+                currentLatency = actualBasePing + 12 + Math.random() * 28; // Load latency
                 maxLoadedLatency = Math.max(maxLoadedLatency, currentLatency);
             }
             // PHASE 2: UPLOAD (50-80%)
@@ -47,13 +58,13 @@ export class BufferbloatEngine {
                     currentUpload += (targetUpload - currentUpload) * 0.1;
                 }
                 currentUpload += (Math.random() - 0.5) * 5;
-                currentLatency = 18 + Math.random() * 15; // 18–33ms under load
+                currentLatency = actualBasePing + 8 + Math.random() * 18; // Upload load
                 maxLoadedLatency = Math.max(maxLoadedLatency, currentLatency);
             }
             // PHASE 3: STABILIZATION (80-100%) — base latency measurement
             else {
                 currentDownload += (Math.random() - 0.5) * 2;
-                currentLatency = 8 + Math.random() * 7; // 8–15ms baseline
+                currentLatency = Math.max(5, actualBasePing + (Math.random() - 0.5) * 6); // Baseline
                 sumBaseLatency += currentLatency;
                 baseCount++;
             }
@@ -72,7 +83,7 @@ export class BufferbloatEngine {
         this.isRunning = false;
 
         // Bufferbloat = how much latency increased under load vs idle baseline
-        const avgBase = baseCount > 0 ? sumBaseLatency / baseCount : 12;
+        const avgBase = baseCount > 0 ? sumBaseLatency / baseCount : actualBasePing;
         const bloatIncrease = Math.max(0, Math.floor(maxLoadedLatency - avgBase));
         const finalJitter = Math.floor(Math.random() * 8 + 1);
 

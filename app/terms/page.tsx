@@ -59,7 +59,7 @@ export default function TermsPage() {
 
                 <Section title="1. Acceptance of Terms">
                     <p>
-                        By accessing or using <strong>MySupportInfo</strong> at <code className="bg-background-dark/8 px-1.5 py-0.5 rounded text-background-dark font-mono text-xs">mysupportinfo.com</code> (the "Service"), you agree to be bound by these Terms of Use. If you do not agree, please do not use the Service.
+                        By accessing or using <strong>MySupportInfo</strong> at <code className="bg-background-dark/8 px-1.5 py-0.5 rounded text-background-dark font-mono text-xs">mysupportinfo.com</code> (the &ldquo;Service&rdquo;), you agree to be bound by these Terms of Use. If you do not agree, please do not use the Service.
                     </p>
                     <p>
                         These terms apply to all visitors and users of the Service. We reserve the right to update these terms at any time. Continued use of the Service after changes constitutes acceptance of the updated terms.
@@ -162,7 +162,7 @@ export default function TermsPage() {
 
                 <Section title="8. Disclaimer of Warranties">
                     <p>
-                        The Service is provided <strong>"as is"</strong> and <strong>"as available"</strong> without warranties of any kind, either express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
+                        The Service is provided <strong>&ldquo;as is&rdquo;</strong> and <strong>&ldquo;as available&rdquo;</strong> without warranties of any kind, either express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
                     </p>
                     <p>
                         We do not warrant that the Service will be uninterrupted, error-free, or that results will be accurate or reliable.

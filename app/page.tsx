@@ -53,8 +53,8 @@ const flagEmoji = (code: string) =>
 const getLatencyStatus = (val: string): "good" | "warn" | "bad" | "info" => {
     const ms = parseInt(val);
     if (isNaN(ms)) return "info";
-    if (ms < 20) return "good";
-    if (ms < 80) return "warn";
+    if (ms < 50) return "good";
+    if (ms < 150) return "warn";
     return "bad";
 };
 
@@ -140,27 +140,13 @@ export default function Home() {
     const [urlCopied, setUrlCopied] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [currentTime, setCurrentTime] = useState<string>("");
-    const [activeQuote, setActiveQuote] = useState({ text: "", author: "" });
     const reportRef = useRef<HTMLDivElement>(null);
-
-    const quotes = [
-        { text: "Innovation distinguishes between a leader and a follower.", author: "Steve Jobs" },
-        { text: "The human spirit must prevail over technology.", author: "Albert Einstein" },
-        { text: "Technology is best when it brings people together.", author: "Matt Mullenweg" },
-        { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
-        { text: "The computer was born to solve problems that did not exist before.", author: "Bill Gates" },
-    ];
 
     useEffect(() => {
         const tick = () => setCurrentTime(new Date().toLocaleString("en-US", { hour12: true }));
         tick();
         const i = setInterval(tick, 1000);
         return () => clearInterval(i);
-    }, []);
-
-    useEffect(() => {
-        setActiveQuote(quotes[new Date().getDay() % quotes.length]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Main stats detection
@@ -214,6 +200,16 @@ export default function Home() {
                 browserVersion = ua.match(/Version\/(\d+)/)?.[1] || "";
             }
 
+            // Brave browser detection (which masks as Chrome in UA)
+            // @ts-expect-error - Brave specific API
+            if (typeof navigator !== "undefined" && navigator.brave?.isBrave) {
+                try {
+                    // @ts-expect-error - Brave specific API
+                    const isBrave = await navigator.brave.isBrave();
+                    if (isBrave) browserName = "Brave";
+                } catch { /* ignore */ }
+            }
+
             const osName = await detectOSName(ua);
 
             // @ts-expect-error - Experimental API
@@ -225,7 +221,18 @@ export default function Home() {
             // @ts-expect-error - Experimental API
             const ram = navigator.deviceMemory ? `~${navigator.deviceMemory} GB` : "Unknown";
             const cpu = navigator.hardwareConcurrency || "Unknown";
-            const latency = conn?.rtt ? `${conn.rtt} ms` : "N/A";
+            let latency = conn?.rtt ? `${conn.rtt} ms` : "N/A";
+
+            // If Network Information API is unavailable (e.g. desktop browsers), measure live HTTP round-trip
+            if (latency === "N/A" && typeof window !== "undefined") {
+                try {
+                    const pStart = performance.now();
+                    await fetch("/favicon.svg?t=" + Date.now(), { method: "HEAD", cache: "no-store" });
+                    const rtt = Math.round(performance.now() - pStart);
+                    if (rtt > 0) latency = `${rtt} ms`;
+                } catch { /* ignore */ }
+            }
+
             const dnt = navigator.doNotTrack === "1" ? "ENABLED" : "DISABLED";
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
             const language = navigator.language || "Unknown";
@@ -237,16 +244,30 @@ export default function Home() {
             const pixelRatioVal = `${window.devicePixelRatio}x`;
             const colorDepthVal = `${window.screen.colorDepth} bit`;
 
-            // Ad blocker detection
+            // Ad blocker detection (DOM bait + script network check)
             let adBlocker = "Not Detected";
             try {
                 const testEl = document.createElement("div");
-                testEl.className = "ad ads advert banner adsbox ad-banner";
+                testEl.className = "ad ads advert banner adsbox ad-banner ad-placement";
                 testEl.style.cssText = "position:absolute;left:-9999px;height:1px;width:1px;opacity:0;";
                 document.body.appendChild(testEl);
-                await new Promise(r => setTimeout(r, 150));
-                adBlocker = testEl.offsetHeight === 0 ? "Detected" : "Not Detected";
+                await new Promise(r => setTimeout(r, 120));
+                const isDomHidden = testEl.offsetHeight === 0 || testEl.clientHeight === 0 || window.getComputedStyle(testEl).display === "none";
                 document.body.removeChild(testEl);
+
+                if (isDomHidden) {
+                    adBlocker = "Detected";
+                } else {
+                    try {
+                        await fetch("https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js", {
+                            method: "HEAD",
+                            mode: "no-cors",
+                            cache: "no-store",
+                        });
+                    } catch {
+                        adBlocker = "Detected";
+                    }
+                }
             } catch { /* ignore */ }
 
             // Battery
@@ -272,7 +293,7 @@ export default function Home() {
                 }
             } catch { /* ignore */ }
 
-            // IP data (with sessionStorage cache)
+            // IP data (with sessionStorage cache and multi-provider fallback)
             let ip = "Unavailable";
             let ipv6 = "Not Available";
             let ispName = "Unknown ISP";
@@ -296,23 +317,44 @@ export default function Home() {
             if (!usedCache) {
                 try {
                     const ctrl = new AbortController();
-                    const tid = setTimeout(() => ctrl.abort(), 6000);
+                    const tid = setTimeout(() => ctrl.abort(), 5000);
                     const res = await fetch("https://ipapi.co/json/", { signal: ctrl.signal });
                     clearTimeout(tid);
+                    if (!res.ok) throw new Error("ipapi failed");
                     const data = await res.json();
+                    if (data.error) throw new Error(data.reason || "ipapi error");
                     ip = data.ip || "Unavailable";
                     ispName = data.org || "Unknown ISP";
                     city = data.city || "";
                     country = data.country_name || "";
                     countryCode = data.country_code || "";
-                    const vpnKeywords = ["vpn", "mullvad", "nordvpn", "expressvpn", "surfshark", "cyberghost", "protonvpn", "torguard", "ipvanish", "windscribe"];
-                    vpnDetected = vpnKeywords.some(k => ispName.toLowerCase().includes(k));
                 } catch {
+                    // Fallback to ipwho.is (free, high limit, full geolocation + ISP)
                     try {
-                        const res = await fetch("https://api.ipify.org?format=json");
-                        ip = (await res.json()).ip || "Unavailable";
-                    } catch { ip = "Unavailable"; }
+                        const ctrl = new AbortController();
+                        const tid = setTimeout(() => ctrl.abort(), 5000);
+                        const res = await fetch("https://ipwho.is/", { signal: ctrl.signal });
+                        clearTimeout(tid);
+                        const data = await res.json();
+                        if (data.success) {
+                            ip = data.ip || "Unavailable";
+                            ispName = data.connection?.isp || data.connection?.org || "Unknown ISP";
+                            city = data.city || "";
+                            country = data.country || "";
+                            countryCode = data.country_code || "";
+                        } else {
+                            throw new Error("ipwho.is failed");
+                        }
+                    } catch {
+                        try {
+                            const res = await fetch("https://api.ipify.org?format=json");
+                            ip = (await res.json()).ip || "Unavailable";
+                        } catch { ip = "Unavailable"; }
+                    }
                 }
+
+                const vpnKeywords = ["vpn", "mullvad", "nordvpn", "expressvpn", "surfshark", "cyberghost", "protonvpn", "torguard", "ipvanish", "windscribe", "ovh", "digitalocean", "linode", "hetzner", "cloudflare"];
+                vpnDetected = vpnKeywords.some(k => ispName.toLowerCase().includes(k));
 
                 try {
                     const res = await fetch("https://api64.ipify.org?format=json");
@@ -344,7 +386,7 @@ export default function Home() {
         fetchStats();
     }, []);
 
-    // WebRTC leak detection
+    // WebRTC leak detection (IPv4 + IPv6 + private/public classification)
     useEffect(() => {
         const detect = async () => {
             try {
@@ -354,14 +396,33 @@ export default function Home() {
                 await new Promise<void>((resolve) => {
                     pc.onicecandidate = (e) => {
                         if (!e.candidate) { resolve(); return; }
-                        const m = e.candidate.candidate.match(/(\d{1,3}\.){3}\d{1,3}/);
-                        if (m) ips.add(m[0]);
+                        const cand = e.candidate.candidate;
+                        const m4 = cand.match(/\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/);
+                        if (m4 && !m4[0].startsWith("0.") && !m4[0].startsWith("127.")) {
+                            ips.add(m4[0]);
+                        }
+                        const m6 = cand.match(/([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}/);
+                        if (m6) ips.add(m6[0]);
                     };
-                    pc.createOffer().then(o => pc.setLocalDescription(o));
+                    pc.createOffer().then(o => pc.setLocalDescription(o)).catch(() => resolve());
                     setTimeout(resolve, 3000);
                 });
                 pc.close();
-                setWebrtcLeak(ips.size > 0 ? `Detected: ${[...ips].join(", ")}` : "No Leak");
+
+                if (ips.size === 0) {
+                    setWebrtcLeak("No Leak (Protected)");
+                } else {
+                    const isPublic = [...ips].some(candIp =>
+                        !candIp.startsWith("192.168.") &&
+                        !candIp.startsWith("10.") &&
+                        !/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(candIp)
+                    );
+                    if (isPublic) {
+                        setWebrtcLeak(`Public IP Exposed: ${[...ips].join(", ")}`);
+                    } else {
+                        setWebrtcLeak(`Local Candidate: ${[...ips].join(", ")}`);
+                    }
+                }
             } catch {
                 setWebrtcLeak("Unsupported");
             }
@@ -407,7 +468,7 @@ export default function Home() {
             `VPN Detected:  ${stats.vpnDetected ? "Yes" : "No"}`,
             `WebRTC Leak:   ${webrtcLoading ? "Scanning…" : webrtcLeak}`,
             `Connection:    ${stats.connectionType === "N/A" ? "N/A (desktop — mobile API only)" : `${stats.connectionType} — ${stats.connectionSpeed}`}`,
-            `Latency RTT:   ${stats.latency === "N/A" ? "N/A (desktop — mobile API only)" : stats.latency}`,
+            `Latency RTT:   ${stats.latency}`,
             "",
             "─── HARDWARE ──────────────────────────────",
             `Screen:        ${stats.resolution} (${stats.colorDepth})`,
@@ -524,13 +585,13 @@ export default function Home() {
     // ─── Shared status values ─────────────────────────────────────────
     const webrtcStatus: "good" | "warn" | "bad" | "info" =
         webrtcLoading ? "info"
-        : webrtcLeak === "No Leak" ? "good"
+        : webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate") ? "good"
         : webrtcLeak === "Unsupported" ? "info"
         : "bad";
 
     const privacySummary = !loading && !webrtcLoading
         ? [
-            webrtcLeak === "No Leak" ? "✓ No WebRTC leak" : "⚠ WebRTC may leak",
+            webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate") ? "✓ No WebRTC leak" : "⚠ WebRTC leak",
             stats?.doNotTrack === "ENABLED" ? "✓ DNT on" : "– DNT off",
             stats?.adBlocker === "Detected" ? "✓ Ad blocker" : "– No ad blocker",
             stats?.vpnDetected ? "✓ VPN detected" : "– No VPN",
@@ -580,7 +641,7 @@ export default function Home() {
                     title="WebRTC Leak"
                     value={webrtcLoading ? "Scanning…" : (
                         <span className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${webrtcLeak === "No Leak" ? "bg-secondary" : webrtcLeak === "Unsupported" ? "bg-background-dark/30" : "bg-red-400"}`} />
+                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate") ? "bg-secondary" : webrtcLeak === "Unsupported" ? "bg-background-dark/30" : "bg-red-400"}`} />
                             {webrtcLeak}
                         </span>
                     )}
@@ -610,8 +671,8 @@ export default function Home() {
                     icon={Activity}
                     title="Latency (RTT)"
                     value={loading ? "…" : stats?.latency}
-                    subtext={stats?.latency === "N/A" ? "Not available — Network Information API requires mobile Chrome." : "Round-trip time estimate. Under 20ms = excellent, 20–80ms = good."}
-                    tooltip="RTT estimate from the Network Information API. Only available on mobile Chrome. For accurate latency measurements, use the Bufferbloat Test."
+                    subtext={stats?.latency === "N/A" ? "Not available on current network connection." : "Round-trip time to nearest server. Under 50ms = excellent, 50–150ms = good."}
+                    tooltip="Round-trip time (RTT) to the nearest edge server. Lower latency provides faster response times and smoother real-time interactions."
                     status={loading ? "info" : getLatencyStatus(stats?.latency || "")}
                 />
             </div>
@@ -799,7 +860,7 @@ export default function Home() {
                     title="WebRTC Leak"
                     value={webrtcLoading ? "Scanning…" : (
                         <span className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${webrtcLeak === "No Leak" ? "bg-secondary" : webrtcLeak === "Unsupported" ? "bg-background-dark/30" : "bg-red-400"}`} />
+                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate") ? "bg-secondary" : webrtcLeak === "Unsupported" ? "bg-background-dark/30" : "bg-red-400"}`} />
                             {webrtcLeak}
                         </span>
                     )}
