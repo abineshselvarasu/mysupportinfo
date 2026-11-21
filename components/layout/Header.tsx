@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import Logo from "@/components/ui/Logo";
 
 export default function Header() {
     const pathname = usePathname();
@@ -15,14 +16,7 @@ export default function Header() {
         <header className="sticky top-0 z-40 w-full border-b border-background-dark/10 bg-background/90 backdrop-blur-md">
             <div className="max-w-site mx-auto px-6 h-16 flex items-center justify-between">
                 {/* Brand Logo */}
-                <div className="flex items-center gap-3">
-                    <div className="size-8 bg-background-dark border border-background-dark rounded-lg flex items-center justify-center text-accent shadow-block-sm">
-                        <span className="material-symbols-outlined fill-1 text-sm">shield_with_heart</span>
-                    </div>
-                    <Link href="/" className="text-xl font-black tracking-tight text-background-dark" onClick={closeMenu}>
-                        MySupport<span className="text-primary font-black italic font-serif ml-0.5">Info</span>
-                    </Link>
-                </div>
+                <Logo onClick={closeMenu} size="md" />
 
                 {/* Desktop Nav Links */}
                 <nav className="hidden md:flex items-center gap-8">

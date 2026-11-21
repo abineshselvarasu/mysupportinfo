@@ -46,11 +46,6 @@ interface SystemStats {
     timezone: string;
 }
 
-const flagEmoji = (code: string) =>
-    code.toUpperCase().split("").map(c =>
-        String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)
-    ).join("");
-
 const getLatencyStatus = (val: string): "good" | "warn" | "bad" | "info" => {
     const ms = parseInt(val);
     if (isNaN(ms)) return "info";
@@ -591,14 +586,26 @@ export default function Home() {
         : webrtcLeak === "Unsupported" ? "info"
         : "bad";
 
-    const privacySummary = !loading && !webrtcLoading
+    const privacyItems = !loading && !webrtcLoading
         ? [
-            webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate") ? "✓ No WebRTC leak" : "⚠ WebRTC leak",
-            stats?.doNotTrack === "ENABLED" ? "✓ DNT on" : "– DNT off",
-            stats?.adBlocker === "Detected" ? "✓ Ad blocker" : "– No ad blocker",
-            stats?.vpnDetected ? "✓ VPN detected" : "– No VPN",
-          ].join("  ·  ")
-        : "Analysing privacy posture…";
+            {
+                ok: webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate"),
+                label: webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate") ? "No WebRTC leak" : "WebRTC leak",
+            },
+            {
+                ok: stats?.doNotTrack === "ENABLED",
+                label: stats?.doNotTrack === "ENABLED" ? "DNT on" : "DNT off",
+            },
+            {
+                ok: stats?.adBlocker === "Detected",
+                label: stats?.adBlocker === "Detected" ? "Ad blocker" : "No ad blocker",
+            },
+            {
+                ok: !!stats?.vpnDetected,
+                label: stats?.vpnDetected ? "VPN detected" : "No VPN",
+            },
+          ]
+        : null;
 
     // ─── Tab card grids (shared between tab view and capture view) ────
     const networkCards = (
@@ -610,7 +617,9 @@ export default function Home() {
                     value={ipLoading ? "Scanning…" : (
                         <span className="flex items-center gap-2 flex-wrap">
                             {stats?.countryCode && (
-                                <span className="text-2xl leading-none select-none">{flagEmoji(stats.countryCode)}</span>
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-2xs font-black uppercase tracking-wider bg-background-dark/10 text-background-dark border border-background-dark/20 font-mono">
+                                    {stats.countryCode}
+                                </span>
                             )}
                             <span className="font-mono break-all">{stats?.ip}</span>
                             {stats?.vpnDetected && (
@@ -853,7 +862,21 @@ export default function Home() {
             <div className="bg-background-dark border-2 border-background-dark rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                     <p className="text-4xs text-accent/50 uppercase tracking-ui-wider font-bold mb-1">Privacy Snapshot</p>
-                    <p className="text-sm font-medium text-accent/90 leading-relaxed">{privacySummary}</p>
+                    {privacyItems ? (
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-accent/90">
+                            {privacyItems.map((item, i) => (
+                                <span key={i} className="inline-flex items-center gap-1.5">
+                                    <span className={item.ok ? "text-secondary font-bold" : "text-primary font-bold"} aria-hidden="true">
+                                        {item.ok ? <>&#10003;</> : <>&#9888;</>}
+                                    </span>
+                                    <span>{item.label}</span>
+                                    {i < privacyItems.length - 1 && <span className="text-accent/30 ml-1.5" aria-hidden="true">&#183;</span>}
+                                </span>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm font-medium text-accent/90 leading-relaxed">Analysing privacy posture&#8230;</p>
+                    )}
                 </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

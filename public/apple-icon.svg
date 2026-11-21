@@ -1,13 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
-  <!-- More padding for iOS home screen display -->
-  <rect width="180" height="180" rx="40" fill="#00473E"/>
-  <path d="M90 22 L148 43 L148 104 C148 137 90 164 90 164 C90 164 32 137 32 104 L32 43 Z" fill="#FF8E60"/>
-  <polyline
-    points="37,100 58,100 70,65 83,133 97,65 110,100 143,100"
-    fill="none"
-    stroke="#FAF6F0"
-    stroke-width="12"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+  <defs>
+    <linearGradient id="apple-bg" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00473E"/>
+      <stop offset="100%" stop-color="#00241F"/>
+    </linearGradient>
+    <linearGradient id="apple-pulse" x1="20" y1="90" x2="160" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFC470"/>
+      <stop offset="40%" stop-color="#FF8E60"/>
+      <stop offset="80%" stop-color="#FF5C35"/>
+      <stop offset="100%" stop-color="#00C48C"/>
+    </linearGradient>
+    <filter id="apple-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="180" height="180" rx="42" fill="url(#apple-bg)" stroke="#00C48C" stroke-width="3" stroke-opacity="0.6"/>
+  <circle cx="90" cy="90" r="64" stroke="#00C48C" stroke-width="2" stroke-opacity="0.25" stroke-dasharray="4 4"/>
+  <circle cx="90" cy="90" r="40" stroke="#FAF6F0" stroke-width="1.5" stroke-opacity="0.1"/>
+
+  <!-- Shield -->
+  <path d="M90 30 L135 48 C135 96 90 134 90 134 C90 134 45 96 45 48 Z" fill="#0A5C50" stroke="#00C48C" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M90 34 L131 50 C131 92 90 129 90 129 Z" fill="#ffffff" fill-opacity="0.1"/>
+
+  <!-- Pulse Wave -->
+  <path d="M36 94 L62 94 L76 66 L90 118 L104 60 L118 104 L128 94 L144 94" fill="none" stroke="url(#apple-pulse)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" filter="url(#apple-glow)"/>
+  <path d="M36 94 L62 94 L76 66 L90 118 L104 60 L118 104 L128 94 L144 94" fill="none" stroke="#FAF6F0" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Info Core Beacon -->
+  <circle cx="90" cy="52" r="6" fill="#FF8E60" filter="url(#apple-glow)"/>
+  <circle cx="90" cy="52" r="3.2" fill="#FAF6F0"/>
 </svg>

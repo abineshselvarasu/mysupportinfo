@@ -1,4 +1,4 @@
-# 🛡️ MySupportInfo
+# &#128737;&#65039; MySupportInfo
 
 **MySupportInfo** is a premium, privacy-first, client-side system diagnostic and network speed/stability testing tool. Built with modern web technologies, it features an aesthetic, high-fidelity **Neobrutalist Design System** that is both highly interactive and instantly responsive. 
 
@@ -6,9 +6,9 @@ It enables users and IT support teams to instantly analyze a device's technical 
 
 ---
 
-## ✨ Key Features
+## &#10024; Key Features
 
-### 💻 Advanced Device & Browser Diagnostics
+### &#128187; Advanced Device & Browser Diagnostics
 - **Core Detection:** Instantly detects Operating System (Windows, macOS, Linux, Android, iOS) and Browser name/version (Chrome, Edge, Firefox, Safari, Opera).
 - **Display Properties:** Captures Screen Resolution, Viewport Size, and Device Pixel Ratio (DPR) with real-time automatic updating upon resizing or zooming.
 - **Hardware Profile:** Estimates available RAM, logical CPU Core counts, and detects the physical GPU/WebGL renderer.
@@ -16,18 +16,18 @@ It enables users and IT support teams to instantly analyze a device's technical 
 - **Privacy Signals:** Detects "Do Not Track" headers, browser cookie persistence settings, and local timezone details.
 - **Screenshot Report:** Allows downloading a visual `.png` card of the diagnostic orb instantly using client-side canvas rendering.
 
-### ⚡ Professional Bufferbloat Diagnostic
+### &#9889; Professional Bufferbloat Diagnostic
 - **Real-Time Simulation:** Simulates multi-phase network load (download saturation, upload saturation, and stabilization) to measure baseline vs. loaded latency.
 - **Interactive Charting:** Fully custom, responsive SVG graphs mapping real-time download speed, loaded latency spikes, and base latency.
 - **Grade & Assessment:** Analyzes network Quality of Experience (QoE) and awards an official grade (`A` through `F`) based on bufferbloat ms increase, complete with action-oriented tips to fix poor network performance (SQM, QoS limits, etc.).
 
-### 🔒 Uncompromising Volatile Privacy
+### &#128274; Uncompromising Volatile Privacy
 - **Client-Side Processing:** All computations, user-agent parsing, and load testing are executed directly in the browser sandbox.
 - **Zero Tracking:** No persistent cookies, analytics databases, database logging, or tracking IDs. GDPR and CCPA compliant by design.
 
 ---
 
-## 🛠️ Technology Stack
+## &#128736;&#65039; Technology Stack
 
 - **Framework:** [Next.js 15](https://nextjs.org/) (App Router architecture)
 - **Language:** [TypeScript](https://www.typescriptlang.org/) (Strict type safety)
@@ -38,7 +38,7 @@ It enables users and IT support teams to instantly analyze a device's technical 
 
 ---
 
-## 📂 Project Structure
+## &#128194; Project Structure
 
 ```text
 mysupportinfo/
@@ -67,7 +67,7 @@ mysupportinfo/
 
 ---
 
-## 🚀 Getting Started
+## &#128640; Getting Started
 
 To run the project locally or in a development sandbox, follow these steps:
 
@@ -91,7 +91,7 @@ npm start
 
 ---
 
-## 📈 SEO & Schema Implementations
+## &#128200; SEO & Schema Implementations
 
 - **Metadata API:** Dynamic per-page page title templates, descriptive meta descriptions, custom keywords, and correct OpenGraph / Twitter Card configurations.
 - **Canonical URLs:** Structured `alternates: { canonical: ... }` on all layouts to prevent duplicate indexing.
@@ -100,6 +100,6 @@ npm start
 
 ---
 
-## 🛡️ License
+## &#128737;&#65039; License
 
 This project is licensed under the MIT License. See [LICENSE](./LICENSE) for details.

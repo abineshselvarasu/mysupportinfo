@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import AskAI from "@/components/ui/AskAI";
+import Logo from "@/components/ui/Logo";
 
 export default function Footer() {
     const [clientInfo, setClientInfo] = useState({ os: "Detecting...", browser: "Detecting..." });
@@ -59,10 +60,7 @@ export default function Footer() {
                 {/* Column 1: Brand & Compliance */}
                 <div className="flex flex-col justify-between gap-6">
                     <div className="flex flex-col gap-3">
-                        <Link href="/" aria-label="MySupportInfo Home" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
-                            <span className="material-symbols-outlined text-primary text-base md:text-2xl">shield_person</span>
-                            <span className="font-bold tracking-tight text-base md:text-xl text-background">MySupportInfo.com</span>
-                        </Link>
+                        <Logo theme="dark" size="md" />
                         <p className="text-accent/80 text-sm leading-relaxed max-w-xs">
                             Secure, privacy-first system metrics and load-latency network diagnostics.
                         </p>
