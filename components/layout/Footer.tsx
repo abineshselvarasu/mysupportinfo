@@ -58,10 +58,10 @@ export default function Footer() {
                 {/* Column 1: Brand & Compliance */}
                 <div className="flex flex-col justify-between gap-6">
                     <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-2.5">
+                        <Link href="/" aria-label="MySupportInfo Home" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
                             <span className="material-symbols-outlined text-primary text-base md:text-2xl">shield_person</span>
                             <span className="font-bold tracking-tight text-base md:text-xl text-background">MySupportInfo.com</span>
-                        </div>
+                        </Link>
                         <p className="text-accent/80 text-sm leading-relaxed max-w-xs">
                             Secure, privacy-first system metrics and load-latency network diagnostics.
                         </p>
@@ -78,6 +78,9 @@ export default function Footer() {
                 <div className="flex flex-col gap-6">
                     <span className="text-xs font-black uppercase text-primary tracking-widest">Diagnostics</span>
                     <nav className="flex flex-col gap-3.5">
+                        <Link className="text-sm font-semibold text-accent/70 hover:text-primary transition-colors" href="/">
+                            What Is My Browser (Home)
+                        </Link>
                         <Link className="text-sm font-semibold text-accent/70 hover:text-primary transition-colors" href="/bufferbloat">
                             Bufferbloat Latency Test
                         </Link>

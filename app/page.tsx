@@ -140,6 +140,7 @@ export default function Home() {
     const [urlCopied, setUrlCopied] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [currentTime, setCurrentTime] = useState<string>("");
+    const [openFaq, setOpenFaq] = useState<number | null>(null);
     const reportRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -1143,6 +1144,251 @@ export default function Home() {
                             </Link>
                         </div>
                     </FadeIn>
+
+                    {/* ── High-Authority Long-Form SEO Content ────────────────── */}
+                    <article className="mt-20 pt-16 border-t-2 border-background-dark/10 space-y-16">
+
+                        {/* Overview: What is My Browser & Support Info */}
+                        <section>
+                            <div className="inline-flex items-center gap-2 text-primary font-black uppercase text-3xs tracking-ui-wide mb-2">
+                                <span className="material-symbols-outlined text-sm">devices</span>
+                                System Diagnostics & Technical Support
+                            </div>
+                            <h2 className="text-3xl md:text-4xl font-extrabold text-background-dark font-serif mb-6">
+                                What Is My Browser? Fast, Private Device & Network Details
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-background-dark/80 text-sm md:text-base leading-relaxed font-medium">
+                                <div className="space-y-4">
+                                    <p>
+                                        When you visit websites, report a bug to a software developer, or contact an IT helpdesk, one of the first questions you are asked is: <em>&ldquo;What browser and operating system are you using?&rdquo;</em>
+                                    </p>
+                                    <p>
+                                        <strong>MySupportInfo</strong> provides a modern, privacy-first diagnostic hub that automatically reads the technical specifications your web browser shares with web servers. Whether you are troubleshooting rendering bugs in Google Chrome, verifying your public IP address behind a VPN, checking screen scaling on a 4K display, or auditing WebRTC privacy leaks, MySupportInfo gives you comprehensive data in a clean, visual card.
+                                    </p>
+                                </div>
+                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm space-y-3">
+                                    <h3 className="font-bold text-background-dark text-base flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-secondary">verified_user</span>
+                                        Why Choose MySupportInfo over Legacy Tools?
+                                    </h3>
+                                    <ul className="text-xs text-background-dark/70 space-y-2 leading-relaxed">
+                                        <li className="flex items-start gap-2">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
+                                            <span><strong>100% Client-Side Detection:</strong> No server database logs or tracking cookies.</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
+                                            <span><strong>Integrated Bufferbloat Diagnostic:</strong> Measure network latency under load alongside device specs.</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
+                                            <span><strong>One-Click Export Options:</strong> Copy formatted text to clipboard or download a high-res PNG card for ticketing systems.</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
+                                            <span><strong>Modern Neobrutalist UI:</strong> High-contrast, instantly responsive, and readable on mobile and desktop.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Complete Breakdown of Technical Metrics */}
+                        <section>
+                            <h2 className="text-2xl md:text-3xl font-extrabold text-background-dark font-serif mb-8">
+                                Complete Diagnostic Guide: What Each Metric Means
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
+                                    <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3">
+                                        <span className="material-symbols-outlined text-xl">language</span>
+                                    </div>
+                                    <h3 className="font-bold text-background-dark text-base mb-1">Browser Engine & Version</h3>
+                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
+                                        Identifies your browser (Chrome, Safari, Firefox, Edge, Opera, Brave) and its rendering engine (Blink, Gecko, WebKit). Support teams need this to reproduce layout bugs or verify compatibility with modern HTML5 APIs.
+                                    </p>
+                                </div>
+
+                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
+                                    <div className="size-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center mb-3">
+                                        <span className="material-symbols-outlined text-xl">laptop</span>
+                                    </div>
+                                    <h3 className="font-bold text-background-dark text-base mb-1">Operating System & Architecture</h3>
+                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
+                                        Detects your host OS (Windows 11, macOS Sequoia, Linux, iOS, Android) via modern Client Hints and navigator fallback APIs. Helps developers distinguish mobile touch interfaces from desktop environments.
+                                    </p>
+                                </div>
+
+                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
+                                    <div className="size-10 rounded-xl bg-accent text-background-dark flex items-center justify-center mb-3">
+                                        <span className="material-symbols-outlined text-xl">public</span>
+                                    </div>
+                                    <h3 className="font-bold text-background-dark text-base mb-1">Public IP, Geolocation & ISP</h3>
+                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
+                                        Displays your public IPv4 and IPv6 addresses, Autonomous System Number (ASN), ISP organization, and city/country location. Crucial for confirming whether your VPN or proxy tunnel is routing correctly.
+                                    </p>
+                                </div>
+
+                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
+                                    <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3">
+                                        <span className="material-symbols-outlined text-xl">aspect_ratio</span>
+                                    </div>
+                                    <h3 className="font-bold text-background-dark text-base mb-1">Screen Resolution vs Viewport</h3>
+                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
+                                        Separates physical monitor resolution from usable browser viewport area and reports Device Pixel Ratio (DPR). When users report UI scaling issues on Retina or 4K monitors, this explains the difference.
+                                    </p>
+                                </div>
+
+                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
+                                    <div className="size-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center mb-3">
+                                        <span className="material-symbols-outlined text-xl">memory</span>
+                                    </div>
+                                    <h3 className="font-bold text-background-dark text-base mb-1">CPU Cores & Device Memory</h3>
+                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
+                                        Inspects available logical CPU threads and estimated RAM buckets. Web apps, WebAssembly modules, and browser games use these values to allocate worker threads and balance performance.
+                                    </p>
+                                </div>
+
+                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
+                                    <div className="size-10 rounded-xl bg-accent text-background-dark flex items-center justify-center mb-3">
+                                        <span className="material-symbols-outlined text-xl">security</span>
+                                    </div>
+                                    <h3 className="font-bold text-background-dark text-base mb-1">WebRTC Leaks & Privacy Signals</h3>
+                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
+                                        Audits STUN peer connections to ensure your real local or ISP IP address is not leaking past your VPN. Also monitors Do Not Track (DNT), cookie persistence, and active ad blockers.
+                                    </p>
+                                </div>
+
+                            </div>
+                        </section>
+
+                        {/* Bufferbloat CTA Section */}
+                        <section className="bg-background-dark text-white rounded-3xl p-8 md:p-12 shadow-block flex flex-col md:flex-row items-center justify-between gap-8">
+                            <div className="max-w-xl">
+                                <div className="text-xs font-black uppercase text-primary tracking-widest mb-2 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm">network_check</span>
+                                    Advanced Network Diagnostic
+                                </div>
+                                <h2 className="text-2xl md:text-3xl font-extrabold mb-3 font-serif">
+                                    Experiencing Gaming Lag or Choppy Video Calls?
+                                </h2>
+                                <p className="text-accent/80 text-sm leading-relaxed font-medium">
+                                    Often, what appears to be a slow browser or buggy web app is actually <strong>Bufferbloat</strong>—packet queuing delay caused by your router during heavy downloads or uploads. Run our professional latency under load test to grade your connection from A to F.
+                                </p>
+                            </div>
+                            <div className="flex-shrink-0">
+                                <Link
+                                    href="/bufferbloat"
+                                    className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-background-dark rounded-full font-black text-base hover:bg-primary-dark transition-all border-2 border-background-dark shadow-block-sm hover:scale-105 active:scale-95"
+                                >
+                                    <span>RUN BUFFERBLOAT TEST</span>
+                                    <ArrowRight size={18} />
+                                </Link>
+                            </div>
+                        </section>
+
+                        {/* IT Support & Helpdesk Workflows */}
+                        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                            <div>
+                                <div className="inline-flex items-center gap-2 text-secondary font-black uppercase text-3xs tracking-ui-wide mb-2">
+                                    <span className="material-symbols-outlined text-sm">support_agent</span>
+                                    Optimized for IT Helpdesks
+                                </div>
+                                <h2 className="text-2xl md:text-3xl font-extrabold text-background-dark font-serif mb-4">
+                                    How Tech Support Teams Use MySupportInfo
+                                </h2>
+                                <p className="text-sm text-background-dark/80 leading-relaxed font-medium mb-4">
+                                    Technical support engineers waste countless hours asking clients for basic configuration info. MySupportInfo streamlines the entire customer intake process:
+                                </p>
+                                <ul className="text-xs text-background-dark/70 space-y-3 font-medium">
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
+                                        <span><strong>Send Clients a Single URL:</strong> Direct users to <code>mysupportinfo.com</code> with no app downloads or software installation needed.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
+                                        <span><strong>One-Click Formatted Report:</strong> Clients click &ldquo;Copy All Info&rdquo; and paste clean, structured markdown directly into Zendesk, Freshdesk, Jira, or email.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
+                                        <span><strong>Downloadable Visual Proof:</strong> Clients can download a visual PNG screenshot card showing exact browser version, viewport, and network RTT.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm font-mono text-2xs space-y-2 text-background-dark/80">
+                                <div className="text-3xs uppercase tracking-wider font-sans font-black text-primary border-b border-background-dark/10 pb-2 mb-3">
+                                    Sample Diagnostic Output
+                                </div>
+                                <div>Browser: Chrome 132.0.0.0 (Blink)</div>
+                                <div>OS: Windows 11 64-bit</div>
+                                <div>Screen: 2560 × 1440 · Viewport: 1920 × 940 (DPR: 1.25x)</div>
+                                <div>IP (IPv4): 198.51.100.42 · IPv6: Supported</div>
+                                <div>ISP: Cloudflare Warp / ASN 13335</div>
+                                <div>WebRTC Leak: No Leak (Protected)</div>
+                                <div>Hardware: 16 Cores · ~8 GB RAM · RTX 4080 (WebGL)</div>
+                                <div>Network Quality: Latency 14ms · Bufferbloat Grade A</div>
+                            </div>
+                        </section>
+
+                        {/* Homepage FAQ Accordion */}
+                        <section>
+                            <div className="text-center max-w-2xl mx-auto mb-10">
+                                <h2 className="text-3xl font-extrabold text-background-dark font-serif mb-3">
+                                    Browser & Support Details FAQ
+                                </h2>
+                                <p className="text-sm text-background-dark/70 font-medium">
+                                    Quick answers to common questions about device detection, user-agent data, and privacy protection.
+                                </p>
+                            </div>
+                            <div className="max-w-3xl mx-auto space-y-3">
+                                {[
+                                    {
+                                        q: "Why do support technicians need my browser version and operating system?",
+                                        a: "Web browsers render HTML, CSS, and JavaScript differently across operating systems. A bug affecting Safari on macOS might look completely fine in Google Chrome on Windows. Knowing your exact browser version and OS allows developers to reproduce the issue in an identical environment."
+                                    },
+                                    {
+                                        q: "How does MySupportInfo detect my graphics card (GPU) and hardware specs?",
+                                        a: "MySupportInfo utilizes standard browser APIs: the WebGL debug renderer info extension queries your graphics hardware string, the Device Memory API provides memory estimations, and navigator.hardwareConcurrency detects available CPU thread cores."
+                                    },
+                                    {
+                                        q: "What is a WebRTC leak and how does it compromise my VPN?",
+                                        a: "WebRTC allows video calls and peer-to-peer data in browsers. Even when using a VPN, WebRTC can communicate with STUN servers and expose your real public or local network IP address. MySupportInfo scans your browser's active ICE candidates to ensure no leaks exist."
+                                    },
+                                    {
+                                        q: "Is my personal data stored or logged when using this tool?",
+                                        a: "Never. All detection occurs client-side in your local browser sandbox. We do not store IP addresses in databases, use no tracking cookies, and never build user profiles. All data disappears the moment you close your browser tab."
+                                    },
+                                    {
+                                        q: "How can I test my network for gaming and video call lag?",
+                                        a: "Head to our Bufferbloat Test tool (/bufferbloat). It simulates real download and upload loads to measure whether your router buffers packets and spikes latency, assigning you an official Quality of Experience grade from A to F."
+                                    }
+                                ].map((item, idx) => (
+                                    <div
+                                        key={item.q}
+                                        className="bg-white border-2 border-background-dark rounded-2xl overflow-hidden shadow-block-sm transition-all"
+                                    >
+                                        <button
+                                            onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                                            className="w-full p-5 text-left flex justify-between items-center gap-4 hover:bg-background/20 transition-colors"
+                                            aria-expanded={openFaq === idx}
+                                        >
+                                            <span className="font-extrabold text-background-dark text-base">{item.q}</span>
+                                            <span className={`material-symbols-outlined transition-transform duration-300 text-background-dark/60 ${openFaq === idx ? "rotate-180 text-primary" : ""}`}>
+                                                expand_more
+                                            </span>
+                                        </button>
+                                        {openFaq === idx && (
+                                            <div className="px-5 pb-5 pt-1 text-sm text-background-dark/75 leading-relaxed font-medium border-t border-background-dark/10">
+                                                {item.a}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                    </article>
                 </div>
             </div>
         </div>
