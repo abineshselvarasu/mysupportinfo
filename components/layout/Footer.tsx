@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import AskAI from "@/components/ui/AskAI";
 
 export default function Footer() {
     const [clientInfo, setClientInfo] = useState({ os: "Detecting...", browser: "Detecting..." });
@@ -119,6 +120,11 @@ export default function Footer() {
                         Detection runs inside your browser sandbox. Your data never leaves your device.
                     </p>
                 </div>
+            </div>
+
+            {/* Ask AI Section */}
+            <div className="max-w-site mx-auto mt-12 pt-8 border-t border-accent/10">
+                <AskAI variant="dark" />
             </div>
 
             {/* Bottom Copyright Bar */}

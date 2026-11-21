@@ -9,6 +9,7 @@ import {
     Activity, Zap, Layout, Lock, Info, ArrowRight, HelpCircle,
 } from "lucide-react";
 import FadeIn from "@/components/ui/FadeIn";
+import AskAI from "@/components/ui/AskAI";
 
 type TabType = "network" | "browser" | "hardware" | "privacy";
 
@@ -1330,6 +1331,11 @@ export default function Home() {
                                 <div>Network Quality: Latency 14ms · Bufferbloat Grade A</div>
                             </div>
                         </section>
+
+                        {/* Ask AI Section */}
+                        <div className="bg-white border-2 border-background-dark p-6 sm:p-8 rounded-3xl shadow-block-sm">
+                            <AskAI variant="light" />
+                        </div>
 
                         {/* Homepage FAQ Accordion */}
                         <section>

@@ -5,6 +5,7 @@ import FadeIn from "@/components/ui/FadeIn";
 import { BufferbloatEngine, TestResult } from "@/lib/bufferbloat-engine";
 import Link from "next/link";
 import { ResultsCharts } from "@/components/bufferbloat/ResultsCharts";
+import AskAI from "@/components/ui/AskAI";
 
 export interface RunMetrics {
     progress: number;
@@ -558,6 +559,11 @@ export default function BufferbloatPage() {
                             </div>
                         </div>
                     </section>
+
+                    {/* Ask AI Section */}
+                    <div className="bg-white border-2 border-background-dark p-6 sm:p-8 rounded-3xl shadow-block-sm">
+                        <AskAI variant="light" />
+                    </div>
 
                     {/* Section 5: Bufferbloat FAQ Accordion */}
                     <section>
