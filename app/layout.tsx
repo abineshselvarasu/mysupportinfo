@@ -21,7 +21,7 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://mysupportinfo.vercel.app"),
+  metadataBase: new URL("https://mysupportinfo.com"),
   applicationName: "MySupportInfo",
   title: {
     default: "What Is My Browser? IP, Device & Privacy Checker",
@@ -117,7 +117,7 @@ export default function RootLayout({
               "@type": "WebSite",
               name: "MySupportInfo",
               alternateName: ["What Is My Browser", "Device Info Checker", "IP Address Checker", "Browser Privacy Checker"],
-              url: "https://mysupportinfo.vercel.app/",
+              url: "https://mysupportinfo.com/",
               description:
                 "What is my browser? Free IP, device info, and privacy checker — instantly detect browser version, OS, IP address, GPU, RAM, screen size, WebRTC leaks, and network quality with zero tracking.",
             }),
@@ -130,7 +130,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebApplication",
               name: "MySupportInfo — What Is My Browser, IP & Device Checker",
-              url: "https://mysupportinfo.vercel.app",
+              url: "https://mysupportinfo.com",
               description:
                 "Free browser, IP address, and device info checker. Instantly see what browser and OS you're using, your public IP address, GPU, RAM, screen resolution, WebRTC leaks, and network quality. Privacy-first — zero tracking, runs entirely in your browser.",
               applicationCategory: "UtilityApplication",
@@ -150,12 +150,12 @@ export default function RootLayout({
               publisher: {
                 "@type": "Organization",
                 name: "MySupportInfo",
-                url: "https://mysupportinfo.vercel.app/",
+                url: "https://mysupportinfo.com/",
               },
               creator: {
                 "@type": "Organization",
                 name: "MySupportInfo",
-                url: "https://mysupportinfo.vercel.app",
+                url: "https://mysupportinfo.com",
               },
             }),
           }}

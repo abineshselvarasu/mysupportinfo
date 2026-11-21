@@ -60,7 +60,7 @@ export default function Footer() {
                     <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2.5">
                             <span className="material-symbols-outlined text-primary text-base md:text-2xl">shield_person</span>
-                            <span className="font-bold tracking-tight text-base md:text-xl text-background">MySupportInfo.vercel.app</span>
+                            <span className="font-bold tracking-tight text-base md:text-xl text-background">MySupportInfo.com</span>
                         </div>
                         <p className="text-accent/80 text-sm leading-relaxed max-w-xs">
                             Secure, privacy-first system metrics and load-latency network diagnostics.
@@ -120,7 +120,7 @@ export default function Footer() {
 
             {/* Bottom Copyright Bar */}
             <div className="max-w-site mx-auto mt-12 pt-8 border-t border-accent/10 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-bold text-accent/40 uppercase tracking-widest">
-                <div>© 2026 MySupportInfo.vercel.app</div>
+                <div>© 2026 MySupportInfo.com</div>
                 <div className="font-medium text-accent/30 normal-case tracking-normal text-right">
                     Made with Care & Privacy in Mind.
                 </div>

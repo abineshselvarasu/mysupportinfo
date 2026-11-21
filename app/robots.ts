@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 
-const BASE_URL = 'https://mysupportinfo.vercel.app';
+const BASE_URL = 'https://mysupportinfo.com';
 
 export const dynamic = 'force-static';
 

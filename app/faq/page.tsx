@@ -13,7 +13,7 @@ const faqs = [
     },
     {
         question: "Is this tool free to use?",
-        answer: "Yes, MySupportInfo.vercel.app is currently 100% free for individual users. We may introduce premium features for enterprise support teams in the future, but the core diagnostic tools will remain free.",
+        answer: "Yes, MySupportInfo.com is currently 100% free for individual users. We may introduce premium features for enterprise support teams in the future, but the core diagnostic tools will remain free.",
     },
     {
         question: "Can I share my results?",
