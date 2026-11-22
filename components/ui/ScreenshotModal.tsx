@@ -209,8 +209,8 @@ export const SCREENSHOT_FIELDS: ScreenshotFieldDef[] = [
     },
 ];
 
-const ALL_FIELD_IDS: FieldId[] = SCREENSHOT_FIELDS.map((f) => f.id);
-const SENSITIVE_FIELD_IDS: Set<FieldId> = new Set(
+export const ALL_FIELD_IDS: FieldId[] = SCREENSHOT_FIELDS.map((f) => f.id);
+export const SENSITIVE_FIELD_IDS: Set<FieldId> = new Set(
     SCREENSHOT_FIELDS.filter((f) => f.isSensitive).map((f) => f.id)
 );
 
@@ -372,7 +372,7 @@ export default function ScreenshotModal({
                                 </span>
                             </div>
                             <p className="text-xs text-background-dark/70 mt-1 leading-relaxed font-medium">
-                                Choose which diagnostic cards appear on your downloaded PNG card. Redact sensitive info before sharing in public support tickets.
+                                Choose which diagnostic cards appear on your downloaded PNG card. Each report automatically includes your official <strong className="text-background-dark font-bold">MySupportInfo.com</strong> provenance header and promotional referral banner.
                             </p>
                         </div>
                     </div>
@@ -529,17 +529,23 @@ export default function ScreenshotModal({
 
                 {/* ── Footer ────────────────────────────────────────── */}
                 <div className="p-4 sm:p-5 border-t-2 border-background-dark/10 bg-white/70 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <p className="text-3xs text-background-dark/65 font-medium text-center sm:text-left">
-                        {isSensitiveMasked ? (
-                            <span className="text-secondary font-bold inline-flex items-center gap-1">
-                                <span>&#10003;</span> IP address, location, and ISP will be omitted from the screenshot.
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center gap-1">
-                                <span className="text-amber-600 font-bold">&#9888;</span> Your public IP address is currently included in the screenshot.
-                            </span>
-                        )}
-                    </p>
+                    <div className="flex flex-col sm:flex-row items-center gap-2">
+                        <p className="text-3xs text-background-dark/65 font-medium text-center sm:text-left">
+                            {isSensitiveMasked ? (
+                                <span className="text-secondary font-bold inline-flex items-center gap-1">
+                                    <span>&#10003;</span> IP address, location, and ISP will be omitted from the screenshot.
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1">
+                                    <span className="text-amber-600 font-bold">&#9888;</span> Your public IP address is currently included in the screenshot.
+                                </span>
+                            )}
+                        </p>
+                        <span className="hidden sm:inline text-background-dark/20">&#183;</span>
+                        <span className="text-4xs font-mono text-secondary font-bold inline-flex items-center gap-1 bg-secondary/10 px-2 py-0.5 rounded-lg border border-secondary/20">
+                            <span>&#10003;</span> Includes mysupportinfo.com provenance &amp; helpdesk promo
+                        </span>
+                    </div>
 
                     <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap justify-end">
                         <button

@@ -10,7 +10,7 @@ import {
     FileSpreadsheet,
 } from "lucide-react";
 import FadeIn from "@/components/ui/FadeIn";
-import ScreenshotModal, { FieldId, DEFAULT_SELECTED_FIELDS } from "@/components/ui/ScreenshotModal";
+import ScreenshotModal, { FieldId, DEFAULT_SELECTED_FIELDS, SENSITIVE_FIELD_IDS } from "@/components/ui/ScreenshotModal";
 import ShareModal from "@/components/ui/ShareModal";
 import { decodeReport, SharedReportData } from "@/lib/report-share";
 import { generateDiagnosticCSV, downloadCSV } from "@/lib/export-csv";
@@ -598,8 +598,10 @@ export default function Home() {
         await new Promise(r => setTimeout(r, 350)); // wait for DOM to repaint with custom fields
         try {
             const html2canvas = (await import("html2canvas")).default;
+            const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+            const captureBg = isDark ? "#011f1a" : "#FAF6F0";
             const canvas = await html2canvas(element, {
-                backgroundColor: "#FAF6F0",
+                backgroundColor: captureBg,
                 scale: 2,
                 logging: false,
                 useCORS: true,
@@ -611,7 +613,8 @@ export default function Home() {
                 y: 0,
             });
             const link = document.createElement("a");
-            link.download = `mysupportinfo-${Date.now()}.png`;
+            const dateStr = new Date().toISOString().slice(0, 10);
+            link.download = `mysupportinfo-diagnostic-report-${dateStr}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
         } catch (err) {
@@ -1214,7 +1217,68 @@ export default function Home() {
             </div>
 
             {/* ── Report wrapper (screenshot capture area) ──────────── */}
-            <div ref={reportRef} className="bg-background w-full px-6 py-4">
+            <div ref={reportRef} className={`bg-background w-full ${isCapturing ? "px-6 sm:px-12 py-10" : "px-6 py-4"}`}>
+
+                {/* ── Official Branded Report Header (Screenshot Capture Only) ──── */}
+                {isCapturing && (
+                    <div className="max-w-6xl mx-auto mb-10 p-6 sm:p-8 rounded-3xl bg-background-dark text-white border-3 border-background-dark shadow-block">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-white/15">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-2xl bg-primary border-2 border-white/20 shadow-block-sm flex items-center justify-center flex-shrink-0 text-background-dark">
+                                    <Activity size={30} strokeWidth={2.5} />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2.5 flex-wrap">
+                                        <span className="font-black text-2xl tracking-tight text-white font-sans">
+                                            MySupport<span className="text-primary italic font-serif ml-0.5">Info</span>
+                                        </span>
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-4xs font-mono font-black uppercase tracking-wider bg-white/10 text-accent border border-white/20">
+                                            Official System Diagnostic Report
+                                        </span>
+                                        {[...SENSITIVE_FIELD_IDS].every(f => !visibleFields.has(f)) && (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-4xs font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30">
+                                                <span>&#10003;</span> PII Masked for Safe Sharing
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-white/80 mt-1 font-medium font-sans">
+                                        Client-side device, browser, network &amp; hardware specifications generated at{" "}
+                                        <strong className="text-accent underline underline-offset-2">https://mysupportinfo.com</strong>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col sm:items-end gap-1.5 text-xs font-mono">
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-accent font-bold">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                                    <span>Verified In-Browser Session</span>
+                                </div>
+                                <div className="text-white/60 text-3xs">
+                                    Generated: {new Date().toUTCString()}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-4 flex flex-wrap items-center justify-between gap-3 text-3xs font-mono text-white/70">
+                            <div className="flex items-center gap-3.5 flex-wrap">
+                                <span className="inline-flex items-center gap-1.5">
+                                    <span className="text-primary">&#10003;</span> Zero Database Logs
+                                </span>
+                                <span className="text-white/25">&#183;</span>
+                                <span className="inline-flex items-center gap-1.5">
+                                    <span className="text-primary">&#10003;</span> 100% In-Browser Execution
+                                </span>
+                                <span className="text-white/25">&#183;</span>
+                                <span className="inline-flex items-center gap-1.5">
+                                    <span className="text-primary">&#10003;</span> Encrypted TLS Transmission
+                                </span>
+                            </div>
+                            <div className="text-accent font-bold">
+                                Audit Source: mysupportinfo.com
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Orb */}
                 <div className="flex justify-center px-4 mb-16">
@@ -1239,6 +1303,9 @@ export default function Home() {
                                         {ipLoading ? "…" : (isCapturing && !visibleFields.has("ip") ? "[Masked for Privacy]" : stats?.ip)}
                                     </p>
                                 </div>
+                            </div>
+                            <div className="text-5xs uppercase tracking-ui-wider font-mono text-accent/60 mb-1">
+                                mysupportinfo.com
                             </div>
                             {!isCapturing && (
                                 <button
@@ -1278,15 +1345,48 @@ export default function Home() {
                                     </div>
                                 );
                             })}
-                            {/* Watermark in downloaded screenshot */}
-                            <div className="pt-8 pb-4 border-t-2 border-background-dark/15 flex items-center justify-between text-background-dark/70 text-xs">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-serif font-black text-background-dark text-sm tracking-tight">MySupportInfo.com</span>
-                                    <span className="text-background-dark/30" aria-hidden="true">&#183;</span>
-                                    <span className="font-mono text-3xs font-semibold">100% In-Browser Device &amp; Network Diagnostic</span>
+                            {/* ── Branded Promotional & Referral Banner (Viral Loop for IT Support & Teams) ── */}
+                            <div className="mt-12 p-8 rounded-3xl bg-white dark:bg-[#062b24] border-3 border-background-dark dark:border-accent/40 shadow-block text-background-dark dark:text-white">
+                                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b-2 border-background-dark/10 dark:border-white/10">
+                                    <div className="space-y-2.5 max-w-2xl">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-3xs font-black uppercase tracking-wider bg-primary/20 dark:bg-primary/25 text-background-dark dark:text-accent border border-background-dark/20 dark:border-primary/40 font-mono">
+                                            <span>Free System Diagnostics for Remote Teams &amp; IT Helpdesks</span>
+                                        </div>
+                                        <h3 className="font-serif text-2xl font-black text-background-dark dark:text-white tracking-tight">
+                                            Need Diagnostic Details From Your Own Clients or Teammates?
+                                        </h3>
+                                        <p className="text-xs text-background-dark/80 dark:text-white/80 leading-relaxed font-medium">
+                                            Direct them to <strong className="text-background-dark dark:text-primary font-black underline decoration-primary decoration-2">https://mysupportinfo.com</strong>.
+                                            Users don&#39;t need to install any software or configure anything. They can view, copy, or screenshot their full browser version, operating system, public IP, screen resolution, WebRTC leak status, and network latency in under 3 seconds.
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row lg:flex-col items-stretch gap-3 flex-shrink-0 w-full lg:w-auto">
+                                        <div className="px-6 py-4 rounded-2xl bg-background-dark text-white border-2 border-background-dark shadow-block-sm flex items-center justify-between gap-5">
+                                            <div>
+                                                <span className="block text-4xs uppercase tracking-widest text-accent font-bold">Test Any Device</span>
+                                                <span className="text-base font-black font-mono text-primary">mysupportinfo.com</span>
+                                            </div>
+                                            <div className="w-8 h-8 rounded-xl bg-primary text-background-dark flex items-center justify-center font-bold text-sm">
+                                                &rarr;
+                                            </div>
+                                        </div>
+                                        <span className="text-4xs text-center text-background-dark/60 dark:text-white/60 font-mono">
+                                            1-Click Link &middot; Visual PNG Card &middot; CSV Export
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="font-mono text-3xs text-background-dark/60">
-                                    Generated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+
+                                {/* Audit trail & copyright */}
+                                <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-3xs text-background-dark/65 dark:text-white/60 font-mono">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-background-dark dark:text-white">MySupportInfo.com</span>
+                                        <span>&middot;</span>
+                                        <span>Private Client-Side Device Intelligence</span>
+                                    </div>
+                                    <div>
+                                        &copy; {new Date().getFullYear()} MySupportInfo. Built for Helpdesks, Sysadmins &amp; Remote Workers.
+                                    </div>
                                 </div>
                             </div>
                         </div>

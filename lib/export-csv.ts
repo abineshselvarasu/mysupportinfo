@@ -71,8 +71,10 @@ export function generateDiagnosticCSV(
         ["privacy", "Privacy & Security", "Ad Blocker", data.adBlocker || "Not Detected"],
         ["privacy", "Privacy & Security", "Do Not Track", data.doNotTrack || "Unspecified"],
         ["meta", "Audit Metadata", "Audit Source", "MySupportInfo (mysupportinfo.com)"],
+        ["meta", "Audit Metadata", "Platform URL", "https://mysupportinfo.com"],
         ["meta", "Audit Metadata", "Export Timestamp (UTC)", new Date().toISOString()],
         ["meta", "Audit Metadata", "Privacy Masking Applied", maskSensitive ? "Yes (IP & Location Redacted)" : "No"],
+        ["meta", "Audit Metadata", "Promotion & Referral", "Instant browser, OS & network diagnostics for IT support tickets: https://mysupportinfo.com"],
     ];
 
     // Filter by selectedFields if provided (always include meta)
