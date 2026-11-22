@@ -1217,10 +1217,6 @@ export default function Home() {
 
             {/* ── Hero ──────────────────────────────────────────────── */}
             <div className="text-center px-6 pt-16 pb-10">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-3xs font-black uppercase tracking-wider bg-background-dark/5 text-background-dark border-2 border-background-dark/15 font-mono mb-6 shadow-sm">
-                    <span className="w-2 h-2 rounded-full bg-secondary flex-shrink-0 animate-pulse" />
-                    <span>One Link to Diagnose Any Device</span>
-                </div>
                 <h1 className="font-serif leading-none mb-6 select-none">
                     <span className="block text-4xl sm:text-5xl md:text-7xl lg:text-display font-light text-background-dark tracking-tight">
                         What Is My
@@ -1230,7 +1226,7 @@ export default function Home() {
                     </span>
                 </h1>
                 <p className="text-sm md:text-base text-background-dark/75 max-w-xl mx-auto mb-10 leading-relaxed font-medium">
-                    Instant system diagnostics for remote teams and IT helpdesks. Check your browser version, operating system, public IP address, screen resolution, WebGL GPU, WebRTC leaks, and network latency — 100% in-browser with zero tracking.
+                    One link to diagnose any device. Instant browser, IP, OS, hardware, and network latency diagnostics for remote teams and IT helpdesks — 100% in-browser with zero tracking.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
                     <button
