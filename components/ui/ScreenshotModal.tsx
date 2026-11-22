@@ -4,8 +4,9 @@ import React, { useState, useEffect, useId } from "react";
 import {
     Download, X, Shield, Check, Globe, Wifi, Monitor,
     HardDrive, Cpu, Palette, Lock, EyeOff, Terminal,
-    Activity, Clock, AlertTriangle, CheckSquare
+    Activity, Clock, AlertTriangle, CheckSquare, FileSpreadsheet
 } from "lucide-react";
+import { generateDiagnosticCSV, downloadCSV } from "@/lib/export-csv";
 
 export type FieldId =
     | "browser"
@@ -237,6 +238,7 @@ export default function ScreenshotModal({
     const [selectedFields, setSelectedFields] = useState<Set<FieldId>>(
         new Set<FieldId>(ALL_FIELD_IDS)
     );
+    const [csvExported, setCsvExported] = useState(false);
     const titleId = useId();
 
     // Prevent body scrolling when open
@@ -334,6 +336,14 @@ export default function ScreenshotModal({
     ];
 
     const isSensitiveMasked = [...SENSITIVE_FIELD_IDS].every((id) => !selectedFields.has(id));
+
+    const handleExportCSV = () => {
+        if (!stats) return;
+        const csv = generateDiagnosticCSV(stats as Record<string, unknown>, isSensitiveMasked, selectedFields);
+        downloadCSV(csv);
+        setCsvExported(true);
+        setTimeout(() => setCsvExported(false), 2200);
+    };
 
     return (
         <div
@@ -531,20 +541,23 @@ export default function ScreenshotModal({
                         )}
                     </p>
 
-                    <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap justify-end">
                         <button
                             type="button"
-                            onClick={onClose}
-                            disabled={downloading}
-                            className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border-2 border-background-dark/30 text-background-dark font-bold text-xs hover:border-background-dark hover:bg-background-dark/5 transition-all disabled:opacity-40"
+                            onClick={handleExportCSV}
+                            disabled={downloading || selectedFields.size === 0}
+                            aria-label="Export selected metrics as CSV spreadsheet"
+                            className="px-4 py-2.5 rounded-xl border-2 border-background-dark/30 text-background-dark font-bold text-xs hover:border-background-dark hover:bg-background-dark/5 transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 cursor-pointer"
                         >
-                            Cancel
+                            <FileSpreadsheet size={14} />
+                            <span>{csvExported ? "Exported CSV!" : "Export CSV"}</span>
                         </button>
                         <button
                             type="button"
                             onClick={handleDownload}
                             disabled={downloading || selectedFields.size === 0}
-                            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 bg-primary border-2 border-background-dark shadow-block-sm text-background-dark font-black uppercase tracking-wider rounded-xl text-xs hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-40"
+                            aria-label="Download customized screenshot report card as PNG"
+                            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 bg-primary border-2 border-background-dark shadow-block-sm text-background-dark font-black uppercase tracking-wider rounded-xl text-xs hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-40 cursor-pointer"
                         >
                             <Download size={14} />
                             <span>{downloading ? "Generating PNG…" : "Download PNG Card"}</span>

@@ -56,7 +56,7 @@ export default function Footer() {
     }, []);
 
     return (
-        <footer className="relative w-full border-t-2 border-background-dark bg-background-dark text-white overflow-hidden">
+        <footer role="contentinfo" className="relative w-full border-t-2 border-background-dark bg-background-dark text-white overflow-hidden">
             {/* Subtle Top Ambient Radial Highlight */}
             <div
                 className="pointer-events-none absolute inset-x-0 top-0 h-32 opacity-25"
@@ -85,7 +85,7 @@ export default function Footer() {
                         <span className="text-3xs font-black uppercase text-primary tracking-widest">
                             Diagnostics &amp; Tools
                         </span>
-                        <nav className="flex flex-col gap-1.5 text-xs font-semibold text-accent/75">
+                        <nav aria-label="Footer diagnostics navigation" className="flex flex-col gap-1.5 text-xs font-semibold text-accent/75">
                             <Link className="hover:text-primary transition-colors flex items-center justify-between w-fit gap-2" href="/what-is-my-browser">
                                 <span>What Is My Browser</span>
                             </Link>
@@ -157,7 +157,7 @@ export default function Footer() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <ThemeToggle compact />
+                        <ThemeToggle compact variant="dark" />
                         <div className="flex items-center gap-2 text-3xs font-bold text-accent/40 uppercase tracking-wider">
                             <span>&copy; {new Date().getFullYear()} MySupportInfo.com</span>
                             <span>&middot;</span>

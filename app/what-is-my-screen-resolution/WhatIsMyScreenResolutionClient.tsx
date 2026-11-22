@@ -113,7 +113,7 @@ export default function WhatIsMyScreenResolutionClient() {
                                         Live On Zoom
                                     </span>
                                 </div>
-                                <div className="text-3xl sm:text-5xl font-mono font-bold text-background-dark mb-2">
+                                <div className="text-3xl sm:text-5xl font-mono font-bold text-background-dark mb-2" aria-live="polite">
                                     {viewport.width > 0 ? `${viewport.width} × ${viewport.height}` : "Measuring…"}
                                 </div>
                                 <p className="text-xs text-background-dark/75 leading-relaxed font-medium">

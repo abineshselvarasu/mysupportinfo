@@ -7,12 +7,13 @@ import {
     MapPin, Wifi, Copy, Share2, Download, Palette, Globe,
     Battery, ShieldCheck, ShieldAlert, Languages, Smartphone,
     Activity, Zap, Layout, Lock, Info, ArrowRight, HelpCircle,
+    FileSpreadsheet,
 } from "lucide-react";
 import FadeIn from "@/components/ui/FadeIn";
-import AskAI from "@/components/ui/AskAI";
 import ScreenshotModal, { FieldId, DEFAULT_SELECTED_FIELDS } from "@/components/ui/ScreenshotModal";
 import ShareModal from "@/components/ui/ShareModal";
 import { decodeReport, SharedReportData } from "@/lib/report-share";
+import { generateDiagnosticCSV, downloadCSV } from "@/lib/export-csv";
 
 type TabType = "network" | "browser" | "hardware" | "privacy";
 
@@ -562,6 +563,21 @@ export default function Home() {
         await navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2500);
+    };
+
+    const [csvExported, setCsvExported] = useState(false);
+
+    const handleExportCSV = () => {
+        if (!stats) return;
+        const csvData = {
+            ...stats,
+            webrtcLeak,
+            cookiesEnabled: stats.persistence === "ENABLED",
+        };
+        const csv = generateDiagnosticCSV(csvData, false);
+        downloadCSV(csv);
+        setCsvExported(true);
+        setTimeout(() => setCsvExported(false), 2500);
     };
 
     const shareLink = () => {
@@ -1153,11 +1169,11 @@ export default function Home() {
                 <p className="text-sm md:text-base text-background-dark/70 max-w-xl mx-auto mb-10 leading-relaxed font-medium">
                     Free instant browser, IP address, and privacy checker. See your browser version, operating system, IP address, screen size, GPU, RAM, WebRTC leaks, and network quality — all detected client-side with zero tracking.
                 </p>
-                <div className="flex flex-wrap justify-center gap-4">
+                <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
                     <button
                         onClick={copyAllInfo}
                         aria-label="Copy all device info to clipboard"
-                        className="flex items-center gap-2 px-6 py-2.5 bg-background-dark text-white border-2 border-background-dark shadow-block hover:bg-foreground active:translate-x-px active:translate-y-px active:shadow-none transition-all rounded-xl text-sm font-bold"
+                        className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-background-dark text-white border-2 border-background-dark shadow-block hover:bg-foreground active:translate-x-px active:translate-y-px active:shadow-none transition-all rounded-xl text-sm font-bold cursor-pointer"
                     >
                         <Copy size={15} />
                         {copied ? "Copied!" : "Copy All Info"}
@@ -1166,19 +1182,34 @@ export default function Home() {
                         onClick={() => setIsScreenshotModalOpen(true)}
                         disabled={loading || downloading}
                         aria-label="Customize and download screenshot report card"
-                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-50"
+                        className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-primary text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-50 cursor-pointer"
                     >
                         <Download size={15} />
                         <span>Screenshot Report</span>
                     </button>
                     <button
+                        onClick={handleExportCSV}
+                        disabled={loading}
+                        aria-label="Export complete diagnostic data to CSV spreadsheet"
+                        className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-white text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-accent/20 active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                        <FileSpreadsheet size={15} />
+                        <span>{csvExported ? "Exported CSV!" : "Export CSV"}</span>
+                    </button>
+                    <button
                         onClick={shareLink}
                         aria-label="Share diagnostic link with IT support"
-                        className="flex items-center gap-2 px-6 py-2.5 bg-white text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-accent/20 active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer"
+                        className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-white text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-accent/20 active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer"
                     >
                         <Share2 size={15} />
                         <span>Share Link</span>
                     </button>
+                </div>
+
+                {/* Accessible Screen Reader Status Region */}
+                <div className="sr-only" role="status" aria-live="polite">
+                    {copied && "All device specifications copied to clipboard."}
+                    {csvExported && "Diagnostic specifications exported as CSV spreadsheet."}
                 </div>
             </div>
 
@@ -1263,19 +1294,27 @@ export default function Home() {
                         // Normal tab view
                         <>
                             {/* Tab bar */}
-                            <div className="flex gap-1 bg-background-dark/5 border-2 border-background-dark/10 rounded-2xl p-1 mb-8 overflow-x-auto">
+                            <div
+                                role="tablist"
+                                aria-label="Device diagnostic categories"
+                                className="flex gap-1 bg-background-dark/5 dark:bg-white/10 border-2 border-background-dark/10 dark:border-white/15 rounded-2xl p-1 mb-8 overflow-x-auto"
+                            >
                                 {tabConfig.map(tab => (
                                     <button
                                         key={tab.id}
+                                        id={`tab-${tab.id}`}
+                                        role="tab"
+                                        aria-selected={activeTab === tab.id}
+                                        aria-controls={`tabpanel-${tab.id}`}
                                         onClick={() => setActiveTab(tab.id)}
-                                        aria-label={tab.label}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-2xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                                        aria-label={`${tab.label} diagnostics tab`}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-2xs font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
                                             activeTab === tab.id
-                                                ? "bg-background-dark text-white shadow-block-sm"
-                                                : "text-background-dark/50 hover:text-background-dark"
+                                                ? "bg-background-dark text-white dark:bg-primary dark:text-background-dark shadow-block-sm"
+                                                : "text-background-dark/60 dark:text-accent/80 hover:text-background-dark dark:hover:text-white hover:bg-background-dark/10 dark:hover:bg-white/10"
                                         }`}
                                     >
-                                        <tab.icon size={14} />
+                                        <tab.icon size={14} aria-hidden="true" />
                                         <span className="hidden sm:inline">{tab.label}</span>
                                     </button>
                                 ))}
@@ -1284,9 +1323,18 @@ export default function Home() {
                             {/* Active tab content */}
                             {tabSections.map(section => (
                                 activeTab === section.id && (
-                                    <FadeIn key={section.id}>
-                                        {section.content}
-                                    </FadeIn>
+                                    <div
+                                        key={section.id}
+                                        id={`tabpanel-${section.id}`}
+                                        role="tabpanel"
+                                        aria-labelledby={`tab-${section.id}`}
+                                        tabIndex={0}
+                                        className="focus:outline-none"
+                                    >
+                                        <FadeIn>
+                                            {section.content}
+                                        </FadeIn>
+                                    </div>
                                 )
                             ))}
                         </>
@@ -1540,11 +1588,6 @@ export default function Home() {
                             </div>
                         </section>
 
-                        {/* Ask AI Section */}
-                        <div className="bg-white border-2 border-background-dark p-6 sm:p-8 rounded-3xl shadow-block-sm">
-                            <AskAI variant="light" />
-                        </div>
-
                         {/* Homepage FAQ Accordion */}
                         <section>
                             <div className="text-center max-w-2xl mx-auto mb-10">
@@ -1583,16 +1626,23 @@ export default function Home() {
                                         className="bg-white border-2 border-background-dark rounded-2xl overflow-hidden shadow-block-sm transition-all duration-200"
                                     >
                                         <button
+                                            id={`home-faq-btn-${idx}`}
                                             onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
                                             className="w-full p-5 text-left flex justify-between items-center gap-4 hover:bg-background/20 transition-colors cursor-pointer"
                                             aria-expanded={openFaq === idx}
+                                            aria-controls={`home-faq-${idx}`}
                                         >
                                             <span className="font-extrabold text-background-dark text-base">{item.q}</span>
                                             <span className={`material-symbols-outlined transition-transform duration-300 ease-out text-background-dark/60 flex-shrink-0 ml-2 ${openFaq === idx ? "rotate-180 text-primary" : ""}`}>
                                                 expand_more
                                             </span>
                                         </button>
-                                        <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${openFaq === idx ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+                                        <div
+                                            id={`home-faq-${idx}`}
+                                            role="region"
+                                            aria-labelledby={`home-faq-btn-${idx}`}
+                                            className={`grid transition-[grid-template-rows] duration-300 ease-out ${openFaq === idx ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                                        >
                                             <div className="overflow-hidden">
                                                 <div className={`px-5 pb-5 pt-1 text-sm text-background-dark/75 leading-relaxed font-medium border-t border-background-dark/10 transition-opacity duration-200 ${openFaq === idx ? "opacity-100" : "opacity-0"}`}>
                                                     {item.a}

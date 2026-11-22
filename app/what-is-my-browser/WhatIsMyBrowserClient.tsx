@@ -168,11 +168,15 @@ export default function WhatIsMyBrowserClient() {
                             </span>
                             <button
                                 onClick={copyUA}
+                                aria-label={copiedUA ? "User-agent string copied to clipboard" : "Copy full user-agent string to clipboard"}
                                 className="flex items-center gap-1.5 text-3xs font-black uppercase tracking-wider px-3 py-1 rounded-lg bg-background-dark text-white hover:bg-foreground transition-all cursor-pointer"
                             >
-                                {copiedUA ? <Check size={11} strokeWidth={3} /> : <Copy size={11} />}
+                                {copiedUA ? <Check size={11} strokeWidth={3} aria-hidden="true" /> : <Copy size={11} aria-hidden="true" />}
                                 <span>{copiedUA ? "Copied" : "Copy UA"}</span>
                             </button>
+                            <div className="sr-only" role="status" aria-live="polite">
+                                {copiedUA && "User-agent string copied to clipboard."}
+                            </div>
                         </div>
                         <div className="p-4 rounded-2xl bg-background-dark text-accent font-mono text-2xs leading-relaxed break-all border-2 border-background-dark">
                             {details ? details.userAgent : "Detecting user agent string…"}

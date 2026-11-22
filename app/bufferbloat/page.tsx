@@ -5,7 +5,6 @@ import FadeIn from "@/components/ui/FadeIn";
 import { BufferbloatEngine, TestResult } from "@/lib/bufferbloat-engine";
 import Link from "next/link";
 import { ResultsCharts } from "@/components/bufferbloat/ResultsCharts";
-import AskAI from "@/components/ui/AskAI";
 
 export interface RunMetrics {
     progress: number;
@@ -208,9 +207,9 @@ export default function BufferbloatPage() {
 
                         {/* Phase Progress Indicator */}
                         {isRunning && runMetrics && (
-                            <div className="mt-6 flex items-center gap-2 text-background-dark/70 text-xs md:text-base font-semibold">
-                                <span className="material-symbols-outlined text-xs md:text-base animate-spin text-primary">sync</span>
-                                {getPhaseLabel(runMetrics.progress)}
+                            <div role="status" aria-live="polite" className="mt-6 flex items-center gap-2 text-background-dark/70 text-xs md:text-base font-semibold">
+                                <span className="material-symbols-outlined text-xs md:text-base animate-spin text-primary" aria-hidden="true">sync</span>
+                                <span>{getPhaseLabel(runMetrics.progress)}</span>
                                 <span className="text-primary font-black text-xs md:text-base">{runMetrics.progress}%</span>
                             </div>
                         )}
@@ -275,7 +274,14 @@ export default function BufferbloatPage() {
                                         <span className="text-xs font-bold uppercase text-background-dark/60">Bloat Increase</span>
                                         <span className="text-sm font-black" style={{ color: gradeColor(result.grade) }}>+{result.latency} ms</span>
                                     </div>
-                                    <div className="h-2.5 w-full bg-background-dark/5 rounded-full overflow-hidden">
+                                    <div
+                                        role="progressbar"
+                                        aria-valuenow={result.latency}
+                                        aria-valuemin={0}
+                                        aria-valuemax={120}
+                                        aria-label="Bufferbloat latency increase"
+                                        className="h-2.5 w-full bg-background-dark/5 rounded-full overflow-hidden"
+                                    >
                                         <div
                                             className="h-full transition-all duration-700 rounded-full"
                                             style={{
@@ -559,11 +565,6 @@ export default function BufferbloatPage() {
                         </div>
                     </section>
 
-                    {/* Ask AI Section */}
-                    <div className="bg-white border-2 border-background-dark p-6 sm:p-8 rounded-3xl shadow-block-sm">
-                        <AskAI variant="light" />
-                    </div>
-
                     {/* Section 5: Bufferbloat FAQ Accordion */}
                     <section>
                         <div className="text-center max-w-2xl mx-auto mb-10">
@@ -581,9 +582,11 @@ export default function BufferbloatPage() {
                                     className="bg-white border-2 border-background-dark rounded-2xl overflow-hidden shadow-block-sm transition-all"
                                 >
                                     <button
+                                        id={`bb-faq-btn-${index}`}
                                         onClick={() => setOpenFaq(openFaq === index ? null : index)}
                                         className="w-full p-5 text-left flex justify-between items-center gap-4 hover:bg-background/20 transition-colors cursor-pointer"
                                         aria-expanded={openFaq === index}
+                                        aria-controls={`bb-faq-panel-${index}`}
                                     >
                                         <span className="font-extrabold text-background-dark text-base">{item.q}</span>
                                         <span className={`material-symbols-outlined transition-transform duration-300 ease-out text-background-dark/60 flex-shrink-0 ml-2 ${openFaq === index ? "rotate-180 text-primary" : ""}`}>
@@ -591,6 +594,9 @@ export default function BufferbloatPage() {
                                         </span>
                                     </button>
                                     <div
+                                        id={`bb-faq-panel-${index}`}
+                                        role="region"
+                                        aria-labelledby={`bb-faq-btn-${index}`}
                                         className={`grid transition-[grid-template-rows] duration-300 ease-out ${
                                             openFaq === index ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                                         }`}

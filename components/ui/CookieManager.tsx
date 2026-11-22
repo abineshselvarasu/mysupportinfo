@@ -240,7 +240,7 @@ export default function CookieManager() {
                                         }`}
                                     >
                                         <div
-                                            className={`bg-white size-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                                            className={`bg-[#FAF6F0] size-4 rounded-full shadow-md transform transition-transform duration-200 ${
                                                 analytics ? "translate-x-5" : "translate-x-0"
                                             }`}
                                         />

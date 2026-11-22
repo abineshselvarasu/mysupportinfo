@@ -154,11 +154,15 @@ export default function WhatIsMyIpClient() {
                             <button
                                 onClick={copyIp}
                                 disabled={loading}
+                                aria-label={copiedIp ? "IPv4 address copied to clipboard" : "Copy public IPv4 address to clipboard"}
                                 className="flex items-center gap-2 px-5 py-2.5 bg-primary text-background-dark font-black uppercase tracking-wider text-xs rounded-xl border-2 border-background-dark shadow-block-sm hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer disabled:opacity-50"
                             >
-                                {copiedIp ? <Check size={14} strokeWidth={3} /> : <Copy size={14} />}
+                                {copiedIp ? <Check size={14} strokeWidth={3} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
                                 <span>{copiedIp ? "Copied!" : "Copy IP"}</span>
                             </button>
+                            <div className="sr-only" role="status" aria-live="polite">
+                                {copiedIp && "Public IP address copied to clipboard."}
+                            </div>
                         </div>
                     </div>
 
