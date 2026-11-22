@@ -78,20 +78,6 @@ export default function Footer() {
                         <p className="text-3xs text-accent/50 font-medium tracking-wide">
                             100% in-browser processing &middot; Zero database logs &middot; Encrypted TLS
                         </p>
-                        <div className="pt-2 flex flex-col gap-1 text-xs text-accent/80 font-mono">
-                            <div className="flex items-center gap-2">
-                                <span className="text-4xs uppercase tracking-wider text-primary font-bold">Support:</span>
-                                <a href="mailto:support@mysupportinfo.com" className="hover:text-primary transition-colors underline font-medium">
-                                    support@mysupportinfo.com
-                                </a>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-4xs uppercase tracking-wider text-primary font-bold">Contact:</span>
-                                <a href="mailto:contact@mysupportinfo.com" className="hover:text-primary transition-colors underline font-medium">
-                                    contact@mysupportinfo.com
-                                </a>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Col 2: Navigation Links (3 cols) */}
