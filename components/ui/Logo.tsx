@@ -82,7 +82,7 @@ export default function Logo({
         <Link href="/" onClick={onClick} aria-label="MySupportInfo Home" className={`group inline-flex items-center gap-2.5 ${className}`}>
             {iconNode}
             <div className="flex flex-col">
-                <span className={`${dimensions.text} font-black tracking-tight leading-none ${isDark ? "text-background" : "text-background-dark"}`}>
+                <span className={`${dimensions.text} font-black tracking-tight leading-none ${isDark ? "text-background" : "text-background-dark dark:text-white"}`}>
                     MySupport<span className="text-primary font-black italic font-serif ml-0.5">Info</span>
                 </span>
             </div>

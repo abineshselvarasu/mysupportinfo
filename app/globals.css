@@ -135,24 +135,10 @@ html.dark .text-foreground\/30 {
 }
 
 /* Text on primary buttons and badges MUST always be dark for readable contrast */
-.bg-primary,
 button.bg-primary,
 a.bg-primary,
-.bg-primary .text-background-dark,
-.bg-primary.text-background-dark,
-.bg-primary .text-foreground,
-.bg-primary.text-foreground,
-[class*="bg-primary"] .text-background-dark,
-[class*="bg-primary"] svg.text-background-dark,
-html.dark .bg-primary,
-html.dark button.bg-primary,
-html.dark a.bg-primary,
-html.dark .bg-primary .text-background-dark,
-html.dark .bg-primary.text-background-dark,
-html.dark .bg-primary .text-foreground,
-html.dark .bg-primary.text-foreground,
-html.dark [class*="bg-primary"] .text-background-dark,
-html.dark [class*="bg-primary"] svg.text-background-dark {
+button.bg-primary *,
+a.bg-primary * {
   color: #002924 !important;
 }
 
