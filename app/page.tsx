@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import FadeIn from "@/components/ui/FadeIn";
 import AskAI from "@/components/ui/AskAI";
+import ScreenshotModal, { FieldId, DEFAULT_SELECTED_FIELDS } from "@/components/ui/ScreenshotModal";
 
 type TabType = "network" | "browser" | "hardware" | "privacy";
 
@@ -137,6 +138,8 @@ export default function Home() {
     const [downloading, setDownloading] = useState(false);
     const [currentTime, setCurrentTime] = useState<string>("");
     const [openFaq, setOpenFaq] = useState<number | null>(null);
+    const [isScreenshotModalOpen, setIsScreenshotModalOpen] = useState(false);
+    const [visibleFields, setVisibleFields] = useState<Set<FieldId>>(DEFAULT_SELECTED_FIELDS);
     const reportRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -495,13 +498,18 @@ export default function Home() {
         setTimeout(() => setUrlCopied(false), 2500);
     };
 
-    // Switch to full-page capture mode, screenshot, then restore tab view
-    const downloadReport = async () => {
+    const handleCaptureFromModal = async (selected: Set<FieldId>) => {
+        setIsScreenshotModalOpen(false);
+        await performCapture(selected);
+    };
+
+    const performCapture = async (fieldsToRender: Set<FieldId>) => {
         const element = reportRef.current;
         if (!element) return;
         setDownloading(true);
         setIsCapturing(true);
-        await new Promise(r => setTimeout(r, 300)); // wait for DOM to repaint all stacked sections
+        setVisibleFields(fieldsToRender);
+        await new Promise(r => setTimeout(r, 350)); // wait for DOM to repaint with custom fields
         try {
             const html2canvas = (await import("html2canvas")).default;
             const canvas = await html2canvas(element, {
@@ -528,6 +536,10 @@ export default function Home() {
         }
     };
 
+    const downloadReport = () => {
+        setIsScreenshotModalOpen(true);
+    };
+
     // ─── Card component ───────────────────────────────────────────────
     const iconBgClass = (s: "good" | "warn" | "bad" | "info") => ({
         good: "bg-secondary/10 text-secondary",
@@ -539,6 +551,7 @@ export default function Home() {
     const Card = ({
         icon: Icon, title, value, subtext, tooltip,
         status = "info", fullWidth = false, isCode = false,
+        fieldId,
     }: {
         icon: React.ComponentType<{ className?: string; size?: number }>;
         title: string;
@@ -548,36 +561,44 @@ export default function Home() {
         status?: "good" | "warn" | "bad" | "info";
         fullWidth?: boolean;
         isCode?: boolean;
-    }) => (
-        <div className={`bg-white border-2 border-background-dark shadow-block-sm p-5 rounded-2xl flex flex-col justify-between hover:bg-background/20 transition-all duration-300 ${fullWidth ? "col-span-1 md:col-span-2" : ""}`}>
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2.5">
-                    <div className={`p-1.5 ${iconBgClass(status)} rounded-lg`}>
-                        <Icon size={16} />
-                    </div>
-                    <span className="text-background-dark/70 font-semibold text-3xs uppercase tracking-micro">{title}</span>
-                </div>
-                {tooltip && (
-                    <div className="relative group/tip">
-                        <Info size={14} className="text-background-dark/25 cursor-help select-none group-hover/tip:text-background-dark/60 transition-colors" />
-                        <div className="absolute right-0 bottom-7 w-56 bg-background-dark text-accent text-3xs rounded-xl p-3 z-50 shadow-xl leading-relaxed border border-accent/10 opacity-0 group-hover/tip:opacity-100 pointer-events-none transition-opacity duration-200">
-                            {tooltip}
+        fieldId?: FieldId;
+    }) => {
+        // Exclude field in screenshot if unselected
+        if (isCapturing && fieldId && !visibleFields.has(fieldId)) {
+            return null;
+        }
+
+        return (
+            <div className={`bg-white border-2 border-background-dark shadow-block-sm p-5 rounded-2xl flex flex-col justify-between hover:bg-background/20 transition-all duration-300 ${fullWidth ? "col-span-1 md:col-span-2" : ""}`}>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                        <div className={`p-1.5 ${iconBgClass(status)} rounded-lg`}>
+                            <Icon size={16} />
                         </div>
+                        <span className="text-background-dark/70 font-semibold text-3xs uppercase tracking-micro">{title}</span>
                     </div>
-                )}
+                    {tooltip && (
+                        <div className="relative group/tip">
+                            <Info size={14} className="text-background-dark/25 cursor-help select-none group-hover/tip:text-background-dark/60 transition-colors" />
+                            <div className="absolute right-0 bottom-7 w-56 bg-background-dark text-accent text-3xs rounded-xl p-3 z-50 shadow-xl leading-relaxed border border-accent/10 opacity-0 group-hover/tip:opacity-100 pointer-events-none transition-opacity duration-200">
+                                {tooltip}
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <div>
+                    {isCode ? (
+                        <div className="font-mono text-2xs text-accent bg-background-dark p-3 rounded-lg break-all leading-relaxed">
+                            {value}
+                        </div>
+                    ) : (
+                        <div className="text-xl font-bold text-background-dark mb-1 leading-tight break-all">{value}</div>
+                    )}
+                    <div className="text-3xs text-background-dark/60 mt-2 leading-tight font-medium">{subtext}</div>
+                </div>
             </div>
-            <div>
-                {isCode ? (
-                    <div className="font-mono text-2xs text-accent bg-background-dark p-3 rounded-lg break-all leading-relaxed">
-                        {value}
-                    </div>
-                ) : (
-                    <div className="text-xl font-bold text-background-dark mb-1 leading-tight break-all">{value}</div>
-                )}
-                <div className="text-3xs text-background-dark/60 mt-2 leading-tight font-medium">{subtext}</div>
-            </div>
-        </div>
-    );
+        );
+    };
 
     // ─── Shared status values ─────────────────────────────────────────
     const webrtcStatus: "good" | "warn" | "bad" | "info" =
@@ -612,11 +633,12 @@ export default function Home() {
         <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Card
+                    fieldId="ip"
                     icon={Globe}
                     title="IP Address (IPv4)"
                     value={ipLoading ? "Scanning…" : (
                         <span className="flex items-center gap-2 flex-wrap">
-                            {stats?.countryCode && (
+                            {stats?.countryCode && (!isCapturing || visibleFields.has("location")) && (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-2xs font-black uppercase tracking-wider bg-background-dark/10 text-background-dark border border-background-dark/20 font-mono">
                                     {stats.countryCode}
                                 </span>
@@ -627,10 +649,17 @@ export default function Home() {
                             )}
                         </span>
                     )}
-                    subtext={ipLoading ? "Resolving your public address…" : [stats?.city, stats?.country].filter(Boolean).join(", ") || "Location unknown"}
+                    subtext={
+                        ipLoading
+                            ? "Resolving your public address…"
+                            : isCapturing && !visibleFields.has("location")
+                            ? "Location hidden for privacy"
+                            : [stats?.city, stats?.country].filter(Boolean).join(", ") || "Location unknown"
+                    }
                     tooltip="Your public IPv4 address as seen by the internet. Assigned by your ISP or router NAT."
                 />
                 <Card
+                    fieldId="ip"
                     icon={Globe}
                     title="IPv6 Address"
                     value={ipLoading ? "Scanning…" : (stats?.ipv6 || "Not Available")}
@@ -641,6 +670,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Card
+                    fieldId="isp"
                     icon={Wifi}
                     title="ISP / Network"
                     value={ipLoading ? "Scanning…" : stats?.ispName}
@@ -648,6 +678,7 @@ export default function Home() {
                     tooltip="Derived from your IP's ASN (Autonomous System Number) registration data."
                 />
                 <Card
+                    fieldId="webrtc"
                     icon={ShieldCheck}
                     title="WebRTC Leak"
                     value={webrtcLoading ? "Scanning…" : (
@@ -663,6 +694,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <Card
+                    fieldId="latency"
                     icon={Signal}
                     title="Connection Type"
                     value={loading ? "…" : stats?.connectionType}
@@ -671,6 +703,7 @@ export default function Home() {
                     status={loading ? "info" : (stats?.connectionType === "4G" ? "good" : stats?.connectionType === "N/A" ? "info" : "warn")}
                 />
                 <Card
+                    fieldId="latency"
                     icon={Zap}
                     title="Estimated Speed"
                     value={loading ? "…" : stats?.connectionSpeed}
@@ -679,6 +712,7 @@ export default function Home() {
                     status={loading ? "info" : getSpeedStatus(stats?.connectionSpeed || "")}
                 />
                 <Card
+                    fieldId="latency"
                     icon={Activity}
                     title="Latency (RTT)"
                     value={loading ? "…" : stats?.latency}
@@ -694,6 +728,7 @@ export default function Home() {
         <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 <Card
+                    fieldId="browser"
                     icon={Monitor}
                     title="Browser"
                     value={loading ? "…" : `${stats?.browserName} ${stats?.browserVersion}`}
@@ -702,6 +737,7 @@ export default function Home() {
                     status="good"
                 />
                 <Card
+                    fieldId="os"
                     icon={HardDrive}
                     title="Operating System"
                     value={loading ? "…" : stats?.osName}
@@ -709,6 +745,7 @@ export default function Home() {
                     tooltip="Identifies the OS platform your browser runs on. Helps support teams reproduce your environment."
                 />
                 <Card
+                    fieldId="language"
                     icon={Languages}
                     title="Language / Locale"
                     value={loading ? "…" : stats?.language}
@@ -716,6 +753,7 @@ export default function Home() {
                     tooltip="Affects date formatting, number separators, and which language websites display by default."
                 />
                 <Card
+                    fieldId="js"
                     icon={ShieldCheck}
                     title="JavaScript"
                     value={<span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-secondary flex-shrink-0" />ENABLED</span>}
@@ -726,6 +764,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 <Card
+                    fieldId="userAgent"
                     icon={Terminal}
                     title="Full User Agent"
                     value={loading ? "Loading…" : stats?.userAgent}
@@ -735,6 +774,7 @@ export default function Home() {
                     isCode
                 />
                 <Card
+                    fieldId="privacy"
                     icon={EyeOff}
                     title="Do Not Track"
                     value={loading ? "…" : (
@@ -748,6 +788,7 @@ export default function Home() {
                     status={loading ? "info" : stats?.doNotTrack === "ENABLED" ? "good" : "info"}
                 />
                 <Card
+                    fieldId="cookies"
                     icon={Lock}
                     title="Cookies"
                     value={loading ? "…" : (
@@ -778,6 +819,7 @@ export default function Home() {
         <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 <Card
+                    fieldId="viewport"
                     icon={Monitor}
                     title="Viewport Size"
                     value={loading ? "…" : stats?.windowSize}
@@ -785,6 +827,7 @@ export default function Home() {
                     tooltip="The pixel area your browser content occupies. Updates live when you resize or zoom."
                 />
                 <Card
+                    fieldId="screen"
                     icon={Palette}
                     title="Color Depth"
                     value={loading ? "…" : stats?.colorDepth}
@@ -792,6 +835,7 @@ export default function Home() {
                     tooltip="24-bit = ~16.7 million colors (standard). 30-bit = HDR. Higher means richer images."
                 />
                 <Card
+                    fieldId="hardware"
                     icon={Cpu}
                     title="CPU Cores"
                     value={loading ? "…" : stats?.cpuCores}
@@ -799,6 +843,7 @@ export default function Home() {
                     tooltip="More cores allow browsers and WebAssembly to run parallel tasks faster."
                 />
                 <Card
+                    fieldId="hardware"
                     icon={HardDrive}
                     title="RAM Estimate"
                     value={loading ? "…" : stats?.ram}
@@ -808,6 +853,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 <Card
+                    fieldId="gpu"
                     icon={Terminal}
                     title="WebGL / GPU"
                     value={<span className="text-sm line-clamp-2">{loading ? "…" : stats?.webglVendor}</span>}
@@ -816,6 +862,7 @@ export default function Home() {
                     fullWidth
                 />
                 <Card
+                    fieldId="battery"
                     icon={Battery}
                     title="Battery"
                     value={loading ? "…" : (stats?.batteryLevel === "N/A" ? "Desktop / N/A" : `${stats?.batteryLevel} — ${stats?.batteryCharging}`)}
@@ -824,6 +871,7 @@ export default function Home() {
                     status={loading ? "info" : getBatteryStatus(stats?.batteryLevel || "N/A")}
                 />
                 <Card
+                    fieldId="battery"
                     icon={Smartphone}
                     title="Touch Support"
                     value={loading ? "…" : stats?.touchSupport}
@@ -833,6 +881,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <Card
+                    fieldId="screen"
                     icon={Layout}
                     title="Screen Orientation"
                     value={loading ? "…" : stats?.orientation}
@@ -840,6 +889,7 @@ export default function Home() {
                     tooltip="Landscape for desktops. Portrait for phones held upright. Affects responsive layout breakpoints."
                 />
                 <Card
+                    fieldId="clock"
                     icon={MapPin}
                     title="Timezone"
                     value={loading ? "…" : stats?.timezone}
@@ -847,6 +897,7 @@ export default function Home() {
                     tooltip="Used by web apps to show times in your local zone. Can differ from your IP geolocation."
                 />
                 <Card
+                    fieldId="clock"
                     icon={Clock}
                     title="System Clock"
                     value={currentTime || "…"}
@@ -859,28 +910,31 @@ export default function Home() {
 
     const privacyCards = (
         <div className="space-y-3">
-            <div className="bg-background-dark border-2 border-background-dark rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                    <p className="text-4xs text-accent/50 uppercase tracking-ui-wider font-bold mb-1">Privacy Snapshot</p>
-                    {privacyItems ? (
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-accent/90">
-                            {privacyItems.map((item, i) => (
-                                <span key={i} className="inline-flex items-center gap-1.5">
-                                    <span className={item.ok ? "text-secondary font-bold" : "text-primary font-bold"} aria-hidden="true">
-                                        {item.ok ? <>&#10003;</> : <>&#9888;</>}
+            {(!isCapturing || visibleFields.has("privacy")) && (
+                <div className="bg-background-dark border-2 border-background-dark rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                        <p className="text-4xs text-accent/50 uppercase tracking-ui-wider font-bold mb-1">Privacy Snapshot</p>
+                        {privacyItems ? (
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-accent/90">
+                                {privacyItems.map((item, i) => (
+                                    <span key={i} className="inline-flex items-center gap-1.5">
+                                        <span className={item.ok ? "text-secondary font-bold" : "text-primary font-bold"} aria-hidden="true">
+                                            {item.ok ? <>&#10003;</> : <>&#9888;</>}
+                                        </span>
+                                        <span>{item.label}</span>
+                                        {i < privacyItems.length - 1 && <span className="text-accent/30 ml-1.5" aria-hidden="true">&#183;</span>}
                                     </span>
-                                    <span>{item.label}</span>
-                                    {i < privacyItems.length - 1 && <span className="text-accent/30 ml-1.5" aria-hidden="true">&#183;</span>}
-                                </span>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-sm font-medium text-accent/90 leading-relaxed">Analysing privacy posture&#8230;</p>
-                    )}
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm font-medium text-accent/90 leading-relaxed">Analysing privacy posture&#8230;</p>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Card
+                    fieldId="webrtc"
                     icon={ShieldCheck}
                     title="WebRTC Leak"
                     value={webrtcLoading ? "Scanning…" : (
@@ -894,6 +948,7 @@ export default function Home() {
                     status={webrtcStatus}
                 />
                 <Card
+                    fieldId="ip"
                     icon={stats?.vpnDetected ? ShieldAlert : ShieldCheck}
                     title="VPN Detection"
                     value={ipLoading ? "Scanning…" : (
@@ -909,6 +964,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Card
+                    fieldId="privacy"
                     icon={EyeOff}
                     title="Do Not Track"
                     value={loading ? "…" : (
@@ -922,6 +978,7 @@ export default function Home() {
                     status={loading ? "info" : stats?.doNotTrack === "ENABLED" ? "good" : "info"}
                 />
                 <Card
+                    fieldId="privacy"
                     icon={ShieldAlert}
                     title="Ad Blocker"
                     value={loading ? "Detecting…" : (
@@ -937,6 +994,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Card
+                    fieldId="cookies"
                     icon={Lock}
                     title="Cookies"
                     value={loading ? "…" : (
@@ -954,6 +1012,7 @@ export default function Home() {
                     tooltip="Cookies are required by most websites for session management. Disabling breaks most logins."
                 />
                 <Card
+                    fieldId="js"
                     icon={ShieldCheck}
                     title="JavaScript"
                     value={<span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-secondary flex-shrink-0" />ENABLED</span>}
@@ -967,17 +1026,17 @@ export default function Home() {
 
     // ─── Tab config ───────────────────────────────────────────────────
     const tabConfig: { id: TabType; label: string; icon: React.ComponentType<{ className?: string; size?: number }> }[] = [
-        { id: "network",  label: "Network",  icon: Wifi          },
-        { id: "browser",  label: "Browser",  icon: Globe      },
-        { id: "hardware", label: "Hardware", icon: Cpu        },
+        { id: "network",  label: "Network",  icon: Wifi         },
+        { id: "browser",  label: "Browser",  icon: Globe        },
+        { id: "hardware", label: "Hardware", icon: Cpu          },
         { id: "privacy",  label: "Privacy",  icon: ShieldCheck  },
     ];
 
-    const tabSections: { id: TabType; label: string; content: React.ReactNode }[] = [
-        { id: "network",  label: "Network",  content: networkCards  },
-        { id: "browser",  label: "Browser",  content: browserCards  },
-        { id: "hardware", label: "Hardware", content: hardwareCards },
-        { id: "privacy",  label: "Privacy",  content: privacyCards  },
+    const tabSections: { id: TabType; label: string; content: React.ReactNode; fieldIds: FieldId[] }[] = [
+        { id: "network",  label: "Network",  content: networkCards,  fieldIds: ["ip", "isp", "location", "webrtc", "latency"] },
+        { id: "browser",  label: "Browser",  content: browserCards,  fieldIds: ["browser", "os", "language", "js", "userAgent", "privacy", "cookies"] },
+        { id: "hardware", label: "Hardware", content: hardwareCards, fieldIds: ["viewport", "screen", "hardware", "gpu", "battery", "clock"] },
+        { id: "privacy",  label: "Privacy",  content: privacyCards,  fieldIds: ["webrtc", "ip", "privacy", "cookies", "js"] },
     ];
 
     return (
@@ -1006,6 +1065,15 @@ export default function Home() {
                         {copied ? "Copied!" : "Copy All Info"}
                     </button>
                     <button
+                        onClick={() => setIsScreenshotModalOpen(true)}
+                        disabled={loading || downloading}
+                        aria-label="Customize and download screenshot report card"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-50"
+                    >
+                        <Download size={15} />
+                        <span>Screenshot Report</span>
+                    </button>
+                    <button
                         onClick={shareLink}
                         aria-label="Share link — copy URL to clipboard"
                         className="flex items-center gap-2 px-6 py-2.5 bg-white text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-accent/20 active:translate-x-px active:translate-y-px active:shadow-none transition-all"
@@ -1026,17 +1094,21 @@ export default function Home() {
                         <div className="relative z-10 flex flex-col items-center text-center px-4 sm:px-10">
                             <span className="text-4xs text-accent/75 uppercase tracking-ui-widest font-bold mb-4">Main Browser</span>
                             <h2 className="font-serif font-bold text-white mb-5 sm:mb-7 w-full" style={{ fontSize: "clamp(1.5rem, 8vw, 4rem)", lineHeight: 1.05 }}>
-                                {loading ? "…" : `${stats?.browserName} ${stats?.browserVersion}`}
+                                {loading ? "…" : (isCapturing && !visibleFields.has("browser") ? "Browser Masked" : `${stats?.browserName} ${stats?.browserVersion}`)}
                             </h2>
                             <div className="flex items-start gap-4 sm:gap-10 mb-7 sm:mb-9">
                                 <div className="text-center">
                                     <p className="text-5xs text-accent/60 uppercase tracking-ui-wider font-bold mb-1.5">OS Environment</p>
-                                    <p className="text-sm sm:text-base font-semibold text-accent">{loading ? "…" : stats?.osName}</p>
+                                    <p className="text-sm sm:text-base font-semibold text-accent">
+                                        {loading ? "…" : (isCapturing && !visibleFields.has("os") ? "Hidden" : stats?.osName)}
+                                    </p>
                                 </div>
                                 <div className="w-px h-10 bg-accent/20 self-center flex-shrink-0" />
                                 <div className="text-center">
                                     <p className="text-5xs text-accent/60 uppercase tracking-ui-wider font-bold mb-1.5">Global IP</p>
-                                    <p className="text-xs sm:text-sm font-semibold text-accent font-mono tabular-nums break-all">{ipLoading ? "…" : stats?.ip}</p>
+                                    <p className="text-xs sm:text-sm font-semibold text-accent font-mono tabular-nums break-all">
+                                        {ipLoading ? "…" : (isCapturing && !visibleFields.has("ip") ? "[Masked for Privacy]" : stats?.ip)}
+                                    </p>
                                 </div>
                             </div>
                             {!isCapturing && (
@@ -1057,22 +1129,37 @@ export default function Home() {
                 {/* ── Tabs / Capture area ───────────────────────────── */}
                 <div className="max-w-6xl mx-auto">
                     {isCapturing ? (
-                        // Full-page capture mode: all sections stacked, no tab bar
+                        // Full-page capture mode: all selected sections stacked, no tab bar
                         <div className="space-y-10">
-                            {tabSections.map(section => (
-                                <div key={section.id}>
-                                    <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-background-dark/10">
-                                        {React.createElement(tabConfig.find(t => t.id === section.id)?.icon || Globe, {
-                                            size: 16,
-                                            className: "text-primary",
-                                        })}
-                                        <span className="text-2xs font-bold text-background-dark uppercase tracking-ui-wide">
-                                            {section.label}
-                                        </span>
+                            {tabSections.map(section => {
+                                const hasVisibleCard = section.fieldIds.some(f => visibleFields.has(f));
+                                if (!hasVisibleCard) return null;
+                                return (
+                                    <div key={section.id}>
+                                        <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-background-dark/10">
+                                            {React.createElement(tabConfig.find(t => t.id === section.id)?.icon || Globe, {
+                                                size: 16,
+                                                className: "text-primary",
+                                            })}
+                                            <span className="text-2xs font-bold text-background-dark uppercase tracking-ui-wide">
+                                                {section.label}
+                                            </span>
+                                        </div>
+                                        {section.content}
                                     </div>
-                                    {section.content}
+                                );
+                            })}
+                            {/* Watermark in downloaded screenshot */}
+                            <div className="pt-8 pb-4 border-t-2 border-background-dark/15 flex items-center justify-between text-background-dark/70 text-xs">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-serif font-black text-background-dark text-sm tracking-tight">MySupportInfo.com</span>
+                                    <span className="text-background-dark/30" aria-hidden="true">&#183;</span>
+                                    <span className="font-mono text-3xs font-semibold">100% In-Browser Device &amp; Network Diagnostic</span>
                                 </div>
-                            ))}
+                                <div className="font-mono text-3xs text-background-dark/60">
+                                    Generated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         // Normal tab view
@@ -1422,6 +1509,17 @@ export default function Home() {
                     </article>
                 </div>
             </div>
+
+            {/* ── Screenshot Options & Privacy Modal ──────────────── */}
+            <ScreenshotModal
+                isOpen={isScreenshotModalOpen}
+                onClose={() => setIsScreenshotModalOpen(false)}
+                onCapture={handleCaptureFromModal}
+                stats={stats}
+                webrtcLeak={webrtcLeak}
+                currentTime={currentTime}
+                downloading={downloading}
+            />
         </div>
     );
 }
