@@ -81,7 +81,7 @@ export default function FAQPage() {
                             <span className="material-symbols-outlined text-background-dark text-3xl">help</span>
                         </div>
                         <div>
-                            <h1 className="text-3xl md:text-5xl font-bold text-white font-serif">Frequently Asked Questions</h1>
+                            <h1 className="text-fluid-hero font-bold text-white font-serif leading-tight">Frequently Asked Questions</h1>
                             <p className="text-accent/70 text-sm mt-1">{faqs.length} expert technical answers on network diagnostics, bufferbloat & privacy</p>
                         </div>
                     </div>

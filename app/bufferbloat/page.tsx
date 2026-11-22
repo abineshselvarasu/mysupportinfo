@@ -121,14 +121,13 @@ export default function BufferbloatPage() {
                 {/* Hero Header */}
                 <FadeIn>
                     <div className="text-center mb-12">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/15 border border-primary/30 text-background-dark text-xs font-black uppercase tracking-wider mb-4">
-                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                            Network Quality & Latency Diagnostic
-                        </div>
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4 text-background-dark font-serif">
+                        <p className="text-xs font-black uppercase tracking-widest text-primary mb-3">
+                            Network Quality &amp; Latency Diagnostic
+                        </p>
+                        <h1 className="text-fluid-hero font-extrabold tracking-tight mb-4 text-background-dark font-serif leading-tight">
                             Bufferbloat <span className="text-primary italic">Test</span>
                         </h1>
-                        <p className="text-background-dark/70 max-w-3xl mx-auto text-base md:text-lg leading-relaxed font-medium">
+                        <p className="text-fluid-lead text-background-dark/75 max-w-3xl mx-auto leading-relaxed font-medium">
                             Measure how your internet latency holds up under real download and upload loads. Detect hidden packet queuing lag that causes stuttering in gaming, dropped frames in Discord, and freezing video calls — even on ultra-fast gigabit connections.
                         </p>
                     </div>
@@ -138,7 +137,7 @@ export default function BufferbloatPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
 
                     {/* Left Panel: Gauge & Real-time Metrics */}
-                    <div className="lg:col-span-8 bg-white border-2 border-background-dark shadow-block rounded-2xl p-5 sm:p-8 md:p-12 flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="lg:col-span-8 bg-white border-2 border-background-dark shadow-block rounded-3xl p-5 sm:p-8 md:p-12 flex flex-col items-center justify-center relative overflow-hidden">
                         <div className="absolute inset-0 bg-accent/5 pointer-events-none" />
 
                         {/* Circular Gauge */}
@@ -230,7 +229,7 @@ export default function BufferbloatPage() {
 
                     {/* Right Panel: Grade Assessment Card */}
                     <div className="lg:col-span-4">
-                        <div className="bg-accent/25 border-2 border-background-dark shadow-block rounded-2xl p-8 flex flex-col items-center text-center h-full relative overflow-hidden">
+                        <div className="bg-accent/25 border-2 border-background-dark shadow-block rounded-3xl p-8 flex flex-col items-center text-center h-full relative overflow-hidden">
 
                             {/* Traffic Signal Lights Indicator */}
                             <div className="absolute top-0 right-0 p-4">
@@ -439,7 +438,7 @@ export default function BufferbloatPage() {
                     {/* Section 2: Why High Bandwidth Doesn't Stop Bufferbloat */}
                     <section className="bg-accent/15 border-2 border-background-dark rounded-3xl p-8 md:p-12 shadow-block-sm">
                         <div className="max-w-3xl">
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-background-dark mb-4 font-serif">
+                            <h2 className="text-fluid-h2 font-extrabold text-background-dark mb-4 font-serif">
                                 Why 1 Gbps Fiber Can Still Suffer From Severe Lag
                             </h2>
                             <p className="text-background-dark/80 text-base leading-relaxed mb-6 font-medium">
@@ -568,7 +567,7 @@ export default function BufferbloatPage() {
                     {/* Section 5: Bufferbloat FAQ Accordion */}
                     <section>
                         <div className="text-center max-w-2xl mx-auto mb-10">
-                            <h2 className="text-3xl font-extrabold text-background-dark font-serif mb-3">
+                            <h2 className="text-fluid-h2 font-extrabold text-background-dark font-serif mb-3">
                                 Frequently Asked Questions About Bufferbloat
                             </h2>
                             <p className="text-sm text-background-dark/70 font-medium">

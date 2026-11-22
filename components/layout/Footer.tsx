@@ -74,12 +74,9 @@ export default function Footer() {
                         <p className="text-accent/75 text-xs sm:text-sm leading-relaxed max-w-sm font-medium">
                             Private, client-side browser intelligence and bufferbloat latency testing. Built for IT support, remote teams, and gamers.
                         </p>
-                        <div className="flex items-center gap-2 pt-0.5">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-3xs font-semibold text-accent/80">
-                                <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
-                                100% In-Browser &middot; Zero Data Logging
-                            </span>
-                        </div>
+                        <p className="text-3xs text-accent/50 font-medium tracking-wide pt-1">
+                            100% in-browser processing &middot; Zero database logs &middot; Encrypted TLS
+                        </p>
                     </div>
 
                     {/* Col 2: Navigation Links (3 cols) */}
@@ -120,9 +117,8 @@ export default function Footer() {
                             <span className="text-3xs font-black uppercase text-primary tracking-widest">
                                 Active Environment
                             </span>
-                            <span className="inline-flex items-center gap-1 text-4xs font-bold text-secondary uppercase tracking-wider">
-                                <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                                Sandboxed
+                            <span className="text-4xs font-bold text-accent/50 uppercase tracking-widest font-mono">
+                                In-Memory
                             </span>
                         </div>
                         
