@@ -17,11 +17,11 @@ export default function PrivacyPage() {
             {/* Header */}
             <div className="bg-background-dark px-6 py-16">
                 <div className="max-w-3xl mx-auto">
-                    <div className="flex items-center gap-2 mb-6">
+                    <nav aria-label="Breadcrumb" className="flex items-center gap-2 mb-6">
                         <Link href="/" className="text-accent/60 text-sm font-semibold hover:text-accent transition-colors">Home</Link>
                         <span className="material-symbols-outlined text-sm text-accent/40">chevron_right</span>
-                        <span className="text-accent text-sm font-extrabold">Privacy Policy</span>
-                    </div>
+                        <span className="text-accent text-sm font-extrabold" aria-current="page">Privacy Policy</span>
+                    </nav>
                     <div className="flex items-center gap-4 mb-4">
                         <div className="p-3 bg-primary rounded-2xl">
                             <span className="material-symbols-outlined text-background-dark text-2xl">shield_person</span>
