@@ -1136,7 +1136,7 @@ export default function Home() {
             <div className="text-center px-6 pt-16 pb-10">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-3xs font-black uppercase tracking-wider bg-background-dark/5 text-background-dark border-2 border-background-dark/15 font-mono mb-6 shadow-sm">
                     <span className="w-2 h-2 rounded-full bg-secondary flex-shrink-0 animate-pulse" />
-                    <span>One Link to Diagnose Any Device &middot; Built for IT &amp; Remote Teams</span>
+                    <span>One Link to Diagnose Any Device</span>
                 </div>
                 <h1 className="font-serif leading-none mb-6 select-none">
                     <span className="block text-4xl sm:text-5xl md:text-7xl lg:text-display font-light text-background-dark tracking-tight">
