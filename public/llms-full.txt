@@ -1,0 +1,82 @@
+# MySupportInfo — Complete Technical & Diagnostic Reference (llms-full.txt)
+
+> **Core Purpose:** One Link to Diagnose Any Device. Instant client-side system, browser, network, and bufferbloat latency diagnostics for remote teams, IT helpdesks, and developers with zero tracking.
+> **Canonical Domain:** https://mysupportinfo.com
+> **License & Pricing:** 100% Free, No registration, No software installation, Open access.
+> **Contact Channels:** report@mysupportinfo.com (Technical detection error reports), contact@mysupportinfo.com (General & business inquiries).
+
+---
+
+## 1. System Architecture & Privacy Model
+MySupportInfo is engineered as a **100% client-side Web Application** built with Next.js and Tailwind CSS.
+- **Zero Database Logs:** The service does not maintain a database (no SQL, no NoSQL, no key-value store). No IP addresses, user-agent strings, hardware fingerprints, or diagnostic results are logged or stored on any server.
+- **Client-Side Execution:** All browser and hardware introspection executes locally inside the visitor's browser sandbox using standard Web APIs.
+- **Strict HTTPS / HSTS Security:** Enforced Strict-Transport-Security (HSTS) with a 2-year preload (`max-age=63072000; includeSubDomains; preload`), preventing protocol downgrade attacks.
+- **Clickjacking & MIME Protection:** Protected by `X-Frame-Options: SAMEORIGIN` and `X-Content-Type-Options: nosniff`.
+- **Hardware Isolation:** Strict `Permissions-Policy` disables camera and microphone access.
+
+---
+
+## 2. Comprehensive Metric Detection Reference
+
+### Browser Specifications
+* **Browser Name & Version:** Extracted using modern User-Agent Client Hints (`navigator.userAgentData`) where supported, with deterministic fallback parsing of `navigator.userAgent`. Detects Google Chrome, Apple Safari, Mozilla Firefox, Microsoft Edge, Brave, Opera, and Vivaldi.
+* **Operating System & Architecture:** Identifies Windows (11, 10), macOS, Linux (distros), ChromeOS, iOS, iPadOS, and Android.
+* **User Agent String:** Complete raw HTTP User-Agent string sent with web requests.
+* **JavaScript Engine Status:** Active status verified by runtime code execution.
+* **Cookie Persistence:** Verified by testing `document.cookie` read/write capabilities without retaining tracking identifiers.
+* **Do Not Track (DNT) / Global Privacy Control (GPC):** Reads `navigator.doNotTrack` and `navigator.globalPrivacyControl` signal headers.
+
+### Network & IP Diagnostics
+* **Public IPv4 & IPv6:** Discovered via client-side STUN / IP reflection endpoints with zero server-side logging. Supports dual-stack networks.
+* **ISP & ASN Lookup:** Autonomous System Number (ASN) and carrier network name derived from IP routing registries.
+* **WebRTC Leak Test:** Creates local `RTCPeerConnection` instances with public STUN servers to detect whether browser WebRTC APIs expose the real public IP or local network LAN IP behind a VPN tunnel.
+* **Network Connection Type & Speed:** Reads effective connection generation (4G/3G) and estimated downlink bandwidth from `navigator.connection` (Network Information API).
+
+### Hardware & Display Specifications
+* **Physical Screen Resolution:** Real monitor pixel dimensions (`window.screen.width` × `window.screen.height`).
+* **Active CSS Viewport:** Exact dimensions of the browser rendering window (`window.innerWidth` × `window.innerHeight`).
+* **Device Pixel Ratio (DPR):** High-DPI / Retina display scaling ratio (`window.devicePixelRatio`).
+* **Color Depth:** Display bit depth (e.g., 24-bit standard or 30-bit HDR).
+* **Logical CPU Cores:** CPU thread concurrency via `navigator.hardwareConcurrency`.
+* **RAM Memory Estimate:** Device memory bucket (0.5GB, 1GB, 2GB, 4GB, 8GB+) via `navigator.deviceMemory`.
+* **Graphics Processor (GPU):** WebGL debug renderer string via `WEBGL_debug_renderer_info` querying graphics hardware (NVIDIA, AMD, Intel, Apple Silicon M-series).
+* **Battery & Power:** Real-time charge level and charging status via `navigator.getBattery()`.
+
+### Bufferbloat Latency Diagnostic (https://mysupportinfo.com/bufferbloat)
+Measures internet connection lag and packet queueing under load:
+1. **Unloaded Baseline Latency:** Measures idle ping to low-latency edge servers.
+2. **Download Latency Under Load:** Streams concurrent multi-threaded downloads while continuously measuring round-trip time (RTT) spikes.
+3. **Upload Latency Under Load:** Performs multi-threaded HTTP POST bursts while tracking latency inflation.
+4. **Scoring:** Assigns an official Bufferbloat Grade:
+   - **Grade A+ / A:** Latency increase < 15ms. Ideal for competitive gaming, Discord, and 4K conferencing.
+   - **Grade B / C:** Latency increase 15ms–60ms. Minor delays during large downloads.
+   - **Grade D / F:** Latency increase > 100ms. Severe packet queueing causing voice cutouts, video freezes, and gaming lag.
+
+---
+
+## 3. Direct Answers to Frequent Questions
+
+### Q: What is MySupportInfo?
+A: MySupportInfo (https://mysupportinfo.com) is an instant, privacy-first diagnostic tool that detects your browser version, operating system, public IP address, screen resolution, GPU, RAM, WebRTC leaks, and network latency under load—100% inside your browser with zero tracking.
+
+### Q: Why do IT helpdesks and technicians use MySupportInfo?
+A: Instead of guiding non-technical users through complex system settings or asking them to install screen-sharing software, technicians send a single link (`mysupportinfo.com`). The user opens it, and all diagnostic specifications are displayed in under 3 seconds with 1-click options to copy specs, generate a visual PNG report card, or export an RFC-compliant CSV.
+
+### Q: How do I test for WebRTC leaks?
+A: Visit https://mysupportinfo.com. The "WebRTC Leak" card evaluates your active ICE candidates. If your real IP address appears while connected to a VPN, your browser is leaking traffic.
+
+### Q: How do I fix bufferbloat?
+A: If the Bufferbloat Test (https://mysupportinfo.com/bufferbloat) results in a Grade C, D, or F, enable Smart Queue Management (SQM) such as CAKE or fq_codel on your router settings, or upgrade router firmware to an SQM-capable build (OpenWrt, pfSense, Ubiquiti).
+
+---
+
+## 4. Canonical Site Navigation & Links
+* Home & Complete Diagnostic: https://mysupportinfo.com/
+* What Is My Browser: https://mysupportinfo.com/what-is-my-browser
+* What Is My IP Address: https://mysupportinfo.com/what-is-my-ip
+* What Is My Screen Resolution: https://mysupportinfo.com/what-is-my-screen-resolution
+* Bufferbloat Latency Test: https://mysupportinfo.com/bufferbloat
+* Knowledge Base (FAQ): https://mysupportinfo.com/faq
+* Privacy Policy: https://mysupportinfo.com/privacy
+* Terms of Use: https://mysupportinfo.com/terms

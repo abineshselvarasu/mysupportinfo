@@ -1102,7 +1102,90 @@ export default function Home() {
     ];
 
     return (
-        <div className="min-h-screen bg-background text-foreground selection:bg-primary/40 font-sans pb-24">
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "FAQPage",
+                        "mainEntity": [
+                            {
+                                "@type": "Question",
+                                "name": "Why do support technicians need my browser version and operating system?",
+                                "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "Web browsers render HTML, CSS, and JavaScript differently across operating systems. A bug affecting Safari on macOS might look completely fine in Google Chrome on Windows. Knowing your exact browser version and OS allows developers to reproduce the issue in an identical environment."
+                                }
+                            },
+                            {
+                                "@type": "Question",
+                                "name": "How does MySupportInfo detect my graphics card (GPU) and hardware specs?",
+                                "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "MySupportInfo utilizes standard browser APIs: the WebGL debug renderer info extension queries your graphics hardware string, the Device Memory API provides memory estimations, and navigator.hardwareConcurrency detects available CPU thread cores."
+                                }
+                            },
+                            {
+                                "@type": "Question",
+                                "name": "What is a WebRTC leak and how does it compromise my VPN?",
+                                "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "WebRTC allows video calls and peer-to-peer data in browsers. Even when using a VPN, WebRTC can communicate with STUN servers and expose your real public or local network IP address. MySupportInfo scans your browser's active ICE candidates to ensure no leaks exist."
+                                }
+                            },
+                            {
+                                "@type": "Question",
+                                "name": "Is my personal data stored or logged when using this tool?",
+                                "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "Never. All detection occurs client-side in your local browser sandbox. We do not store IP addresses in databases, use no tracking cookies, and never build user profiles. All data disappears the moment you close your browser tab."
+                                }
+                            },
+                            {
+                                "@type": "Question",
+                                "name": "How can I test my network for gaming and video call lag?",
+                                "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "Head to our Bufferbloat Test tool (/bufferbloat). It simulates real download and upload loads to measure whether your router buffers packets and spikes latency, assigning you an official Quality of Experience grade from A to F."
+                                }
+                            }
+                        ]
+                    })
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "HowTo",
+                        "name": "How to Check Your Browser, IP and System Specs with MySupportInfo",
+                        "description": "Step-by-step guide to discovering your full browser version, operating system, public IP, and hardware specifications for tech support.",
+                        "step": [
+                            {
+                                "@type": "HowToStep",
+                                "name": "Open MySupportInfo",
+                                "text": "Navigate to https://mysupportinfo.com on any computer, tablet, or phone without installing software.",
+                                "url": "https://mysupportinfo.com/#main-content"
+                            },
+                            {
+                                "@type": "HowToStep",
+                                "name": "Review System Diagnostics",
+                                "text": "Your browser version, operating system, public IP address, screen resolution, GPU, RAM, and WebRTC privacy status load instantly in under 3 seconds.",
+                                "url": "https://mysupportinfo.com/"
+                            },
+                            {
+                                "@type": "HowToStep",
+                                "name": "Export or Share Diagnostic Data",
+                                "text": "Click 'Copy All Info' to copy raw text, 'Screenshot Report' to download a clean visual PNG card, or 'Export CSV' for IT ticketing systems.",
+                                "url": "https://mysupportinfo.com/"
+                            }
+                        ]
+                    })
+                }}
+            />
+            <div className="min-h-screen bg-background text-foreground selection:bg-primary/40 font-sans pb-24">
 
             {/* ── Shared Remote Report Notification Banner ──────────── */}
             {sharedReport && (
@@ -1778,5 +1861,6 @@ export default function Home() {
                 systemStats={stats}
             />
         </div>
+        </>
     );
 }
