@@ -186,8 +186,18 @@ export default function TermsPage() {
 
                 <Section title="11. Contact">
                     <p>
-                        If you have questions about these Terms of Use, please refer to our <Link href="/faq" className="text-secondary font-semibold hover:underline">FAQ</Link> or <Link href="/privacy" className="text-secondary font-semibold hover:underline">Privacy Centre</Link> for further information about how the Service operates.
+                        If you have questions about these Terms of Use, service inquiries, or legal notifications, please contact our team:
                     </p>
+                    <ul className="list-none space-y-1.5 mt-2 font-medium">
+                        <li className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />
+                            <span>Support &amp; Technical Inquiries: <a href="mailto:support@mysupportinfo.com" className="text-secondary font-bold hover:underline">support@mysupportinfo.com</a></span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />
+                            <span>Legal &amp; Business Inquiries: <a href="mailto:contact@mysupportinfo.com" className="text-secondary font-bold hover:underline">contact@mysupportinfo.com</a></span>
+                        </li>
+                    </ul>
                 </Section>
 
                 {/* Footer links */}

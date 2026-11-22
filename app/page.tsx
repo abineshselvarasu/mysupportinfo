@@ -12,6 +12,7 @@ import {
 import FadeIn from "@/components/ui/FadeIn";
 import ScreenshotModal, { FieldId, DEFAULT_SELECTED_FIELDS, SENSITIVE_FIELD_IDS } from "@/components/ui/ScreenshotModal";
 import ShareModal from "@/components/ui/ShareModal";
+import ReportErrorModal from "@/components/ui/ReportErrorModal";
 import { decodeReport, SharedReportData } from "@/lib/report-share";
 import { generateDiagnosticCSV, downloadCSV } from "@/lib/export-csv";
 
@@ -142,6 +143,7 @@ export default function Home() {
     const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [isScreenshotModalOpen, setIsScreenshotModalOpen] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isReportErrorOpen, setIsReportErrorOpen] = useState(false);
     const [sharedReport, setSharedReport] = useState<SharedReportData | null>(null);
     const [visibleFields, setVisibleFields] = useState<Set<FieldId>>(DEFAULT_SELECTED_FIELDS);
     const reportRef = useRef<HTMLDivElement>(null);
@@ -945,7 +947,7 @@ export default function Home() {
                     fieldId="gpu"
                     icon={Terminal}
                     title="WebGL / GPU"
-                    value={<span className="text-sm line-clamp-2">{loading ? "…" : stats?.webglVendor}</span>}
+                    value={<span className="text-xs sm:text-sm font-bold text-background-dark leading-snug break-words block">{loading ? "…" : stats?.webglVendor}</span>}
                     subtext="GPU renderer string from the WebGL debug extension."
                     tooltip="Identifies your graphics card. Useful for diagnosing rendering and performance issues."
                     fullWidth
@@ -1081,35 +1083,6 @@ export default function Home() {
                     status={loading ? "info" : stats?.adBlocker === "Detected" ? "good" : "info"}
                 />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Card
-                    fieldId="cookies"
-                    icon={Lock}
-                    title="Cookies"
-                    value={loading ? "…" : (
-                        <span className="flex items-center justify-between w-full">
-                            <span className="flex items-center gap-2">
-                                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${stats?.persistence === "ENABLED" ? "bg-secondary" : "bg-red-400"}`} />
-                                {stats?.persistence}
-                            </span>
-                            {!isCapturing && (
-                                <button onClick={checkCookies} aria-label="Re-test cookie status" className="text-4xs text-primary font-black uppercase tracking-wider bg-background-dark px-2 py-0.5 rounded border border-background-dark hover:bg-primary hover:text-background-dark transition-colors">Re-test</button>
-                            )}
-                        </span>
-                    )}
-                    subtext="Browser cookie acceptance state."
-                    tooltip="Cookies are required by most websites for session management. Disabling breaks most logins."
-                />
-                <Card
-                    fieldId="js"
-                    icon={ShieldCheck}
-                    title="JavaScript"
-                    value={<span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-secondary flex-shrink-0" />ENABLED</span>}
-                    subtext="JS is active — this diagnostic tool requires it to run."
-                    tooltip="This page requires JavaScript. If you see this card, JS is working correctly."
-                    status="good"
-                />
-            </div>
         </div>
     );
 
@@ -1125,7 +1098,7 @@ export default function Home() {
         { id: "network",  label: "Network",  content: networkCards,  fieldIds: ["ip", "isp", "location", "webrtc", "latency"] },
         { id: "browser",  label: "Browser",  content: browserCards,  fieldIds: ["browser", "os", "language", "js", "userAgent", "privacy", "cookies"] },
         { id: "hardware", label: "Hardware", content: hardwareCards, fieldIds: ["viewport", "screen", "hardware", "gpu", "battery", "clock"] },
-        { id: "privacy",  label: "Privacy",  content: privacyCards,  fieldIds: ["webrtc", "ip", "privacy", "cookies", "js"] },
+        { id: "privacy",  label: "Privacy",  content: privacyCards,  fieldIds: ["webrtc", "ip", "privacy"] },
     ];
 
     return (
@@ -1209,6 +1182,18 @@ export default function Home() {
                     </button>
                 </div>
 
+                {/* Spot an incorrect spec button */}
+                <div className="flex items-center justify-center gap-1.5 text-xs text-background-dark/70 dark:text-white/70 mt-4">
+                    <span>Notice an incorrect spec?</span>
+                    <button
+                        type="button"
+                        onClick={() => setIsReportErrorOpen(true)}
+                        className="font-bold underline underline-offset-2 hover:text-primary transition-colors cursor-pointer text-background-dark dark:text-accent"
+                    >
+                        Report a detection error
+                    </button>
+                </div>
+
                 {/* Accessible Screen Reader Status Region */}
                 <div className="sr-only" role="status" aria-live="polite">
                     {copied && "All device specifications copied to clipboard."}
@@ -1222,33 +1207,33 @@ export default function Home() {
                 {/* ── Official Branded Report Header (Screenshot Capture Only) ──── */}
                 {isCapturing && (
                     <div className="max-w-6xl mx-auto mb-10 p-6 sm:p-8 rounded-3xl bg-background-dark text-white border-3 border-background-dark shadow-block">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-white/15">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-5 border-b border-white/10">
                             <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 rounded-2xl bg-primary border-2 border-white/20 shadow-block-sm flex items-center justify-center flex-shrink-0 text-background-dark">
-                                    <Activity size={30} strokeWidth={2.5} />
+                                <div className="w-13 h-13 rounded-2xl bg-primary border-2 border-white/20 shadow-block-sm flex items-center justify-center flex-shrink-0 text-background-dark">
+                                    <Activity size={26} strokeWidth={2.5} />
                                 </div>
-                                <div>
+                                <div className="space-y-1">
                                     <div className="flex items-center gap-2.5 flex-wrap">
-                                        <span className="font-black text-2xl tracking-tight text-white font-sans">
+                                        <span className="font-black text-2xl tracking-tight text-white font-sans leading-none">
                                             MySupport<span className="text-primary italic font-serif ml-0.5">Info</span>
                                         </span>
                                         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-4xs font-mono font-black uppercase tracking-wider bg-white/10 text-accent border border-white/20">
-                                            Official System Diagnostic Report
+                                            Official Diagnostic Report
                                         </span>
                                         {[...SENSITIVE_FIELD_IDS].every(f => !visibleFields.has(f)) && (
                                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-4xs font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30">
-                                                <span>&#10003;</span> PII Masked for Safe Sharing
+                                                <span>&#10003;</span> PII Masked
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-xs text-white/80 mt-1 font-medium font-sans">
+                                    <p className="text-xs text-white/80 font-medium font-sans">
                                         Client-side device, browser, network &amp; hardware specifications generated at{" "}
                                         <strong className="text-accent underline underline-offset-2">https://mysupportinfo.com</strong>
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col sm:items-end gap-1.5 text-xs font-mono">
+                            <div className="flex flex-col sm:items-start md:items-end gap-1 text-xs font-mono">
                                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-accent font-bold">
                                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
                                     <span>Verified In-Browser Session</span>
@@ -1281,30 +1266,30 @@ export default function Home() {
                 )}
 
                 {/* Orb */}
-                <div className="flex justify-center px-4 mb-16">
-                    <div className="relative w-full max-w-orb aspect-square rounded-full flex flex-col items-center justify-center overflow-hidden bg-background-dark border-4 border-accent/25 shadow-block">
+                <div className="flex justify-center px-4 mb-14">
+                    <div className="relative w-full max-w-orb aspect-square rounded-full flex flex-col items-center justify-center overflow-hidden bg-background-dark border-4 border-accent/25 shadow-block p-6 sm:p-10">
                         <div className="absolute inset-4 rounded-full border-2 border-dashed border-accent/15 pointer-events-none" />
-                        <div className="relative z-10 flex flex-col items-center text-center px-4 sm:px-10">
-                            <span className="text-4xs text-accent/75 uppercase tracking-ui-widest font-bold mb-4">Main Browser</span>
-                            <h2 className="font-serif font-bold text-white mb-5 sm:mb-7 w-full" style={{ fontSize: "clamp(1.5rem, 8vw, 4rem)", lineHeight: 1.05 }}>
+                        <div className="relative z-10 flex flex-col items-center text-center w-full">
+                            <span className="text-4xs text-accent/75 uppercase tracking-ui-widest font-bold mb-3 sm:mb-4">Main Browser</span>
+                            <h2 className="font-serif font-bold text-white mb-4 sm:mb-6 w-full" style={{ fontSize: "clamp(1.5rem, 7vw, 3.75rem)", lineHeight: 1.08 }}>
                                 {loading ? "…" : (isCapturing && !visibleFields.has("browser") ? "Browser Masked" : `${stats?.browserName} ${stats?.browserVersion}`)}
                             </h2>
-                            <div className="flex items-start gap-4 sm:gap-10 mb-7 sm:mb-9">
+                            <div className="flex items-center justify-center gap-6 sm:gap-10 mb-5 sm:mb-6">
                                 <div className="text-center">
-                                    <p className="text-5xs text-accent/60 uppercase tracking-ui-wider font-bold mb-1.5">OS Environment</p>
+                                    <p className="text-5xs text-accent/60 uppercase tracking-ui-wider font-bold mb-1">OS Environment</p>
                                     <p className="text-sm sm:text-base font-semibold text-accent">
                                         {loading ? "…" : (isCapturing && !visibleFields.has("os") ? "Hidden" : stats?.osName)}
                                     </p>
                                 </div>
-                                <div className="w-px h-10 bg-accent/20 self-center flex-shrink-0" />
+                                <div className="w-px h-8 bg-accent/20 self-center flex-shrink-0" />
                                 <div className="text-center">
-                                    <p className="text-5xs text-accent/60 uppercase tracking-ui-wider font-bold mb-1.5">Global IP</p>
+                                    <p className="text-5xs text-accent/60 uppercase tracking-ui-wider font-bold mb-1">Global IP</p>
                                     <p className="text-xs sm:text-sm font-semibold text-accent font-mono tabular-nums break-all">
                                         {ipLoading ? "…" : (isCapturing && !visibleFields.has("ip") ? "[Masked for Privacy]" : stats?.ip)}
                                     </p>
                                 </div>
                             </div>
-                            <div className="text-5xs uppercase tracking-ui-wider font-mono text-accent/60 mb-1">
+                            <div className="text-5xs uppercase tracking-ui-wider font-mono text-accent/60">
                                 mysupportinfo.com
                             </div>
                             {!isCapturing && (
@@ -1312,7 +1297,7 @@ export default function Home() {
                                     onClick={downloadReport}
                                     disabled={loading || downloading}
                                     aria-label="Download screenshot report as PNG"
-                                    className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-primary border-2 border-background-dark shadow-block-sm text-background-dark rounded-full text-3xs font-black uppercase tracking-wider hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-40"
+                                    className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-primary border-2 border-background-dark shadow-block-sm text-background-dark rounded-full text-3xs font-black uppercase tracking-wider hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-40 mt-3 cursor-pointer"
                                 >
                                     <Download size={13} />
                                     {downloading ? "Generating…" : <><span className="hidden sm:inline">Download Screenshot </span>Report</>}
@@ -1780,6 +1765,13 @@ export default function Home() {
                 isOpen={isShareModalOpen}
                 onClose={() => setIsShareModalOpen(false)}
                 stats={stats}
+            />
+
+            {/* ── Report a Detection Error Modal ─────────────────── */}
+            <ReportErrorModal
+                isOpen={isReportErrorOpen}
+                onClose={() => setIsReportErrorOpen(false)}
+                systemStats={stats}
             />
         </div>
     );

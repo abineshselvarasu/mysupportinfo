@@ -158,7 +158,20 @@ export default function PrivacyPage() {
 
                 <Section title="7. Contact">
                     <p>
-                        If you have questions about this Privacy Policy, please refer to our <Link href="/faq" className="text-secondary font-semibold hover:underline">FAQ</Link> or <Link href="/terms" className="text-secondary font-semibold hover:underline">Terms of Use</Link> for further information about how the Service operates.
+                        If you have questions about this Privacy Policy, your data privacy rights, or need assistance, please contact our team:
+                    </p>
+                    <ul className="list-none space-y-1.5 mt-2 font-medium">
+                        <li className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />
+                            <span>Support &amp; Detection Queries: <a href="mailto:support@mysupportinfo.com" className="text-secondary font-bold hover:underline">support@mysupportinfo.com</a></span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />
+                            <span>Privacy &amp; General Inquiries: <a href="mailto:contact@mysupportinfo.com" className="text-secondary font-bold hover:underline">contact@mysupportinfo.com</a></span>
+                        </li>
+                    </ul>
+                    <p className="mt-3">
+                        Official business email hosted on Zoho Mail for mysupportinfo.com. You may also refer to our <Link href="/faq" className="text-secondary font-semibold hover:underline">FAQ</Link> or <Link href="/terms" className="text-secondary font-semibold hover:underline">Terms of Use</Link>.
                     </p>
                 </Section>
 

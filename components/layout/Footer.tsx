@@ -75,9 +75,23 @@ export default function Footer() {
                         <p className="text-accent/75 text-xs sm:text-sm leading-relaxed max-w-sm font-medium">
                             Private, client-side browser intelligence and bufferbloat latency testing. Built for IT support, remote teams, and gamers.
                         </p>
-                        <p className="text-3xs text-accent/50 font-medium tracking-wide pt-1">
+                        <p className="text-3xs text-accent/50 font-medium tracking-wide">
                             100% in-browser processing &middot; Zero database logs &middot; Encrypted TLS
                         </p>
+                        <div className="pt-2 flex flex-col gap-1 text-xs text-accent/80 font-mono">
+                            <div className="flex items-center gap-2">
+                                <span className="text-4xs uppercase tracking-wider text-primary font-bold">Support:</span>
+                                <a href="mailto:support@mysupportinfo.com" className="hover:text-primary transition-colors underline font-medium">
+                                    support@mysupportinfo.com
+                                </a>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-4xs uppercase tracking-wider text-primary font-bold">Contact:</span>
+                                <a href="mailto:contact@mysupportinfo.com" className="hover:text-primary transition-colors underline font-medium">
+                                    contact@mysupportinfo.com
+                                </a>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Col 2: Navigation Links (3 cols) */}
@@ -104,6 +118,13 @@ export default function Footer() {
                             <Link className="hover:text-primary transition-colors w-fit" href="/faq">
                                 Knowledge Base (FAQ)
                             </Link>
+                            <a
+                                href="mailto:support@mysupportinfo.com?subject=Detection%20Error%20Report%20-%20MySupportInfo"
+                                className="hover:text-primary text-primary/90 transition-colors flex items-center gap-1.5 w-fit font-bold pt-0.5"
+                            >
+                                <span>&#9888;</span>
+                                <span>Report Detection Error</span>
+                            </a>
                             <div className="flex items-center gap-2 pt-1 text-accent/50 text-3xs flex-wrap">
                                 <Link className="hover:text-accent transition-colors underline-offset-2 hover:underline" href="/privacy">
                                     Privacy
