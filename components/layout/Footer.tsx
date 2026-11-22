@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import AskAI from "@/components/ui/AskAI";
 import Logo from "@/components/ui/Logo";
+import CookieManager, { CookiePreferencesButton } from "@/components/ui/CookieManager";
 
 export default function Footer() {
     const [clientInfo, setClientInfo] = useState({ os: "Detecting...", browser: "Detecting..." });
@@ -54,84 +55,112 @@ export default function Footer() {
     }, []);
 
     return (
-        <footer className="w-full border-t-2 border-background-dark py-16 px-6 bg-background-dark text-white">
-            <div className="max-w-site mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
-                
-                {/* Column 1: Brand & Compliance */}
-                <div className="flex flex-col justify-between gap-6">
-                    <div className="flex flex-col gap-3">
-                        <Logo theme="dark" size="md" />
-                        <p className="text-accent/80 text-sm leading-relaxed max-w-xs">
-                            Secure, privacy-first system metrics and load-latency network diagnostics.
+        <footer className="relative w-full border-t-2 border-background-dark bg-background-dark text-white overflow-hidden">
+            {/* Subtle Top Ambient Radial Highlight */}
+            <div
+                className="pointer-events-none absolute inset-x-0 top-0 h-32 opacity-25"
+                style={{
+                    background: "radial-gradient(ellipse 60% 80% at 50% 0%, #00C48C 0%, transparent 75%)",
+                }}
+            />
+
+            <div className="relative max-w-site mx-auto px-6 py-8 md:py-10">
+                {/* Main Content Grid: Balanced 3 Columns */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10 pb-8 border-b border-white/10 items-start">
+                    
+                    {/* Col 1: Brand & Core Mission (5 cols) */}
+                    <div className="md:col-span-5 flex flex-col gap-3">
+                        <Logo theme="dark" size="sm" />
+                        <p className="text-accent/75 text-xs sm:text-sm leading-relaxed max-w-sm font-medium">
+                            Private, client-side browser intelligence and bufferbloat latency testing. Built for IT support, remote teams, and gamers.
+                        </p>
+                        <div className="flex items-center gap-2 pt-0.5">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-3xs font-semibold text-accent/80">
+                                <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+                                100% In-Browser &middot; Zero Data Logging
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Col 2: Navigation Links (3 cols) */}
+                    <div className="md:col-span-3 flex flex-col gap-2.5">
+                        <span className="text-3xs font-black uppercase text-primary tracking-widest">
+                            Diagnostics &amp; Info
+                        </span>
+                        <nav className="flex flex-col gap-2 text-xs font-semibold text-accent/75">
+                            <Link className="hover:text-primary transition-colors flex items-center justify-between w-fit gap-2" href="/">
+                                <span>What Is My Browser</span>
+                            </Link>
+                            <Link className="hover:text-primary transition-colors flex items-center gap-2 w-fit" href="/bufferbloat">
+                                <span>Bufferbloat Test</span>
+                                <span className="text-4xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold uppercase leading-none">
+                                    Latency
+                                </span>
+                            </Link>
+                            <Link className="hover:text-primary transition-colors w-fit" href="/faq">
+                                Knowledge Base (FAQ)
+                            </Link>
+                            <div className="flex items-center gap-2 pt-1 text-accent/50 text-3xs flex-wrap">
+                                <Link className="hover:text-accent transition-colors underline-offset-2 hover:underline" href="/privacy">
+                                    Privacy
+                                </Link>
+                                <span>&middot;</span>
+                                <Link className="hover:text-accent transition-colors underline-offset-2 hover:underline" href="/terms">
+                                    Terms
+                                </Link>
+                                <span>&middot;</span>
+                                <CookiePreferencesButton />
+                            </div>
+                        </nav>
+                    </div>
+
+                    {/* Col 3: Live Active Telemetry Pill (4 cols) */}
+                    <div className="md:col-span-4 flex flex-col gap-2.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-3xs font-black uppercase text-primary tracking-widest">
+                                Active Environment
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-4xs font-bold text-secondary uppercase tracking-wider">
+                                <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+                                Sandboxed
+                            </span>
+                        </div>
+                        
+                        {/* Compact Glass Telemetry Card */}
+                        <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-2 text-2xs font-mono backdrop-blur-sm shadow-sm">
+                            <div className="flex items-center justify-between">
+                                <span className="text-accent/50 font-sans font-medium text-3xs">Host OS</span>
+                                <span className="text-white font-bold truncate max-w-[180px]">{clientInfo.os}</span>
+                            </div>
+                            <div className="flex items-center justify-between border-t border-white/5 pt-1.5">
+                                <span className="text-accent/50 font-sans font-medium text-3xs">Browser</span>
+                                <span className="text-white font-bold truncate max-w-[180px]">{clientInfo.browser}</span>
+                            </div>
+                        </div>
+                        <p className="text-4xs text-accent/40 leading-normal">
+                            Telemetry evaluated in browser memory. Disappears when tab closes.
                         </p>
                     </div>
-                    {/* Security Badge */}
-                    <div className="inline-flex items-center gap-2 bg-background/5 border border-accent/15 rounded-xl px-4 py-2.5 w-fit">
-                        <span className="text-3xs text-accent uppercase font-bold tracking-wider">
-                            Your technical footprint, visualised privately.
+
+                </div>
+
+                {/* Bottom Row: Compact AI Prompt Strip & Copyright */}
+                <div className="pt-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="text-3xs font-bold text-accent/60 uppercase tracking-wider">
+                            Ask AI:
                         </span>
+                        <AskAI variant="dark" compact={true} />
+                    </div>
+                    <div className="flex items-center gap-2 text-3xs font-bold text-accent/40 uppercase tracking-wider">
+                        <span>&copy; {new Date().getFullYear()} MySupportInfo.com</span>
+                        <span>&middot;</span>
+                        <span className="normal-case font-medium text-accent/35">Private System Diagnostics</span>
                     </div>
                 </div>
-
-                {/* Column 2: Navigation Links */}
-                <div className="flex flex-col gap-6">
-                    <span className="text-xs font-black uppercase text-primary tracking-widest">Diagnostics</span>
-                    <nav className="flex flex-col gap-3.5">
-                        <Link className="text-sm font-semibold text-accent/70 hover:text-primary transition-colors" href="/">
-                            What Is My Browser (Home)
-                        </Link>
-                        <Link className="text-sm font-semibold text-accent/70 hover:text-primary transition-colors" href="/bufferbloat">
-                            Bufferbloat Latency Test
-                        </Link>
-                        <Link className="text-sm font-semibold text-accent/70 hover:text-primary transition-colors" href="/faq">
-                            Knowledge Base (FAQ)
-                        </Link>
-                        <Link className="text-sm font-semibold text-accent/70 hover:text-primary transition-colors" href="/privacy">
-                            Privacy Centre
-                        </Link>
-                        <Link className="text-sm font-semibold text-accent/70 hover:text-primary transition-colors" href="/terms">
-                            Terms of Use
-                        </Link>
-                    </nav>
-                </div>
-
-                {/* Column 3: Client Info Box */}
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase text-primary tracking-widest">Active Footprint</span>
-                        <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                            <span className="text-4xs text-secondary font-bold uppercase tracking-wider">Connected</span>
-                        </div>
-                    </div>
-                    <div className="bg-background/5 border border-accent/10 p-4 rounded-2xl flex flex-col gap-3 font-mono text-xs">
-                        <div className="flex justify-between border-b border-accent/10 pb-2">
-                            <span className="text-accent/50 uppercase text-4xs tracking-wider font-sans font-bold">Client OS</span>
-                            <span className="text-background font-bold">{clientInfo.os}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-accent/50 uppercase text-4xs tracking-wider font-sans font-bold">Browser</span>
-                            <span className="text-background font-bold">{clientInfo.browser}</span>
-                        </div>
-                    </div>
-                    <p className="text-3xs text-accent/50 leading-tight">
-                        Detection runs inside your browser sandbox. Your data never leaves your device.
-                    </p>
-                </div>
             </div>
-
-            {/* Ask AI Section */}
-            <div className="max-w-site mx-auto mt-12 pt-8 border-t border-accent/10">
-                <AskAI variant="dark" />
-            </div>
-
-            {/* Bottom Copyright Bar */}
-            <div className="max-w-site mx-auto mt-12 pt-8 border-t border-accent/10 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-bold text-accent/40 uppercase tracking-widest">
-                <div>© 2026 MySupportInfo.com</div>
-                <div className="font-medium text-accent/30 normal-case tracking-normal text-right">
-                    Made with Care & Privacy in Mind.
-                </div>
-            </div>
+            {/* Global Cookie Preferences & Consent Manager */}
+            <CookieManager />
         </footer>
     );
 }

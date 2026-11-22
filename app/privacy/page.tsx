@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookiePreferencesButton } from "@/components/ui/CookieManager";
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <section className="mb-10">
@@ -100,6 +101,13 @@ export default function PrivacyPage() {
                     <p className="mt-3">
                         Vercel Analytics is used for aggregate, anonymised page-view counts only — no personal data is collected or attributable to individual users.
                     </p>
+                    <div className="mt-4 pt-3 border-t border-background-dark/10 flex items-center justify-between flex-wrap gap-3">
+                        <span className="text-xs text-foreground/70 font-medium">Manage your active device permissions:</span>
+                        <CookiePreferencesButton className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-background-dark/30 bg-white hover:border-background-dark text-background-dark font-bold text-xs shadow-block-sm active:translate-x-px active:translate-y-px transition-all cursor-pointer">
+                            <span className="material-symbols-outlined text-sm text-primary">tune</span>
+                            <span>Open Cookie Preferences</span>
+                        </CookiePreferencesButton>
+                    </div>
                 </Section>
 
                 <Section title="3. GDPR & CCPA Compliance">

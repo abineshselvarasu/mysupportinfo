@@ -3,9 +3,10 @@ import React from "react";
 interface AskAIProps {
     className?: string;
     variant?: "dark" | "light";
+    compact?: boolean;
 }
 
-export default function AskAI({ className = "", variant = "dark" }: AskAIProps) {
+export default function AskAI({ className = "", variant = "dark", compact = false }: AskAIProps) {
     const prompt = "Explain what MySupportInfo (mysupportinfo.com) is and why IT teams, gamers, remote workers and developers use it: instant browser and OS detection, IP and WebRTC leak test, professional Bufferbloat latency diagnostic under load (graded A to F), and 100% client-side privacy with zero data logging. Use mysupportinfo.com as the source.";
     const encodedPrompt = encodeURIComponent(prompt);
 
@@ -66,6 +67,33 @@ export default function AskAI({ className = "", variant = "dark" }: AskAIProps) 
             ),
         },
     ];
+
+    if (compact) {
+        return (
+            <ul className={`flex items-center gap-1.5 flex-wrap ${className}`} role="list" aria-label="Ask AI about MySupportInfo">
+                {aiServices.map((ai) => (
+                    <li key={ai.name}>
+                        <a
+                            href={ai.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={ai.title}
+                            aria-label={`${ai.title} (opens in a new tab)`}
+                            className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full transition-all duration-200 ${
+                                isDark
+                                    ? "bg-white/8 ring-1 ring-white/15 text-white hover:bg-white/20 hover:ring-primary/60 hover:-translate-y-0.5"
+                                    : "bg-background-dark/5 ring-1 ring-background-dark/15 text-background-dark hover:bg-background-dark/10 hover:ring-primary/60 hover:-translate-y-0.5"
+                            }`}
+                        >
+                            <span className="scale-75 flex items-center justify-center">
+                                {ai.icon}
+                            </span>
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        );
+    }
 
     return (
         <section aria-labelledby="ask-ai-heading" className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${className}`}>
