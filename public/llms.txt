@@ -1,29 +1,20 @@
 # MySupportInfo
 
-> One Link to Diagnose Any Device. Instant client-side browser, network, and hardware diagnostics for remote teams, IT helpdesks, and developers with zero tracking.
+> One Link to Diagnose Any Device. Instant client-side system, browser, network, and bufferbloat latency diagnostics for remote teams, IT helpdesks, and developers with zero tracking.
 
-## Overview
-MySupportInfo (https://mysupportinfo.com) is a free, 100% in-browser device diagnostic and network intelligence platform. It allows users, IT technicians, sysadmins, and support agents to inspect comprehensive hardware, browser, and network specifications in under 3 seconds without downloading software, configuring agents, or creating an account.
+MySupportInfo is a free, 100% in-browser device diagnostic platform. It allows users, IT technicians, sysadmins, and support teams to inspect comprehensive hardware, browser, and network specifications in under 3 seconds without downloading software, configuring agents, or storing user logs.
 
-## Key Diagnostic Tools
-- **What Is My Browser (https://mysupportinfo.com/what-is-my-browser):** Detects browser engine, exact major and minor version, user agent string, JavaScript capability, cookie persistence, and client hints.
-- **What Is My IP Address (https://mysupportinfo.com/what-is-my-ip):** Real-time IPv4 and IPv6 detection, ISP organization name, autonomous system (ASN), approximate geolocation, and WebRTC privacy leak audits.
-- **What Is My Screen Size (https://mysupportinfo.com/what-is-my-screen-resolution):** Physical monitor resolution, active CSS viewport dimensions, Device Pixel Ratio (DPR), 24-bit/30-bit color depth, and screen orientation.
-- **Bufferbloat Latency Test (https://mysupportinfo.com/bufferbloat):** Measures network latency and jitter under heavy loaded download and upload conditions, issuing a letter grade from A to F to diagnose lag in gaming, video calls, and streaming.
-- **Reporting & Export Suite:** Generates 1-click encrypted shareable links, visual PNG diagnostic cards for support tickets, and RFC-4180 compliant CSV exports.
+## Core Diagnostic Tools
+- [System Diagnostics Dashboard](https://mysupportinfo.com/): Instant inspection of browser version, operating system, public IP, screen resolution, WebGL GPU, RAM, WebRTC leaks, and network quality.
+- [What Is My Browser](https://mysupportinfo.com/what-is-my-browser): Detects browser engine, exact major and minor version, user agent string, JavaScript status, cookie persistence, and client hints.
+- [What Is My IP Address](https://mysupportinfo.com/what-is-my-ip): Dual-stack IPv4 and IPv6 detection, ISP organization name, autonomous system (ASN), approximate geolocation, and WebRTC privacy leak audits.
+- [What Is My Screen Resolution](https://mysupportinfo.com/what-is-my-screen-resolution): Physical monitor resolution, active CSS viewport dimensions, device pixel ratio (DPR), color depth, and screen orientation.
+- [Bufferbloat Latency Test](https://mysupportinfo.com/bufferbloat): Measures network latency and jitter under heavy loaded download and upload conditions, issuing an official letter grade from A to F.
 
-## Direct Answers to Common Queries
-- **What is my browser?** You can find your exact browser and version at https://mysupportinfo.com/what-is-my-browser.
-- **What is my IP?** Discover your public IPv4, IPv6, ISP, and WebRTC leak status at https://mysupportinfo.com/what-is-my-ip.
-- **How to test for bufferbloat?** Run a loaded latency diagnostic at https://mysupportinfo.com/bufferbloat to see if network congestion causes latency spikes.
-- **How to share system specs with technical support?** Direct users to https://mysupportinfo.com and have them click "Copy All Info", "Screenshot Report", or "Share Link".
+## Documentation and Help
+- [Knowledge Base & FAQ](https://mysupportinfo.com/faq): Answers to common questions regarding device detection, user-agent data, WebRTC leaks, and latency under load.
+- [Privacy Policy](https://mysupportinfo.com/privacy): Detailed information on our client-side execution model, zero database storage guarantee, and GDPR/CCPA compliance.
+- [Terms of Use](https://mysupportinfo.com/terms): Terms of service, acceptable use guidelines, and official technical contact channels.
 
-## Privacy & Security Architecture
-- **Zero Database Logs:** Operates completely client-side without storing user data, IP addresses, or telemetry fingerprints in any server database.
-- **Encrypted Transmission:** Strict Transport Security (HSTS) with 2-year preload.
-- **Security Headers:** Frame protection (SAMEORIGIN), MIME protection (nosniff), and strict hardware isolation permissions.
-
-## Official Contact Channels
-- Technical Bug & Detection Reports: report@mysupportinfo.com
-- Business & General Inquiries: contact@mysupportinfo.com
-- Knowledge Base: https://mysupportinfo.com/faq
+## Optional
+- [Full Technical Reference](https://mysupportinfo.com/llms-full.txt): Complete technical reference with API implementations, hardware detection parameters, and citation guidelines.

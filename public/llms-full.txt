@@ -72,11 +72,11 @@ A: If the Bufferbloat Test (https://mysupportinfo.com/bufferbloat) results in a 
 ---
 
 ## 4. Canonical Site Navigation & Links
-* Home & Complete Diagnostic: https://mysupportinfo.com/
-* What Is My Browser: https://mysupportinfo.com/what-is-my-browser
-* What Is My IP Address: https://mysupportinfo.com/what-is-my-ip
-* What Is My Screen Resolution: https://mysupportinfo.com/what-is-my-screen-resolution
-* Bufferbloat Latency Test: https://mysupportinfo.com/bufferbloat
-* Knowledge Base (FAQ): https://mysupportinfo.com/faq
-* Privacy Policy: https://mysupportinfo.com/privacy
-* Terms of Use: https://mysupportinfo.com/terms
+- [System Diagnostics Home](https://mysupportinfo.com/): Instant inspection of device, browser, and network parameters.
+- [What Is My Browser](https://mysupportinfo.com/what-is-my-browser): Detects browser version, engine, and client hints.
+- [What Is My IP Address](https://mysupportinfo.com/what-is-my-ip): IPv4/IPv6, ISP lookup, and WebRTC privacy audit.
+- [What Is My Screen Resolution](https://mysupportinfo.com/what-is-my-screen-resolution): Display resolution, viewport, and DPR scaling.
+- [Bufferbloat Latency Test](https://mysupportinfo.com/bufferbloat): Loaded latency and jitter diagnostic with letter grading.
+- [Knowledge Base (FAQ)](https://mysupportinfo.com/faq): Technical explanations and troubleshooting guides.
+- [Privacy Policy](https://mysupportinfo.com/privacy): Zero database storage and client-side processing guarantee.
+- [Terms of Use](https://mysupportinfo.com/terms): Terms of service and official contact channels.
