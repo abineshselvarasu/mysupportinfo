@@ -39,6 +39,9 @@ lerna-debug.log*
 
 # Operating System Files
 .DS_Store
+*.pem
+scratch/
+.DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
