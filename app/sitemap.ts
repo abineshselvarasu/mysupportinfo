@@ -12,6 +12,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 1.0,
         },
         {
+            url: `${BASE_URL}/what-is-my-browser`,
+            lastModified: now,
+            changeFrequency: 'daily',
+            priority: 0.9,
+        },
+        {
+            url: `${BASE_URL}/what-is-my-ip`,
+            lastModified: now,
+            changeFrequency: 'daily',
+            priority: 0.9,
+        },
+        {
+            url: `${BASE_URL}/what-is-my-screen-resolution`,
+            lastModified: now,
+            changeFrequency: 'daily',
+            priority: 0.9,
+        },
+        {
             url: `${BASE_URL}/bufferbloat`,
             lastModified: now,
             changeFrequency: 'weekly',

@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -30,16 +31,21 @@ const config: Config = {
         "5xs":        ["8px",  { lineHeight: "1.4" }],
         "display":    ["5.5rem", { lineHeight: "1" }],
         "display-lg": ["7rem",   { lineHeight: "1" }],
-        // Loopio-inspired fluid clamp typography scale
-        "fluid-hero": ["clamp(2.25rem, 1.25rem + 3.33vw, 3.75rem)", { lineHeight: "1.12", letterSpacing: "-0.02em" }],
-        "fluid-h1":   ["clamp(2rem, 1rem + 2.67vw, 3.25rem)",       { lineHeight: "1.15", letterSpacing: "-0.02em" }],
-        "fluid-h2":   ["clamp(1.5rem, 0.85rem + 1.8vw, 2.375rem)",   { lineHeight: "1.2",  letterSpacing: "-0.015em" }],
-        "fluid-h3":   ["clamp(1.25rem, 0.95rem + 0.8vw, 1.625rem)",  { lineHeight: "1.3",  letterSpacing: "-0.01em" }],
-        "fluid-lead": ["clamp(1.125rem, 1rem + 0.33vw, 1.25rem)",    { lineHeight: "1.55" }],
-        "fluid-body": ["clamp(1rem, 0.925rem + 0.2vw, 1.125rem)",    { lineHeight: "1.6" }],
+        // Loopio-inspired exact fluid clamp typography scale
+        "fluid-hero": ["clamp(2rem, 0.25rem + 4.667vw, 3.75rem)",   { lineHeight: "1.12", letterSpacing: "-0.025em" }],
+        "fluid-h1":   ["clamp(1.75rem, 0.875rem + 2.333vw, 2.625rem)", { lineHeight: "1.15", letterSpacing: "-0.02em" }],
+        "fluid-h2":   ["clamp(1.375rem, 1.125rem + 0.667vw, 1.625rem)", { lineHeight: "1.25", letterSpacing: "-0.015em" }],
+        "fluid-h3":   ["clamp(1.2rem, 1rem + 0.5vw, 1.375rem)",      { lineHeight: "1.3",  letterSpacing: "-0.01em" }],
+        "fluid-lead": ["clamp(1.125rem, 1rem + 0.333vw, 1.25rem)",    { lineHeight: "1.55" }],
+        "fluid-body": ["clamp(1rem, 0.875rem + 0.333vw, 1.125rem)",    { lineHeight: "1.6" }],
+        "fluid-caption": ["0.875rem",                                 { lineHeight: "1.5" }],
       },
       spacing: {
-        // Loopio-inspired fluid padding and section spacing
+        // Loopio-inspired exact fluid spacing scale
+        "fluid-micro":    "clamp(0.938rem, 0.586rem + 1.563vw, 1.563rem)", // 15px -> 25px
+        "fluid-standard": "clamp(1.25rem, 0.195rem + 4.688vw, 3.125rem)",  // 20px -> 50px
+        "fluid-section":  "clamp(3.125rem, 0rem + 8.333vw, 6.25rem)",      // 50px -> 100px
+        "fluid-hero-pad": "clamp(4.688rem, 0rem + 12.5vw, 9.375rem)",      // 75px -> 150px
         "fluid-xs": "clamp(0.75rem, 0.5rem + 0.8vw, 1.25rem)",
         "fluid-sm": "clamp(1rem, 0.65rem + 1.2vw, 1.75rem)",
         "fluid":    "clamp(2.5rem, 1.5rem + 2.5vw, 4rem)",

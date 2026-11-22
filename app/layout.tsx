@@ -23,55 +23,49 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://mysupportinfo.com"),
   applicationName: "MySupportInfo",
   title: {
-    default: "What Is My Browser? Free Device, IP & Bufferbloat Test",
+    default: "My Support Info & Details — What Is My Browser, IP & Diagnostic Tool",
     template: "%s | MySupportInfo",
   },
   description:
-    "Check what browser, OS & public IP you're using in 1 click. Free device info, WebRTC leak & bufferbloat latency test. Private, fast, zero tracking.",
+    "Check your support details: what browser, OS, screen resolution & public IP you're using. Free device diagnostic, WebRTC leak & bufferbloat test with zero tracking.",
   keywords: [
+    "my support details",
+    "mysupportdetails",
+    "my support info",
+    "support details",
+    "support info",
     "what is my browser",
     "what browser am I using",
     "check my browser version",
-    "what is my support details",
-    "mysupportdetails",
-    "my support info",
+    "what is my screen resolution",
+    "what is my IP address",
+    "IP address lookup",
     "bufferbloat test",
     "bufferbloat latency test",
     "internet latency under load",
-    "router bufferbloat fix",
-    "gaming lag test",
-    "what is my IP address",
-    "IP address lookup",
     "what is my operating system",
     "browser version checker",
     "device info checker",
     "WebRTC leak test",
     "browser privacy test",
-    "browser fingerprint checker",
-    "what is my screen resolution",
-    "GPU detection online",
-    "RAM detection",
-    "network quality checker",
     "what is my ISP",
     "VPN detection",
     "browser security test",
-    "sqm cake fq_codel",
-    "wifi latency test",
   ],
   openGraph: {
     type: "website",
     url: "/",
     siteName: "MySupportInfo",
-    title: "What Is My Browser? Free Device, IP & Bufferbloat Test",
+    title: "My Support Info & Details — What Is My Browser, IP & Diagnostic Tool",
     description:
-      "Check what browser, OS & public IP you're using in 1 click. Free device info, WebRTC leak & bufferbloat latency test. Private, fast, zero tracking.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "MySupportInfo – Browser, IP, Device Info & Bufferbloat Test" }],
+      "Check your support details: what browser, OS, screen resolution & public IP you're using in 1 click. Free device info, WebRTC leak & bufferbloat latency test.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "MySupportInfo – Support Details, Browser, IP & Device Diagnostic" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "What Is My Browser? Free Device, IP & Bufferbloat Test",
+    title: "My Support Info & Details — What Is My Browser, IP & Diagnostic Tool",
     description:
-      "Check what browser, OS & public IP you're using in 1 click. Free device info, WebRTC leak & bufferbloat latency test. Private, fast, zero tracking.",
+      "Check your support details: what browser, OS, screen resolution & public IP you're using in 1 click. Free device info, WebRTC leak & bufferbloat latency test.",
     images: ["/og-image.png"],
   },
   alternates: {
@@ -107,8 +101,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('msi_theme');
+                  var mql = window.matchMedia('(prefers-color-scheme: dark)');
+                  if (stored === 'dark' || (!stored && mql.matches) || (stored === 'system' && mql.matches)) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-icon.svg" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 export default function Header() {
     const pathname = usePathname();
@@ -18,25 +19,33 @@ export default function Header() {
                 {/* Brand Logo */}
                 <Logo onClick={closeMenu} size="md" />
 
-                {/* Desktop Nav Links */}
-                <nav className="hidden md:flex items-center gap-8">
-                    <Link className={`text-sm font-extrabold transition-colors ${isActive('/bufferbloat') ? 'text-background-dark' : 'text-background-dark/60'} hover:text-primary`} href="/bufferbloat">Bufferbloat</Link>
-                    <Link className={`text-sm font-extrabold transition-colors ${isActive('/faq') ? 'text-background-dark' : 'text-background-dark/60'} hover:text-primary`} href="/faq">FAQ</Link>
-                    <Link className={`text-sm font-extrabold transition-colors ${isActive('/privacy') ? 'text-background-dark' : 'text-background-dark/60'} hover:text-primary`} href="/privacy">Privacy</Link>
-                    <Link className={`text-sm font-extrabold transition-colors ${isActive('/terms') ? 'text-background-dark' : 'text-background-dark/60'} hover:text-primary`} href="/terms">Terms</Link>
-                </nav>
+                {/* Desktop Nav Links & Theme Switcher */}
+                <div className="hidden md:flex items-center gap-6">
+                    <nav className="flex items-center gap-6">
+                        <Link className={`text-sm font-extrabold transition-colors ${isActive('/bufferbloat') ? 'text-background-dark' : 'text-background-dark/60'} hover:text-primary`} href="/bufferbloat">Bufferbloat</Link>
+                        <Link className={`text-sm font-extrabold transition-colors ${isActive('/what-is-my-browser') ? 'text-background-dark' : 'text-background-dark/60'} hover:text-primary`} href="/what-is-my-browser">Browser</Link>
+                        <Link className={`text-sm font-extrabold transition-colors ${isActive('/what-is-my-ip') ? 'text-background-dark' : 'text-background-dark/60'} hover:text-primary`} href="/what-is-my-ip">IP Address</Link>
+                        <Link className={`text-sm font-extrabold transition-colors ${isActive('/what-is-my-screen-resolution') ? 'text-background-dark' : 'text-background-dark/60'} hover:text-primary`} href="/what-is-my-screen-resolution">Screen Size</Link>
+                        <Link className={`text-sm font-extrabold transition-colors ${isActive('/faq') ? 'text-background-dark' : 'text-background-dark/60'} hover:text-primary`} href="/faq">FAQ</Link>
+                    </nav>
+                    <div className="h-5 w-px bg-background-dark/15" />
+                    <ThemeToggle />
+                </div>
 
-                {/* Mobile Hamburger Toggle Button */}
-                <button
-                    onClick={toggleMenu}
-                    className="flex md:hidden p-2 text-background-dark hover:text-primary transition-colors focus:outline-none cursor-pointer"
-                    aria-label="Toggle navigation menu"
-                    aria-expanded={isOpen}
-                >
-                    <span className="material-symbols-outlined text-2xl font-bold transition-transform duration-200">
-                        {isOpen ? 'close' : 'menu'}
-                    </span>
-                </button>
+                {/* Mobile Hamburger & Theme Toggle */}
+                <div className="flex items-center gap-2 md:hidden">
+                    <ThemeToggle compact />
+                    <button
+                        onClick={toggleMenu}
+                        className="p-2 text-background-dark hover:text-primary transition-colors focus:outline-none cursor-pointer"
+                        aria-label="Toggle navigation menu"
+                        aria-expanded={isOpen}
+                    >
+                        <span className="material-symbols-outlined text-2xl font-bold transition-transform duration-200">
+                            {isOpen ? 'close' : 'menu'}
+                        </span>
+                    </button>
+                </div>
             </div>
 
             {/* Mobile Dropdown Panel with Smooth CSS Grid Transition */}
@@ -46,7 +55,43 @@ export default function Header() {
                 }`}
             >
                 <div className="overflow-hidden">
-                    <nav className={`flex flex-col p-6 space-y-4 transition-opacity duration-200 ${isOpen ? "opacity-100" : "opacity-0"}`}>
+                    <nav className={`flex flex-col p-6 space-y-3 transition-opacity duration-200 ${isOpen ? "opacity-100" : "opacity-0"}`}>
+                        <Link
+                            onClick={closeMenu}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all font-bold ${
+                                isActive('/what-is-my-browser')
+                                    ? 'bg-primary/10 border-background-dark text-background-dark shadow-block-sm'
+                                    : 'bg-white border-background-dark/20 text-background-dark/70 hover:border-background-dark hover:text-primary'
+                            }`}
+                            href="/what-is-my-browser"
+                        >
+                            <span className="material-symbols-outlined text-primary">language</span>
+                            <span>What Is My Browser</span>
+                        </Link>
+                        <Link
+                            onClick={closeMenu}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all font-bold ${
+                                isActive('/what-is-my-ip')
+                                    ? 'bg-primary/10 border-background-dark text-background-dark shadow-block-sm'
+                                    : 'bg-white border-background-dark/20 text-background-dark/70 hover:border-background-dark hover:text-primary'
+                            }`}
+                            href="/what-is-my-ip"
+                        >
+                            <span className="material-symbols-outlined text-secondary">public</span>
+                            <span>What Is My IP Address</span>
+                        </Link>
+                        <Link
+                            onClick={closeMenu}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all font-bold ${
+                                isActive('/what-is-my-screen-resolution')
+                                    ? 'bg-primary/10 border-background-dark text-background-dark shadow-block-sm'
+                                    : 'bg-white border-background-dark/20 text-background-dark/70 hover:border-background-dark hover:text-primary'
+                            }`}
+                            href="/what-is-my-screen-resolution"
+                        >
+                            <span className="material-symbols-outlined text-primary">aspect_ratio</span>
+                            <span>What Is My Screen Resolution</span>
+                        </Link>
                         <Link
                             onClick={closeMenu}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all font-bold ${
@@ -81,19 +126,7 @@ export default function Header() {
                             href="/privacy"
                         >
                             <span className="material-symbols-outlined text-background-dark">shield_person</span>
-                            <span>Privacy & Compliance</span>
-                        </Link>
-                        <Link
-                            onClick={closeMenu}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all font-bold ${
-                                isActive('/terms')
-                                    ? 'bg-primary/10 border-background-dark text-background-dark shadow-block-sm'
-                                    : 'bg-white border-background-dark/20 text-background-dark/70 hover:border-background-dark hover:text-primary'
-                            }`}
-                            href="/terms"
-                        >
-                            <span className="material-symbols-outlined text-primary">gavel</span>
-                            <span>Terms of Use</span>
+                            <span>Privacy &amp; Compliance</span>
                         </Link>
                     </nav>
                 </div>

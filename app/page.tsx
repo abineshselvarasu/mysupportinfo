@@ -11,6 +11,8 @@ import {
 import FadeIn from "@/components/ui/FadeIn";
 import AskAI from "@/components/ui/AskAI";
 import ScreenshotModal, { FieldId, DEFAULT_SELECTED_FIELDS } from "@/components/ui/ScreenshotModal";
+import ShareModal from "@/components/ui/ShareModal";
+import { decodeReport, SharedReportData } from "@/lib/report-share";
 
 type TabType = "network" | "browser" | "hardware" | "privacy";
 
@@ -134,11 +136,12 @@ export default function Home() {
     const [activeTab, setActiveTab] = useState<TabType>("network");
     const [isCapturing, setIsCapturing] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [urlCopied, setUrlCopied] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [currentTime, setCurrentTime] = useState<string>("");
     const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [isScreenshotModalOpen, setIsScreenshotModalOpen] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [sharedReport, setSharedReport] = useState<SharedReportData | null>(null);
     const [visibleFields, setVisibleFields] = useState<Set<FieldId>>(DEFAULT_SELECTED_FIELDS);
     const reportRef = useRef<HTMLDivElement>(null);
 
@@ -149,9 +152,72 @@ export default function Home() {
         return () => clearInterval(i);
     }, []);
 
+    // Check for shared report parameter (?report=...) on load
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const params = new URLSearchParams(window.location.search);
+        const reportParam = params.get("report");
+        if (reportParam) {
+            const decoded = decodeReport(reportParam);
+            if (decoded) {
+                setSharedReport(decoded);
+                setStats({
+                    browserName: decoded.browserName,
+                    browserVersion: decoded.browserVersion,
+                    osName: decoded.osName,
+                    language: decoded.language,
+                    connectionType: "N/A",
+                    connectionSpeed: "N/A",
+                    latency: "N/A",
+                    ip: decoded.ip,
+                    ipv6: decoded.ipv6,
+                    ispName: decoded.ispName,
+                    city: decoded.location.split(",")[0]?.trim() || "",
+                    country: decoded.location.split(",")[1]?.trim() || "",
+                    countryCode: "",
+                    vpnDetected: false,
+                    resolution: decoded.resolution,
+                    windowSize: decoded.windowSize,
+                    pixelRatio: decoded.pixelRatio,
+                    colorDepth: decoded.colorDepth,
+                    orientation: "Unknown",
+                    touchSupport: "N/A",
+                    cpuCores: decoded.cpuCores,
+                    ram: decoded.ram,
+                    webglVendor: decoded.webglVendor,
+                    batteryLevel: "N/A",
+                    batteryCharging: "N/A",
+                    persistence: decoded.persistence,
+                    doNotTrack: decoded.doNotTrack,
+                    adBlocker: "N/A",
+                    userAgent: "Shared device snapshot",
+                    timezone: decoded.timezone,
+                });
+                setLoading(false);
+                setIpLoading(false);
+                setWebrtcLoading(false);
+                setWebrtcLeak("Protected (Report)");
+            }
+        }
+    }, []);
+
+    const switchToMyDevice = () => {
+        if (typeof window !== "undefined") {
+            window.history.replaceState({}, "", window.location.pathname);
+            setSharedReport(null);
+            window.location.reload();
+        }
+    };
+
     // Main stats detection
     useEffect(() => {
         const fetchStats = async () => {
+            if (typeof window !== "undefined" && window.location.search.includes("report=")) {
+                const p = new URLSearchParams(window.location.search);
+                if (p.get("report") && decodeReport(p.get("report")!)) {
+                    return; // Retain shared report snapshot
+                }
+            }
             const ua = navigator.userAgent;
             let browserName = "Unknown";
             let browserVersion = "";
@@ -389,6 +455,12 @@ export default function Home() {
     // WebRTC leak detection (IPv4 + IPv6 + private/public classification)
     useEffect(() => {
         const detect = async () => {
+            if (typeof window !== "undefined" && window.location.search.includes("report=")) {
+                const p = new URLSearchParams(window.location.search);
+                if (p.get("report") && decodeReport(p.get("report")!)) {
+                    return;
+                }
+            }
             try {
                 const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
                 pc.createDataChannel("");
@@ -492,10 +564,8 @@ export default function Home() {
         setTimeout(() => setCopied(false), 2500);
     };
 
-    const shareLink = async () => {
-        await navigator.clipboard.writeText(window.location.href);
-        setUrlCopied(true);
-        setTimeout(() => setUrlCopied(false), 2500);
+    const shareLink = () => {
+        setIsShareModalOpen(true);
     };
 
     const handleCaptureFromModal = async (selected: Set<FieldId>) => {
@@ -1042,6 +1112,34 @@ export default function Home() {
     return (
         <div className="min-h-screen bg-background text-foreground selection:bg-primary/40 font-sans pb-24">
 
+            {/* ── Shared Remote Report Notification Banner ──────────── */}
+            {sharedReport && (
+                <div className="max-w-site mx-auto px-6 pt-6">
+                    <div className="bg-secondary text-white p-4 sm:p-5 rounded-3xl border-2 border-background-dark shadow-block-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5">
+                            <div className="p-2.5 rounded-2xl bg-white text-secondary flex-shrink-0 shadow-sm">
+                                <ShieldCheck size={22} />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-serif font-bold text-lg sm:text-xl text-white">Viewing Shared Diagnostic Report</span>
+                                    <span className="text-4xs font-mono font-black uppercase tracking-wider bg-white/20 text-white px-2 py-0.5 rounded-full">Remote Device</span>
+                                </div>
+                                <p className="text-xs text-white/85 mt-0.5 leading-relaxed font-medium">
+                                    Snapshot recorded on {new Date(sharedReport.timestamp).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}. Showing sender&#39;s exact browser, OS, and hardware specifications.
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={switchToMyDevice}
+                            className="flex-shrink-0 px-4 py-2 bg-white text-background-dark font-extrabold text-xs uppercase tracking-wider rounded-xl border-2 border-background-dark shadow-block-sm hover:bg-accent transition-all cursor-pointer"
+                        >
+                            Inspect My Own Device
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* ── Hero ──────────────────────────────────────────────── */}
             <div className="text-center px-6 pt-16 pb-10">
                 <h1 className="font-serif leading-none mb-6 select-none">
@@ -1075,11 +1173,11 @@ export default function Home() {
                     </button>
                     <button
                         onClick={shareLink}
-                        aria-label="Share link — copy URL to clipboard"
-                        className="flex items-center gap-2 px-6 py-2.5 bg-white text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-accent/20 active:translate-x-px active:translate-y-px active:shadow-none transition-all"
+                        aria-label="Share diagnostic link with IT support"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-white text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-accent/20 active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer"
                     >
                         <Share2 size={15} />
-                        {urlCopied ? "Copied!" : "Share Link"}
+                        <span>Share Link</span>
                     </button>
                 </div>
             </div>
@@ -1519,6 +1617,13 @@ export default function Home() {
                 webrtcLeak={webrtcLeak}
                 currentTime={currentTime}
                 downloading={downloading}
+            />
+
+            {/* ── Share Diagnostic Report Modal ───────────────────── */}
+            <ShareModal
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                stats={stats}
             />
         </div>
     );

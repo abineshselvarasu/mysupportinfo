@@ -62,3 +62,70 @@ html {
     }
   }
 }
+
+/* ── Light, Dark & System Theme System ── */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #011f1a;
+  color: #FAF6F0;
+}
+
+html.dark header {
+  background-color: rgba(1, 31, 26, 0.92);
+  border-bottom-color: rgba(0, 158, 82, 0.25);
+}
+
+html.dark .bg-background {
+  background-color: #011f1a !important;
+}
+
+html.dark .text-background-dark {
+  color: #FAF6F0 !important;
+}
+
+html.dark .text-foreground {
+  color: #FAF6F0 !important;
+}
+
+html.dark .text-background-dark\/70,
+html.dark .text-background-dark\/65,
+html.dark .text-background-dark\/60 {
+  color: rgba(250, 246, 240, 0.72) !important;
+}
+
+html.dark .bg-white {
+  background-color: #062b24 !important;
+  color: #FAF6F0 !important;
+}
+
+html.dark .bg-white\/70,
+html.dark .bg-white\/80 {
+  background-color: rgba(6, 43, 36, 0.85) !important;
+}
+
+html.dark .border-background-dark {
+  border-color: #009E52 !important;
+}
+
+html.dark .border-background-dark\/10,
+html.dark .border-background-dark\/15,
+html.dark .border-background-dark\/20,
+html.dark .border-background-dark\/30 {
+  border-color: rgba(0, 158, 82, 0.22) !important;
+}
+
+html.dark .shadow-block {
+  box-shadow: 4px 4px 0px 0px #009E52 !important;
+}
+
+html.dark .shadow-block-sm {
+  box-shadow: 2px 2px 0px 0px #009E52 !important;
+}
+
+html.dark .bg-background-dark\/5,
+html.dark .bg-background-dark\/10 {
+  background-color: rgba(0, 158, 82, 0.12) !important;
+}

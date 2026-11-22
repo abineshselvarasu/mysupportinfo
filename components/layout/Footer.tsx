@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AskAI from "@/components/ui/AskAI";
 import Logo from "@/components/ui/Logo";
 import CookieManager, { CookiePreferencesButton } from "@/components/ui/CookieManager";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 export default function Footer() {
     const [clientInfo, setClientInfo] = useState({ os: "Detecting...", browser: "Detecting..." });
@@ -82,11 +83,17 @@ export default function Footer() {
                     {/* Col 2: Navigation Links (3 cols) */}
                     <div className="md:col-span-3 flex flex-col gap-2.5">
                         <span className="text-3xs font-black uppercase text-primary tracking-widest">
-                            Diagnostics &amp; Info
+                            Diagnostics &amp; Tools
                         </span>
-                        <nav className="flex flex-col gap-2 text-xs font-semibold text-accent/75">
-                            <Link className="hover:text-primary transition-colors flex items-center justify-between w-fit gap-2" href="/">
+                        <nav className="flex flex-col gap-1.5 text-xs font-semibold text-accent/75">
+                            <Link className="hover:text-primary transition-colors flex items-center justify-between w-fit gap-2" href="/what-is-my-browser">
                                 <span>What Is My Browser</span>
+                            </Link>
+                            <Link className="hover:text-primary transition-colors flex items-center justify-between w-fit gap-2" href="/what-is-my-ip">
+                                <span>What Is My IP Address</span>
+                            </Link>
+                            <Link className="hover:text-primary transition-colors flex items-center justify-between w-fit gap-2" href="/what-is-my-screen-resolution">
+                                <span>What Is My Screen Size</span>
                             </Link>
                             <Link className="hover:text-primary transition-colors flex items-center gap-2 w-fit" href="/bufferbloat">
                                 <span>Bufferbloat Test</span>
@@ -140,18 +147,22 @@ export default function Footer() {
 
                 </div>
 
-                {/* Bottom Row: Compact AI Prompt Strip & Copyright */}
-                <div className="pt-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+                {/* Bottom Row: Compact AI Prompt Strip, Theme Selector & Copyright */}
+                <div className="pt-5 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
                     <div className="flex items-center gap-2.5 flex-wrap">
                         <span className="text-3xs font-bold text-accent/60 uppercase tracking-wider">
                             Ask AI:
                         </span>
                         <AskAI variant="dark" compact={true} />
                     </div>
-                    <div className="flex items-center gap-2 text-3xs font-bold text-accent/40 uppercase tracking-wider">
-                        <span>&copy; {new Date().getFullYear()} MySupportInfo.com</span>
-                        <span>&middot;</span>
-                        <span className="normal-case font-medium text-accent/35">Private System Diagnostics</span>
+
+                    <div className="flex items-center gap-4">
+                        <ThemeToggle compact />
+                        <div className="flex items-center gap-2 text-3xs font-bold text-accent/40 uppercase tracking-wider">
+                            <span>&copy; {new Date().getFullYear()} MySupportInfo.com</span>
+                            <span>&middot;</span>
+                            <span className="normal-case font-medium text-accent/35">Private System Diagnostics</span>
+                        </div>
                     </div>
                 </div>
             </div>
