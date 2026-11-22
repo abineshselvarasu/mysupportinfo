@@ -105,7 +105,7 @@ export default function Footer() {
                                 Knowledge Base (FAQ)
                             </Link>
                             <a
-                                href="mailto:support@mysupportinfo.com?subject=Detection%20Error%20Report%20-%20MySupportInfo"
+                                href="mailto:report@mysupportinfo.com?subject=Detection%20Error%20Report%20-%20MySupportInfo"
                                 className="hover:text-primary text-primary/90 transition-colors flex items-center gap-1.5 w-fit font-bold pt-0.5"
                             >
                                 <span>&#9888;</span>

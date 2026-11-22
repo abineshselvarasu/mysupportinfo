@@ -163,7 +163,7 @@ export default function PrivacyPage() {
                     <ul className="list-none space-y-1.5 mt-2 font-medium">
                         <li className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />
-                            <span>Support &amp; Detection Queries: <a href="mailto:support@mysupportinfo.com" className="text-secondary font-bold hover:underline">support@mysupportinfo.com</a></span>
+                            <span>Detection Error &amp; Support Queries: <a href="mailto:report@mysupportinfo.com" className="text-secondary font-bold hover:underline">report@mysupportinfo.com</a></span>
                         </li>
                         <li className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />

@@ -191,11 +191,11 @@ export default function TermsPage() {
                     <ul className="list-none space-y-1.5 mt-2 font-medium">
                         <li className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />
-                            <span>Support &amp; Technical Inquiries: <a href="mailto:support@mysupportinfo.com" className="text-secondary font-bold hover:underline">support@mysupportinfo.com</a></span>
+                            <span>Detection Error &amp; Technical Reports: <a href="mailto:report@mysupportinfo.com" className="text-secondary font-bold hover:underline">report@mysupportinfo.com</a></span>
                         </li>
                         <li className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />
-                            <span>Legal &amp; Business Inquiries: <a href="mailto:contact@mysupportinfo.com" className="text-secondary font-bold hover:underline">contact@mysupportinfo.com</a></span>
+                            <span>General &amp; Business Inquiries: <a href="mailto:contact@mysupportinfo.com" className="text-secondary font-bold hover:underline">contact@mysupportinfo.com</a></span>
                         </li>
                     </ul>
                 </Section>

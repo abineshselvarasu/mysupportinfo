@@ -65,7 +65,7 @@ const faqs = [
     },
     {
         question: "What should I do if my browser or operating system is detected incorrectly?",
-        answer: "Certain privacy browsers (like Brave with Shields, or Firefox with resistFingerprinting enabled), virtual machines, and privacy extensions intentionally spoof or freeze user-agent headers. If a specification looks inaccurate, click 'Report a detection error' on the home dashboard or email our team directly at support@mysupportinfo.com.",
+        answer: "Certain privacy browsers (like Brave with Shields, or Firefox with resistFingerprinting enabled), virtual machines, and privacy extensions intentionally spoof or freeze user-agent headers. If a specification looks inaccurate, click 'Report a detection error' on the home dashboard or email our team directly at report@mysupportinfo.com.",
         category: "Compatibility",
     },
 ];

@@ -89,7 +89,7 @@ export default function ReportErrorModal({ isOpen, onClose, systemStats }: Repor
             `Additional notes: ${userNotes || "[Any additional details]"}\n\n` +
             `System Diagnostic Dump:\n${buildDiagnosticPayload()}`
         );
-        return `mailto:support@mysupportinfo.com?subject=${subject}&body=${body}`;
+        return `mailto:report@mysupportinfo.com?subject=${subject}&body=${body}`;
     };
 
     return (
@@ -222,8 +222,8 @@ export default function ReportErrorModal({ isOpen, onClose, systemStats }: Repor
                         <Mail size={18} className="text-background-dark mt-0.5 flex-shrink-0" />
                         <div className="text-xs text-background-dark leading-relaxed font-medium">
                             <span>Direct support channels: </span>
-                            <a href="mailto:support@mysupportinfo.com" className="font-bold underline underline-offset-2">
-                                support@mysupportinfo.com
+                            <a href="mailto:report@mysupportinfo.com" className="font-bold underline underline-offset-2">
+                                report@mysupportinfo.com
                             </a>
                             <span> &middot; </span>
                             <a href="mailto:contact@mysupportinfo.com" className="font-bold underline underline-offset-2">
@@ -257,7 +257,7 @@ export default function ReportErrorModal({ isOpen, onClose, systemStats }: Repor
                             className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 bg-primary border-2 border-background-dark shadow-block-sm text-background-dark font-black uppercase tracking-wider rounded-xl text-xs hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer"
                         >
                             <Mail size={14} />
-                            <span>Send to support@mysupportinfo.com</span>
+                            <span>Send to report@mysupportinfo.com</span>
                             <ExternalLink size={12} className="opacity-70" />
                         </a>
                     </div>
