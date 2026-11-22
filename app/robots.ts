@@ -6,11 +6,18 @@ export const dynamic = 'force-static';
 
 export default function robots(): MetadataRoute.Robots {
     return {
-        rules: {
-            userAgent: '*',
-            allow: '/',
-            disallow: ['/private/'],
-        },
+        rules: [
+            {
+                userAgent: '*',
+                allow: '/',
+                disallow: ['/private/'],
+            },
+            {
+                userAgent: ['GPTBot', 'ChatGPT-User', 'ClaudeBot', 'PerplexityBot', 'Google-Extended', 'Applebot-Extended'],
+                allow: '/',
+                disallow: ['/private/'],
+            },
+        ],
         sitemap: `${BASE_URL}/sitemap.xml`,
     };
 }

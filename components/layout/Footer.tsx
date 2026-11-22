@@ -73,7 +73,7 @@ export default function Footer() {
                     <div className="md:col-span-5 flex flex-col gap-3">
                         <Logo theme="dark" size="sm" />
                         <p className="text-accent/75 text-xs sm:text-sm leading-relaxed max-w-sm font-medium">
-                            Private, client-side browser intelligence and bufferbloat latency testing. Built for IT support, remote teams, and gamers.
+                            One link to diagnose any device. Private, client-side browser intelligence and bufferbloat latency testing built for IT support, remote teams, and sysadmins.
                         </p>
                         <p className="text-3xs text-accent/50 font-medium tracking-wide">
                             100% in-browser processing &middot; Zero database logs &middot; Encrypted TLS

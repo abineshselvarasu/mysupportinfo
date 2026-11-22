@@ -23,11 +23,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://mysupportinfo.com"),
   applicationName: "MySupportInfo",
   title: {
-    default: "My Support Info & Details — What Is My Browser, IP & Diagnostic Tool",
+    default: "MySupportInfo — One Link to Diagnose Any Device | What Is My Browser & IP",
     template: "%s | MySupportInfo",
   },
   description:
-    "Check your support details: what browser, OS, screen resolution & public IP you're using. Free device diagnostic, WebRTC leak & bufferbloat test with zero tracking.",
+    "One link to diagnose any device. Free instant system diagnostics for remote teams and IT helpdesks: inspect browser version, OS, IP address, screen size, GPU, WebRTC leaks & bufferbloat latency with zero tracking.",
   keywords: [
     "my support details",
     "mysupportdetails",
@@ -56,16 +56,16 @@ export const metadata: Metadata = {
     type: "website",
     url: "/",
     siteName: "MySupportInfo",
-    title: "My Support Info & Details — What Is My Browser, IP & Diagnostic Tool",
+    title: "MySupportInfo — One Link to Diagnose Any Device | What Is My Browser & IP",
     description:
-      "Check your support details: what browser, OS, screen resolution & public IP you're using in 1 click. Free device info, WebRTC leak & bufferbloat latency test.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "MySupportInfo – Support Details, Browser, IP & Device Diagnostic" }],
+      "One link to diagnose any device. Free instant system diagnostics for remote teams and IT helpdesks: inspect browser version, OS, IP address, screen size, GPU, WebRTC leaks & bufferbloat latency with zero tracking.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "MySupportInfo – One Link to Diagnose Any Device" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "My Support Info & Details — What Is My Browser, IP & Diagnostic Tool",
+    title: "MySupportInfo — One Link to Diagnose Any Device | What Is My Browser & IP",
     description:
-      "Check your support details: what browser, OS, screen resolution & public IP you're using in 1 click. Free device info, WebRTC leak & bufferbloat latency test.",
+      "One link to diagnose any device. Free instant system diagnostics for remote teams and IT helpdesks: inspect browser version, OS, IP address, screen size, GPU, WebRTC leaks & bufferbloat latency with zero tracking.",
     images: ["/og-image.png"],
   },
   alternates: {
