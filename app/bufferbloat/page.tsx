@@ -509,7 +509,7 @@ export default function BufferbloatPage() {
                             {/* Card 3: Voice Chat */}
                             <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm flex flex-col justify-between">
                                 <div>
-                                    <div className="size-12 rounded-xl bg-accent text-background-dark flex items-center justify-center mb-4">
+                                    <div className="size-12 rounded-xl bg-accent/20 text-accent flex items-center justify-center mb-4">
                                         <span className="material-symbols-outlined text-2xl">mic</span>
                                     </div>
                                     <h3 className="text-lg font-bold text-background-dark mb-2">Discord & VoIP Robotics</h3>
@@ -517,7 +517,7 @@ export default function BufferbloatPage() {
                                         Voice over IP relies on constant packet pacing. When router buffers inflate, UDP packets arrive out of order or clump together (jitter). Your friends will report that your voice sounds metallic, robotic, or chops into silence mid-sentence.
                                     </p>
                                 </div>
-                                <div className="mt-4 pt-3 border-t border-background-dark/10 text-3xs font-extrabold uppercase text-background-dark">
+                                <div className="mt-4 pt-3 border-t border-background-dark/10 text-3xs font-extrabold uppercase text-accent">
                                     Impact: Jitter & &ldquo;Robot Voice&rdquo;
                                 </div>
                             </div>

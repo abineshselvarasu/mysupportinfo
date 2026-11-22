@@ -1368,32 +1368,38 @@ export default function Home() {
                                 </div>
                             </Link>
 
-                            <Link href="/privacy" className="group relative overflow-hidden rounded-3xl bg-accent border-2 border-background-dark shadow-block hover:scale-102 transition-all duration-300">
+                            <Link
+                                href="/privacy"
+                                className="group relative overflow-hidden rounded-3xl bg-accent dark:bg-[#062b24] border-2 border-background-dark dark:border-accent/40 shadow-block hover:scale-102 transition-all duration-300"
+                            >
                                 <div className="p-8 flex flex-col justify-between min-h-card">
                                     <div>
-                                        <div className="size-12 rounded-2xl bg-background-dark flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                                        <div className="size-12 rounded-2xl bg-background-dark dark:bg-accent/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
                                             <EyeOff size={22} className="text-accent" />
                                         </div>
-                                        <h3 className="text-lg font-bold text-background-dark mb-2">Privacy Centre</h3>
-                                        <p className="text-background-dark/80 text-sm leading-relaxed">Review how we handle your data locally — zero tracking, GDPR compliant.</p>
+                                        <h3 className="text-lg font-bold text-background-dark dark:text-white mb-2">Privacy Centre</h3>
+                                        <p className="text-background-dark/80 dark:text-accent/80 text-sm leading-relaxed">Review how we handle your data locally — zero tracking, GDPR compliant.</p>
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-background-dark font-bold uppercase tracking-widest text-3xs mt-6">
+                                    <div className="flex items-center gap-1.5 text-background-dark dark:text-accent font-bold uppercase tracking-widest text-3xs mt-6">
                                         <span>View Policy</span>
                                         <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
                                     </div>
                                 </div>
                             </Link>
 
-                            <Link href="/faq" className="group relative overflow-hidden rounded-3xl bg-white border-2 border-background-dark shadow-block hover:scale-102 transition-all duration-300">
+                            <Link
+                                href="/faq"
+                                className="group relative overflow-hidden rounded-3xl bg-white dark:bg-[#062b24] border-2 border-background-dark dark:border-secondary/40 shadow-block hover:scale-102 transition-all duration-300"
+                            >
                                 <div className="p-8 flex flex-col justify-between min-h-card">
                                     <div>
-                                        <div className="size-12 rounded-2xl bg-secondary/15 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                                        <div className="size-12 rounded-2xl bg-secondary/15 dark:bg-secondary/25 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
                                             <HelpCircle size={22} className="text-secondary" />
                                         </div>
-                                        <h3 className="text-lg font-bold text-background-dark mb-2">Knowledge Base</h3>
-                                        <p className="text-background-dark/70 text-sm leading-relaxed">Common questions about network testing, privacy, and what each metric means.</p>
+                                        <h3 className="text-lg font-bold text-background-dark dark:text-white mb-2">Knowledge Base</h3>
+                                        <p className="text-background-dark/70 dark:text-white/75 text-sm leading-relaxed">Common questions about network testing, privacy, and what each metric means.</p>
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-background-dark font-bold uppercase tracking-widest text-3xs mt-6">
+                                    <div className="flex items-center gap-1.5 text-background-dark dark:text-secondary font-bold uppercase tracking-widest text-3xs mt-6">
                                         <span>Read FAQ</span>
                                         <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
                                     </div>
@@ -1478,7 +1484,7 @@ export default function Home() {
                                 </div>
 
                                 <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
-                                    <div className="size-10 rounded-xl bg-accent text-background-dark flex items-center justify-center mb-3">
+                                    <div className="size-10 rounded-xl bg-accent/20 text-accent flex items-center justify-center mb-3">
                                         <span className="material-symbols-outlined text-xl">public</span>
                                     </div>
                                     <h3 className="font-bold text-background-dark text-base mb-1">Public IP, Geolocation & ISP</h3>
@@ -1508,7 +1514,7 @@ export default function Home() {
                                 </div>
 
                                 <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
-                                    <div className="size-10 rounded-xl bg-accent text-background-dark flex items-center justify-center mb-3">
+                                    <div className="size-10 rounded-xl bg-accent/20 text-accent flex items-center justify-center mb-3">
                                         <span className="material-symbols-outlined text-xl">security</span>
                                     </div>
                                     <h3 className="font-bold text-background-dark text-base mb-1">WebRTC Leaks & Privacy Signals</h3>

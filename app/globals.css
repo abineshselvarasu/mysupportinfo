@@ -96,7 +96,8 @@ html.dark .text-background-dark {
   color: #FAF6F0 !important;
 }
 
-html.dark .text-foreground {
+html.dark .text-foreground,
+html.dark [class*="text-foreground"] {
   color: #FAF6F0 !important;
 }
 
@@ -115,6 +116,55 @@ html.dark .text-background-dark\/40,
 html.dark .text-background-dark\/35,
 html.dark .text-background-dark\/30 {
   color: rgba(250, 246, 240, 0.65) !important;
+}
+
+html.dark .text-foreground\/90,
+html.dark .text-foreground\/85,
+html.dark .text-foreground\/80,
+html.dark .text-foreground\/75,
+html.dark .text-foreground\/70,
+html.dark .text-foreground\/65,
+html.dark .text-foreground\/60 {
+  color: rgba(250, 246, 240, 0.85) !important;
+}
+
+html.dark .text-foreground\/50,
+html.dark .text-foreground\/40,
+html.dark .text-foreground\/30 {
+  color: rgba(250, 246, 240, 0.65) !important;
+}
+
+/* Text on primary buttons and badges MUST always be dark for readable contrast */
+.bg-primary,
+button.bg-primary,
+a.bg-primary,
+.bg-primary .text-background-dark,
+.bg-primary.text-background-dark,
+.bg-primary .text-foreground,
+.bg-primary.text-foreground,
+[class*="bg-primary"] .text-background-dark,
+[class*="bg-primary"] svg.text-background-dark,
+html.dark .bg-primary,
+html.dark button.bg-primary,
+html.dark a.bg-primary,
+html.dark .bg-primary .text-background-dark,
+html.dark .bg-primary.text-background-dark,
+html.dark .bg-primary .text-foreground,
+html.dark .bg-primary.text-foreground,
+html.dark [class*="bg-primary"] .text-background-dark,
+html.dark [class*="bg-primary"] svg.text-background-dark {
+  color: #002924 !important;
+}
+
+html.dark .bg-accent\/25,
+html.dark .bg-accent\/15,
+html.dark .bg-accent\/10 {
+  background-color: rgba(255, 196, 183, 0.08) !important;
+}
+
+html.dark code {
+  color: #FF8E60 !important;
+  background-color: rgba(0, 158, 82, 0.15) !important;
 }
 
 html.dark .bg-white {
