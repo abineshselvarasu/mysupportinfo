@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://mysupportinfo.com"),
   applicationName: "MySupportInfo",
   title: {
-    default: "MySupportInfo — One Link to Diagnose Any Device",
+    default: "My Support Info (MySupportInfo) — One Link to Diagnose Any Device",
     template: "%s | MySupportInfo",
   },
   description:
@@ -56,14 +56,14 @@ export const metadata: Metadata = {
     type: "website",
     url: "/",
     siteName: "MySupportInfo",
-    title: "MySupportInfo — One Link to Diagnose Any Device",
+    title: "My Support Info (MySupportInfo) — One Link to Diagnose Any Device",
     description:
       "One link to diagnose any device. Free instant system diagnostics for remote teams and IT helpdesks: inspect browser version, OS, IP address, screen size, GPU, WebRTC leaks & bufferbloat latency with zero tracking.",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "MySupportInfo – One Link to Diagnose Any Device" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "MySupportInfo — One Link to Diagnose Any Device",
+    title: "My Support Info (MySupportInfo) — One Link to Diagnose Any Device",
     description:
       "One link to diagnose any device. Free instant system diagnostics for remote teams and IT helpdesks: inspect browser version, OS, IP address, screen size, GPU, WebRTC leaks & bufferbloat latency with zero tracking.",
     images: ["/og-image.png"],
@@ -141,6 +141,7 @@ export default function RootLayout({
               "@type": "WebSite",
               name: "MySupportInfo",
               alternateName: [
+                "My Support Info",
                 "What Is My Browser",
                 "My Support Details",
                 "Device Info Checker",

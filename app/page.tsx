@@ -1226,7 +1226,7 @@ export default function Home() {
                     </span>
                 </h1>
                 <p className="text-sm md:text-base text-background-dark/75 max-w-xl mx-auto mb-10 leading-relaxed font-medium">
-                    One link to diagnose any device. Instant browser, IP, OS, hardware, and network latency diagnostics for remote teams and IT helpdesks — 100% in-browser with zero tracking.
+                    My Support Info provides one link to diagnose any device. Instant browser, IP, OS, hardware, and network latency diagnostics for remote teams and IT helpdesks — 100% in-browser with zero tracking.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
                     <button
