@@ -103,61 +103,64 @@ export default function CookieManager() {
 
     return (
         <>
-            {/* ── First-Visit Discreet Floating Banner ──────────────────── */}
+            {/* ── First-Visit Compact Bottom Cookie Strip ─────────────── */}
             {showBanner && !isOpen && (
-                <div
-                    role="region"
-                    aria-label="Cookie consent banner"
-                    className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md z-40 bg-white border-2 border-background-dark rounded-2xl p-4 sm:p-5 shadow-block flex flex-col gap-3.5 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
-                >
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2.5">
-                            <div className="size-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center flex-shrink-0">
-                                <span className="material-symbols-outlined text-lg">cookie</span>
+                <div className="fixed bottom-3 inset-x-0 z-40 px-3 pointer-events-none flex justify-center">
+                    <div
+                        role="region"
+                        aria-label="Cookie consent banner"
+                        className="pointer-events-auto w-full max-w-3xl bg-white border-2 border-background-dark rounded-2xl px-3.5 sm:px-4 py-2.5 shadow-block flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
+                    >
+                        <div className="flex items-start sm:items-center justify-between gap-2.5 flex-1 min-w-0">
+                            <div className="flex items-start sm:items-center gap-2 min-w-0">
+                                <span className="material-symbols-outlined text-primary text-base sm:text-lg flex-shrink-0 mt-0.5 sm:mt-0" aria-hidden="true">cookie</span>
+                                <p className="text-2xs text-background-dark/80 leading-snug font-medium">
+                                    <strong className="text-background-dark font-extrabold">Privacy Notice:</strong>{" "}
+                                    Essential session storage only plus optional anonymous page analytics—no ad trackers.
+                                </p>
                             </div>
-                            <span className="font-extrabold text-background-dark text-sm">
-                                Cookie &amp; Privacy Choices
-                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setShowBanner(false)}
+                                aria-label="Dismiss banner"
+                                className="sm:hidden text-background-dark/50 hover:text-background-dark p-1 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                            >
+                                <span className="material-symbols-outlined text-base" aria-hidden="true">close</span>
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => setShowBanner(false)}
-                            aria-label="Dismiss banner"
-                            className="text-background-dark/40 hover:text-background-dark p-1 rounded-lg transition-colors cursor-pointer"
-                        >
-                            <span className="material-symbols-outlined text-base">close</span>
-                        </button>
-                    </div>
 
-                    <p className="text-2xs sm:text-xs text-background-dark/75 leading-relaxed font-medium">
-                        We prioritize your privacy. We use essential session storage for device diagnostics and optional anonymous analytics to monitor server latency. We never use advertising trackers.
-                    </p>
-
-                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-background-dark/10 flex-wrap">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setShowBanner(false);
-                                setIsOpen(true);
-                            }}
-                            className="text-2xs font-bold text-background-dark/70 hover:text-primary transition-colors underline cursor-pointer"
-                        >
-                            Customize
-                        </button>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-end gap-2 flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowBanner(false);
+                                    setIsOpen(true);
+                                }}
+                                className="text-2xs font-bold text-background-dark/70 hover:text-primary transition-colors underline cursor-pointer px-1"
+                            >
+                                Customize
+                            </button>
                             <button
                                 type="button"
                                 onClick={handleRejectAll}
-                                className="px-3 py-1.5 rounded-xl border border-background-dark text-background-dark text-2xs font-bold hover:bg-background-dark/5 transition-colors cursor-pointer"
+                                className="px-2.5 py-1 rounded-lg border border-background-dark text-background-dark text-2xs font-bold hover:bg-background-dark/5 transition-colors cursor-pointer whitespace-nowrap"
                             >
-                                Reject Non-Essential
+                                Reject
                             </button>
                             <button
                                 type="button"
                                 onClick={handleAcceptAll}
-                                className="px-3.5 py-1.5 rounded-xl bg-primary text-foreground border border-background-dark text-2xs font-black shadow-block-sm hover:bg-primary-dark transition-all cursor-pointer"
+                                className="px-3 py-1 rounded-lg bg-primary text-foreground border border-background-dark text-2xs font-black shadow-block-sm hover:bg-primary-dark transition-all cursor-pointer whitespace-nowrap"
                             >
-                                Accept All
+                                Accept
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowBanner(false)}
+                                aria-label="Dismiss banner"
+                                className="hidden sm:inline-flex text-background-dark/50 hover:text-background-dark p-1 rounded-lg transition-colors cursor-pointer"
+                            >
+                                <span className="material-symbols-outlined text-base" aria-hidden="true">close</span>
                             </button>
                         </div>
                     </div>
