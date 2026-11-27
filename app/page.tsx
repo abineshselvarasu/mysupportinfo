@@ -627,10 +627,6 @@ export default function Home() {
         }
     };
 
-    const downloadReport = () => {
-        setIsScreenshotModalOpen(true);
-    };
-
     // ─── Card component ───────────────────────────────────────────────
     const iconBgClass = (s: "good" | "warn" | "bad" | "info") => ({
         good: "bg-secondary/10 text-secondary",
@@ -1228,39 +1224,39 @@ export default function Home() {
                 <p className="text-sm md:text-base text-background-dark/75 max-w-xl mx-auto mb-10 leading-relaxed font-medium">
                     My Support Info provides one link to diagnose any device. Instant browser, IP, OS, hardware, and network latency diagnostics for remote teams and IT helpdesks — 100% in-browser with zero tracking.
                 </p>
-                <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-                    <button
-                        onClick={copyAllInfo}
-                        aria-label="Copy all device info to clipboard"
-                        className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-background-dark text-white border-2 border-background-dark shadow-block hover:bg-foreground active:translate-x-px active:translate-y-px active:shadow-none transition-all rounded-xl text-sm font-bold cursor-pointer"
-                    >
-                        <Copy size={15} />
-                        {copied ? "Copied!" : "Copy All Info"}
-                    </button>
+                <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
                     <button
                         onClick={() => setIsScreenshotModalOpen(true)}
                         disabled={loading || downloading}
                         aria-label="Customize and download screenshot report card"
-                        className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-primary text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-50 cursor-pointer"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-background-dark border-2 border-background-dark shadow-block rounded-xl text-sm font-black hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-50 cursor-pointer"
                     >
-                        <Download size={15} />
-                        <span>Screenshot Report</span>
+                        <Download size={16} aria-hidden="true" />
+                        <span>{downloading ? "Generating…" : "Screenshot Report"}</span>
+                    </button>
+                    <button
+                        onClick={copyAllInfo}
+                        aria-label="Copy All Info to clipboard"
+                        className="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-background-dark text-white border-2 border-background-dark shadow-block-sm hover:bg-foreground active:translate-x-px active:translate-y-px active:shadow-none transition-all rounded-xl text-xs sm:text-sm font-bold cursor-pointer"
+                    >
+                        <Copy size={14} aria-hidden="true" />
+                        <span>{copied ? "Copied!" : "Copy All Info"}</span>
                     </button>
                     <button
                         onClick={handleExportCSV}
                         disabled={loading}
-                        aria-label="Export complete diagnostic data to CSV spreadsheet"
-                        className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-white text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-accent/20 active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-50 cursor-pointer"
+                        aria-label="Export CSV spreadsheet"
+                        className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2.5 bg-white text-background-dark border-2 border-background-dark/30 hover:border-background-dark hover:bg-accent/20 active:translate-x-px active:translate-y-px transition-all rounded-xl text-xs sm:text-sm font-bold disabled:opacity-50 cursor-pointer"
                     >
-                        <FileSpreadsheet size={15} />
-                        <span>{csvExported ? "Exported CSV!" : "Export CSV"}</span>
+                        <FileSpreadsheet size={14} aria-hidden="true" />
+                        <span>{csvExported ? "Exported!" : "CSV"}</span>
                     </button>
                     <button
                         onClick={shareLink}
-                        aria-label="Share diagnostic link with IT support"
-                        className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-white text-background-dark border-2 border-background-dark shadow-block-sm rounded-xl text-sm font-bold hover:bg-accent/20 active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer"
+                        aria-label="Share Link with IT support"
+                        className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2.5 bg-white text-background-dark border-2 border-background-dark/30 hover:border-background-dark hover:bg-accent/20 active:translate-x-px active:translate-y-px transition-all rounded-xl text-xs sm:text-sm font-bold cursor-pointer"
                     >
-                        <Share2 size={15} />
+                        <Share2 size={14} aria-hidden="true" />
                         <span>Share Link</span>
                     </button>
                 </div>
@@ -1359,33 +1355,22 @@ export default function Home() {
                             </h2>
                             <div className="flex items-center justify-center gap-6 sm:gap-10 mb-5 sm:mb-6">
                                 <div className="text-center">
-                                    <p className="text-5xs text-accent/60 uppercase tracking-ui-wider font-bold mb-1">OS Environment</p>
+                                    <p className="text-5xs text-accent/85 uppercase tracking-ui-wider font-bold mb-1">OS Environment</p>
                                     <p className="text-sm sm:text-base font-semibold text-accent">
                                         {loading ? "…" : (isCapturing && !visibleFields.has("os") ? "Hidden" : stats?.osName)}
                                     </p>
                                 </div>
-                                <div className="w-px h-8 bg-accent/20 self-center flex-shrink-0" />
+                                <div className="w-px h-8 bg-accent/25 self-center flex-shrink-0" />
                                 <div className="text-center">
-                                    <p className="text-5xs text-accent/60 uppercase tracking-ui-wider font-bold mb-1">Global IP</p>
+                                    <p className="text-5xs text-accent/85 uppercase tracking-ui-wider font-bold mb-1">Global IP</p>
                                     <p className="text-xs sm:text-sm font-semibold text-accent font-mono tabular-nums break-all">
                                         {ipLoading ? "…" : (isCapturing && !visibleFields.has("ip") ? "[Masked for Privacy]" : stats?.ip)}
                                     </p>
                                 </div>
                             </div>
-                            <div className="text-5xs uppercase tracking-ui-wider font-mono text-accent/60">
+                            <div className="text-5xs uppercase tracking-ui-wider font-mono text-accent/85">
                                 mysupportinfo.com
                             </div>
-                            {!isCapturing && (
-                                <button
-                                    onClick={downloadReport}
-                                    disabled={loading || downloading}
-                                    aria-label="Download screenshot report as PNG"
-                                    className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-primary border-2 border-background-dark shadow-block-sm text-background-dark rounded-full text-3xs font-black uppercase tracking-wider hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-40 mt-3 cursor-pointer"
-                                >
-                                    <Download size={13} />
-                                    {downloading ? "Generating…" : <><span className="hidden sm:inline">Download Screenshot </span>Report</>}
-                                </button>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -1510,372 +1495,343 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* ── Navigation cards ──────────────────────────────────── */}
-            <div className="bg-background w-full px-6 py-4">
+            {/* ── Band 2: Full-Bleed Deep Teal Contrast Strip (Section Rhythm) ── */}
+            <section aria-labelledby="why-msi-heading" className="w-full bg-background-dark text-white border-y-2 border-background-dark dark:border-secondary/30 mt-10 py-12 sm:py-14 px-6">
                 <div className="max-w-6xl mx-auto">
-                    <FadeIn delay={0.3}>
-                        <div className="mb-6">
-                            <p className="text-3xs font-black uppercase tracking-ui-wider text-primary mb-2">More Tools</p>
-                            <h2 className="font-serif text-fluid-h2 font-bold text-background-dark">Explore Diagnostics</h2>
-                            <p className="mt-2 max-w-2xl text-sm text-background-dark/65 font-medium leading-relaxed">Run deeper network tests, review privacy details, or learn how each device metric is detected.</p>
+                    <div className="max-w-2xl mb-8">
+                        <p className="text-3xs font-black uppercase tracking-ui-wider text-primary mb-2">
+                            Designed for Support Clarity
+                        </p>
+                        <h2 id="why-msi-heading" className="font-serif text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+                            Built for clarity, speed, and support workflows
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="p-5 rounded-2xl bg-white/5 border border-white/15">
+                            <h3 className="text-sm font-extrabold text-accent mb-1.5">Manual Settings Walkthroughs</h3>
+                            <p className="text-xs text-white/80 leading-relaxed">
+                                Guiding non-technical users through OS and browser menus slows down every ticket.
+                            </p>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-1">
-                            {[
-                                {
-                                    href: "/bufferbloat",
-                                    title: "Bufferbloat Test",
-                                    desc: "Analyse network latency under load to detect lag in gaming, calls, and streaming.",
-                                    cta: "Run Diagnostic",
-                                    icon: Signal,
-                                    cardClass: "bg-background-dark border-background-dark",
-                                    iconWrapClass: "bg-primary",
-                                    iconClass: "text-background-dark",
-                                    titleClass: "text-white",
-                                    descClass: "text-accent",
-                                    ctaClass: "text-primary",
-                                },
-                                {
-                                    href: "/what-is-my-ip",
-                                    title: "What Is My IP Address",
-                                    desc: "Check public IPv4 & IPv6 addresses, ISP routing, approximate city, and WebRTC VPN leaks.",
-                                    cta: "Inspect IP & WebRTC",
-                                    icon: Wifi,
-                                    cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-secondary/40",
-                                    iconWrapClass: "bg-secondary/15 dark:bg-secondary/25",
-                                    iconClass: "text-secondary",
-                                    titleClass: "text-background-dark dark:text-white",
-                                    descClass: "text-background-dark/70 dark:text-white/75",
-                                    ctaClass: "text-secondary",
-                                },
-                                {
-                                    href: "/what-is-my-browser",
-                                    title: "What Is My Browser",
-                                    desc: "Detect exact browser version, Blink/Gecko/WebKit engine, Client Hints, and full User-Agent.",
-                                    cta: "Check Browser Specs",
-                                    icon: Globe,
-                                    cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-primary/40",
-                                    iconWrapClass: "bg-primary/15 dark:bg-primary/25",
-                                    iconClass: "text-primary",
-                                    titleClass: "text-background-dark dark:text-white",
-                                    descClass: "text-background-dark/70 dark:text-white/75",
-                                    ctaClass: "text-primary",
-                                },
-                                {
-                                    href: "/what-is-my-screen-resolution",
-                                    title: "What Is My Screen Resolution",
-                                    desc: "Measure display size, CSS viewport pixels on zoom, Device Pixel Ratio (DPR), and breakpoints.",
-                                    cta: "Measure Display",
-                                    icon: Monitor,
-                                    cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-accent/40",
-                                    iconWrapClass: "bg-background-dark/10 dark:bg-white/10",
-                                    iconClass: "text-background-dark dark:text-accent",
-                                    titleClass: "text-background-dark dark:text-white",
-                                    descClass: "text-background-dark/70 dark:text-white/75",
-                                    ctaClass: "text-background-dark dark:text-accent",
-                                },
-                                {
-                                    href: "/privacy",
-                                    title: "Privacy Centre",
-                                    desc: "Review how we handle your data locally — zero tracking, GDPR & CCPA compliant.",
-                                    cta: "View Policy",
-                                    icon: EyeOff,
-                                    cardClass: "bg-accent dark:bg-[#062b24] border-background-dark dark:border-accent/40",
-                                    iconWrapClass: "bg-background-dark dark:bg-accent/20",
-                                    iconClass: "text-accent",
-                                    titleClass: "text-background-dark dark:text-white",
-                                    descClass: "text-background-dark/80 dark:text-accent/80",
-                                    ctaClass: "text-background-dark dark:text-accent",
-                                },
-                                {
-                                    href: "/faq",
-                                    title: "Knowledge Base",
-                                    desc: "Common questions about network testing, privacy, and what each diagnostic metric means.",
-                                    cta: "Read FAQ",
-                                    icon: HelpCircle,
-                                    cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-secondary/40",
-                                    iconWrapClass: "bg-secondary/15 dark:bg-secondary/25",
-                                    iconClass: "text-secondary",
-                                    titleClass: "text-background-dark dark:text-white",
-                                    descClass: "text-background-dark/70 dark:text-white/75",
-                                    ctaClass: "text-background-dark dark:text-secondary",
-                                },
-                            ].map((item) => (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={`group relative overflow-hidden rounded-3xl border-2 shadow-block hover:scale-102 transition-all duration-300 ${item.cardClass}`}
-                                >
-                                    <div className="p-8 flex flex-col justify-between min-h-card">
-                                        <div>
-                                            <div className={`size-12 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 ${item.iconWrapClass}`}>
-                                                <item.icon size={22} className={item.iconClass} aria-hidden="true" />
-                                            </div>
-                                            <h3 className={`text-lg font-bold mb-2 ${item.titleClass}`}>{item.title}</h3>
-                                            <p className={`text-sm leading-relaxed ${item.descClass}`}>{item.desc}</p>
-                                        </div>
-                                        <div className={`flex items-center gap-1.5 font-bold uppercase tracking-widest text-3xs mt-6 ${item.ctaClass}`}>
-                                            <span>{item.cta}</span>
-                                            <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-                                        </div>
-                                    </div>
+                        <div className="p-5 rounded-2xl bg-white/5 border border-white/15">
+                            <h3 className="text-sm font-extrabold text-accent mb-1.5">Single-Purpose Lookups</h3>
+                            <p className="text-xs text-white/80 leading-relaxed">
+                                Checking browser version, public IP, display scaling, and latency separately takes multiple tabs.
+                            </p>
+                        </div>
+                        <div className="p-5 rounded-2xl bg-primary/15 border-2 border-primary">
+                            <h3 className="text-sm font-extrabold text-accent mb-1.5">One Unified Link</h3>
+                            <p className="text-xs text-white/95 leading-relaxed">
+                                MySupportInfo detects browser, IP, viewport, GPU, and WebRTC status together in your browser.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Band 3: Alternating 50/50 Visual Workflow Splits & Unified Hub ── */}
+            <div className="bg-background w-full px-6 pt-14 pb-4">
+                <div className="max-w-6xl mx-auto space-y-16">
+
+                    {/* Split A: Live IT Helpdesk Output + Real Telemetry Preview */}
+                    <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                        <div className="space-y-4">
+                            <div className="inline-flex items-center gap-2 text-secondary font-black uppercase text-3xs tracking-ui-wide">
+                                <span className="material-symbols-outlined text-sm" aria-hidden="true">support_agent</span>
+                                Helpdesk &amp; QA Intake
+                            </div>
+                            <h2 className="text-2xl md:text-3xl font-extrabold text-background-dark font-serif leading-tight">
+                                Share Exact Browser, Display &amp; System Specs in One Click
+                            </h2>
+                            <p className="text-sm text-background-dark/80 leading-relaxed font-medium">
+                                Instead of asking clients for screenshots of their settings, send them <code className="bg-background-dark/10 px-1.5 py-0.5 rounded font-mono text-xs">mysupportinfo.com</code>. Every critical detail runs client-side with zero software installs.
+                            </p>
+                            <ul className="text-xs text-background-dark/75 space-y-2.5 font-medium">
+                                <li className="flex items-start gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
+                                    <span><strong>Copy or Export Anywhere:</strong> Paste formatted text into Jira or Zendesk, export RFC-4180 CSV, or download a PNG card.</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
+                                    <span><strong>Client-Side Execution:</strong> Device telemetry is inspected in-browser memory; short-lived IP lookups use session cache only.</span>
+                                </li>
+                            </ul>
+                            <div className="flex flex-wrap items-center gap-4 pt-2 text-xs font-extrabold">
+                                <Link href="/what-is-my-browser" className="inline-flex items-center gap-1.5 text-secondary hover:underline underline-offset-4">
+                                    <span>Inspect Browser Engine &amp; User-Agent</span>
+                                    <ArrowRight size={13} aria-hidden="true" />
                                 </Link>
-                            ))}
+                                <Link href="/what-is-my-screen-resolution" className="inline-flex items-center gap-1.5 text-background-dark hover:text-primary transition-colors underline underline-offset-4">
+                                    <span>Check Viewport &amp; DPR Scaling</span>
+                                    <ArrowRight size={13} aria-hidden="true" />
+                                </Link>
+                            </div>
                         </div>
-                    </FadeIn>
 
-                    {/* ── High-Authority Long-Form SEO Content ────────────────── */}
-                    <article className="mt-20 pt-16 border-t-2 border-background-dark/10 space-y-16">
-
-                        {/* Overview: What is My Browser & Support Info */}
-                        <section>
-                            <div className="inline-flex items-center gap-2 text-primary font-black uppercase text-3xs tracking-ui-wide mb-2">
-                                <span className="material-symbols-outlined text-sm">devices</span>
-                                System Diagnostics & Technical Support
+                        <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block font-mono text-2xs space-y-2 text-background-dark/85">
+                            <div className="flex items-center justify-between border-b border-background-dark/10 pb-2.5 mb-3 font-sans">
+                                <span className="text-3xs uppercase tracking-wider font-black text-primary">
+                                    Live Diagnostic Output
+                                </span>
+                                <span className="text-4xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-secondary/15 text-[#006B37] dark:bg-secondary/25 dark:text-emerald-300">
+                                    Your Current Session
+                                </span>
                             </div>
-                            <h2 className="text-3xl md:text-4xl font-extrabold text-background-dark font-serif mb-6">
-                                What Is My Browser? Fast, Private Device & Network Details
+                            <div>Browser: {loading ? "Detecting…" : `${stats?.browserName} ${stats?.browserVersion}`}</div>
+                            <div>OS Platform: {loading ? "Detecting…" : stats?.osName}</div>
+                            <div>Display: {loading ? "Detecting…" : `${stats?.resolution} · Viewport: ${stats?.windowSize} (DPR ${stats?.pixelRatio})`}</div>
+                            <div>Public IP: {ipLoading ? "Scanning…" : `${stats?.ip}${stats?.ipv6 && stats.ipv6 !== "Not Available" ? ` · IPv6 Active` : ""}`}</div>
+                            <div>ISP Network: {ipLoading ? "Scanning…" : stats?.ispName}</div>
+                            <div>WebRTC Leak: {webrtcLoading ? "Scanning…" : webrtcLeak}</div>
+                            <div>Hardware: {loading ? "Detecting…" : `${stats?.cpuCores} Threads · RAM ${stats?.ram}`}</div>
+                        </div>
+                    </section>
+
+                    {/* Split B: Network Latency & Honest Sample Scale */}
+                    <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center pt-8 border-t-2 border-background-dark/10">
+                        <div className="order-2 lg:order-1 bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block space-y-4">
+                            <div className="flex items-center justify-between border-b border-background-dark/10 pb-2.5">
+                                <span className="text-3xs uppercase tracking-wider font-black text-background-dark">
+                                    Sample Bufferbloat Scale (A–F)
+                                </span>
+                                <span className="text-4xs font-mono font-bold text-background-dark/60">
+                                    Live RTT: {loading ? "…" : stats?.latency}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2.5 text-xs font-mono">
+                                <div className="p-3 rounded-xl bg-secondary/10 border border-secondary/25">
+                                    <span className="font-black text-[#006B37] dark:text-emerald-300 block">Grade A / A+</span>
+                                    <span className="text-background-dark/75 text-3xs font-sans">+0–5 ms under load (Ideal)</span>
+                                </div>
+                                <div className="p-3 rounded-xl bg-background-dark/5 border border-background-dark/15">
+                                    <span className="font-black text-background-dark block">Grade B</span>
+                                    <span className="text-background-dark/75 text-3xs font-sans">+6–30 ms (Minor spikes)</span>
+                                </div>
+                                <div className="p-3 rounded-xl bg-primary/15 border border-primary/30">
+                                    <span className="font-black text-background-dark block">Grade C / D</span>
+                                    <span className="text-background-dark/75 text-3xs font-sans">+31–100 ms (Noticeable lag)</span>
+                                </div>
+                                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25">
+                                    <span className="font-black text-red-600 dark:text-red-400 block">Grade F</span>
+                                    <span className="text-background-dark/75 text-3xs font-sans">+100+ ms (Severe queue bloat)</span>
+                                </div>
+                            </div>
+                            <p className="text-3xs text-background-dark/60 font-medium leading-relaxed">
+                                Run the dedicated Bufferbloat Test to saturate download and upload streams and measure your connection&apos;s real grade.
+                            </p>
+                        </div>
+
+                        <div className="order-1 lg:order-2 space-y-4">
+                            <div className="inline-flex items-center gap-2 text-primary font-black uppercase text-3xs tracking-ui-wide">
+                                <span className="material-symbols-outlined text-sm" aria-hidden="true">network_check</span>
+                                Deep Network &amp; Privacy Checks
+                            </div>
+                            <h2 className="text-2xl md:text-3xl font-extrabold text-background-dark font-serif leading-tight">
+                                Catch Gaming Lag, Bufferbloat &amp; WebRTC VPN Leaks
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-background-dark/80 text-sm md:text-base leading-relaxed font-medium">
-                                <div className="space-y-4">
-                                    <p>
-                                        When you visit websites, report a bug to a software developer, or contact an IT helpdesk, one of the first questions you are asked is: <em>&ldquo;What browser and operating system are you using?&rdquo;</em>
-                                    </p>
-                                    <p>
-                                        <strong>MySupportInfo</strong> provides a modern, privacy-first diagnostic hub that automatically reads the technical specifications your web browser shares with web servers. Whether you are troubleshooting rendering bugs in Google Chrome, verifying your public IP address behind a VPN, checking screen scaling on a 4K display, or auditing WebRTC privacy leaks, MySupportInfo gives you comprehensive data in a clean, visual card.
-                                    </p>
-                                </div>
-                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm space-y-3">
-                                    <h3 className="font-bold text-background-dark text-base flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-secondary">verified_user</span>
-                                        Why Choose MySupportInfo over Legacy Tools?
-                                    </h3>
-                                    <ul className="text-xs text-background-dark/70 space-y-2 leading-relaxed">
-                                        <li className="flex items-start gap-2">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
-                                            <span><strong>100% Client-Side Detection:</strong> No server database logs or tracking cookies.</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
-                                            <span><strong>Integrated Bufferbloat Diagnostic:</strong> Measure network latency under load alongside device specs.</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
-                                            <span><strong>One-Click Export Options:</strong> Copy formatted text to clipboard or download a high-res PNG card for ticketing systems.</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
-                                            <span><strong>Modern Neobrutalist UI:</strong> High-contrast, instantly responsive, and readable on mobile and desktop.</span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* Complete Breakdown of Technical Metrics */}
-                        <section>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-background-dark font-serif mb-8">
-                                Complete Diagnostic Guide: What Each Metric Means
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
-                                    <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-                                        <span className="material-symbols-outlined text-xl">language</span>
-                                    </div>
-                                    <h3 className="font-bold text-background-dark text-base mb-1">Browser Engine & Version</h3>
-                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
-                                        Identifies your browser (Chrome, Safari, Firefox, Edge, Opera, Brave) and its rendering engine (Blink, Gecko, WebKit). Support teams need this to reproduce layout bugs or verify compatibility with modern HTML5 APIs.
-                                    </p>
-                                </div>
-
-                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
-                                    <div className="size-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center mb-3">
-                                        <span className="material-symbols-outlined text-xl">laptop</span>
-                                    </div>
-                                    <h3 className="font-bold text-background-dark text-base mb-1">Operating System & Architecture</h3>
-                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
-                                        Detects your host OS (Windows 11, macOS Sequoia, Linux, iOS, Android) via modern Client Hints and navigator fallback APIs. Helps developers distinguish mobile touch interfaces from desktop environments.
-                                    </p>
-                                </div>
-
-                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
-                                    <div className="size-10 rounded-xl bg-accent/20 text-accent flex items-center justify-center mb-3">
-                                        <span className="material-symbols-outlined text-xl">public</span>
-                                    </div>
-                                    <h3 className="font-bold text-background-dark text-base mb-1">Public IP, Geolocation & ISP</h3>
-                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
-                                        Displays your public IPv4 and IPv6 addresses, Autonomous System Number (ASN), ISP organization, and city/country location. Crucial for confirming whether your VPN or proxy tunnel is routing correctly.
-                                    </p>
-                                </div>
-
-                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
-                                    <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-                                        <span className="material-symbols-outlined text-xl">aspect_ratio</span>
-                                    </div>
-                                    <h3 className="font-bold text-background-dark text-base mb-1">Screen Resolution vs Viewport</h3>
-                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
-                                        Separates physical monitor resolution from usable browser viewport area and reports Device Pixel Ratio (DPR). When users report UI scaling issues on Retina or 4K monitors, this explains the difference.
-                                    </p>
-                                </div>
-
-                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
-                                    <div className="size-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center mb-3">
-                                        <span className="material-symbols-outlined text-xl">memory</span>
-                                    </div>
-                                    <h3 className="font-bold text-background-dark text-base mb-1">CPU Cores & Device Memory</h3>
-                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
-                                        Inspects available logical CPU threads and estimated RAM buckets. Web apps, WebAssembly modules, and browser games use these values to allocate worker threads and balance performance.
-                                    </p>
-                                </div>
-
-                                <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm">
-                                    <div className="size-10 rounded-xl bg-accent/20 text-accent flex items-center justify-center mb-3">
-                                        <span className="material-symbols-outlined text-xl">security</span>
-                                    </div>
-                                    <h3 className="font-bold text-background-dark text-base mb-1">WebRTC Leaks & Privacy Signals</h3>
-                                    <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
-                                        Audits STUN peer connections to ensure your real local or ISP IP address is not leaking past your VPN. Also monitors Do Not Track (DNT), cookie persistence, and active ad blockers.
-                                    </p>
-                                </div>
-
-                            </div>
-                        </section>
-
-                        {/* Bufferbloat CTA Section */}
-                        <section className="bg-background-dark text-white rounded-3xl p-8 md:p-12 shadow-block flex flex-col md:flex-row items-center justify-between gap-8">
-                            <div className="max-w-xl">
-                                <div className="text-xs font-black uppercase text-primary tracking-widest mb-2 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-sm">network_check</span>
-                                    Advanced Network Diagnostic
-                                </div>
-                                <h2 className="text-2xl md:text-3xl font-extrabold mb-3 font-serif">
-                                    Experiencing Gaming Lag or Choppy Video Calls?
-                                </h2>
-                                <p className="text-accent/80 text-sm leading-relaxed font-medium">
-                                    Often, what appears to be a slow browser or buggy web app is actually <strong>Bufferbloat</strong>—packet queuing delay caused by your router during heavy downloads or uploads. Run our professional latency under load test to grade your connection from A to F.
-                                </p>
-                            </div>
-                            <div className="flex-shrink-0">
+                            <p className="text-sm text-background-dark/80 leading-relaxed font-medium">
+                                High download speeds can still stutter on Zoom or games when routers buffer packets under load, or when WebRTC STUN requests leak your real IP behind a VPN. Measure both in seconds.
+                            </p>
+                            <div className="flex flex-wrap items-center gap-3 pt-1">
                                 <Link
                                     href="/bufferbloat"
-                                    className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-background-dark rounded-full font-black text-base hover:bg-primary-dark transition-all border-2 border-background-dark shadow-block-sm hover:scale-105 active:scale-95"
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-background-dark rounded-xl font-black text-xs uppercase tracking-wider hover:bg-primary-dark transition-all border-2 border-background-dark shadow-block-sm"
                                 >
-                                    <span>RUN BUFFERBLOAT TEST</span>
-                                    <ArrowRight size={18} />
+                                    <span>Run Bufferbloat Test</span>
+                                    <ArrowRight size={14} aria-hidden="true" />
+                                </Link>
+                                <Link
+                                    href="/what-is-my-ip"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white text-background-dark rounded-xl font-bold text-xs border-2 border-background-dark/30 hover:border-background-dark transition-all"
+                                >
+                                    <span>Audit IP &amp; WebRTC Leak</span>
+                                    <ArrowRight size={13} aria-hidden="true" />
                                 </Link>
                             </div>
-                        </section>
+                        </div>
+                    </section>
 
-                        {/* IT Support & Helpdesk Workflows */}
-                        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                            <div>
-                                <div className="inline-flex items-center gap-2 text-secondary font-black uppercase text-3xs tracking-ui-wide mb-2">
-                                    <span className="material-symbols-outlined text-sm">support_agent</span>
-                                    Optimized for IT Helpdesks
-                                </div>
-                                <h2 className="text-2xl md:text-3xl font-extrabold text-background-dark font-serif mb-4">
-                                    How Tech Support Teams Use MySupportInfo
-                                </h2>
-                                <p className="text-sm text-background-dark/80 leading-relaxed font-medium mb-4">
-                                    Technical support engineers waste countless hours asking clients for basic configuration info. MySupportInfo streamlines the entire customer intake process:
-                                </p>
-                                <ul className="text-xs text-background-dark/70 space-y-3 font-medium">
-                                    <li className="flex items-start gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
-                                        <span><strong>Send Clients a Single URL:</strong> Direct users to <code>mysupportinfo.com</code> with no app downloads or software installation needed.</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
-                                        <span><strong>One-Click Formatted Report:</strong> Clients click &ldquo;Copy All Info&rdquo; and paste clean, structured markdown directly into Zendesk, Freshdesk, Jira, or email.</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
-                                        <span><strong>Downloadable Visual Proof:</strong> Clients can download a visual PNG screenshot card showing exact browser version, viewport, and network RTT.</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block-sm font-mono text-2xs space-y-2 text-background-dark/80">
-                                <div className="text-3xs uppercase tracking-wider font-sans font-black text-primary border-b border-background-dark/10 pb-2 mb-3">
-                                    Sample Diagnostic Output
-                                </div>
-                                <div>Browser: Chrome 132.0.0.0 (Blink)</div>
-                                <div>OS: Windows 11 64-bit</div>
-                                <div>Screen: 2560 × 1440 · Viewport: 1920 × 940 (DPR: 1.25x)</div>
-                                <div>IP (IPv4): 198.51.100.42 · IPv6: Supported</div>
-                                <div>ISP: Cloudflare Warp / ASN 13335</div>
-                                <div>WebRTC Leak: No Leak (Protected)</div>
-                                <div>Hardware: 16 Cores · ~8 GB RAM · RTX 4080 (WebGL)</div>
-                                <div>Network Quality: Latency 14ms · Bufferbloat Grade A</div>
-                            </div>
-                        </section>
-
-                        {/* Homepage FAQ Accordion */}
-                        <section>
-                            <div className="text-center max-w-2xl mx-auto mb-10">
-                                <h2 className="text-fluid-h2 font-extrabold text-background-dark font-serif mb-3">
-                                    Browser & Support Details FAQ
-                                </h2>
-                                <p className="text-sm text-background-dark/70 font-medium">
-                                    Quick answers to common questions about device detection, user-agent data, and privacy protection.
+                    {/* Unified 6-Route Tool Hub (replaces duplicate 6-card grids) */}
+                    <section className="pt-8 border-t-2 border-background-dark/10">
+                        <FadeIn delay={0.2}>
+                            <div className="mb-6">
+                                <p className="text-3xs font-black uppercase tracking-ui-wider text-primary mb-2">Specialized Tools</p>
+                                <h2 className="font-serif text-fluid-h2 font-bold text-background-dark">Explore Diagnostics</h2>
+                                <p className="mt-2 max-w-2xl text-sm text-background-dark/65 font-medium leading-relaxed">
+                                    Open focused diagnostic pages for IP lookups, browser engines, display scaling, loaded latency, privacy documentation, or FAQs.
                                 </p>
                             </div>
-                            <div className="max-w-3xl mx-auto space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-1">
                                 {[
                                     {
-                                        q: "Why do support technicians need my browser version and operating system?",
-                                        a: "Web browsers render HTML, CSS, and JavaScript differently across operating systems. A bug affecting Safari on macOS might look completely fine in Google Chrome on Windows. Knowing your exact browser version and OS allows developers to reproduce the issue in an identical environment."
+                                        href: "/bufferbloat",
+                                        title: "Bufferbloat Test",
+                                        desc: "Measure loaded download and upload ping spikes to diagnose lag in gaming and calls.",
+                                        cta: "Run Diagnostic",
+                                        icon: Signal,
+                                        cardClass: "bg-background-dark border-background-dark",
+                                        iconWrapClass: "bg-primary",
+                                        iconClass: "text-background-dark",
+                                        titleClass: "text-white",
+                                        descClass: "text-accent",
+                                        ctaClass: "text-primary",
                                     },
                                     {
-                                        q: "How does MySupportInfo detect my graphics card (GPU) and hardware specs?",
-                                        a: "MySupportInfo utilizes standard browser APIs: the WebGL debug renderer info extension queries your graphics hardware string, the Device Memory API provides memory estimations, and navigator.hardwareConcurrency detects available CPU thread cores."
+                                        href: "/what-is-my-ip",
+                                        title: "What Is My IP Address",
+                                        desc: "Check public IPv4 & IPv6 addresses, ISP routing, approximate city, and WebRTC leaks.",
+                                        cta: "Inspect IP & WebRTC",
+                                        icon: Wifi,
+                                        cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-secondary/40",
+                                        iconWrapClass: "bg-secondary/15 dark:bg-secondary/25",
+                                        iconClass: "text-secondary dark:text-emerald-300",
+                                        titleClass: "text-background-dark dark:text-white",
+                                        descClass: "text-background-dark/70 dark:text-white/75",
+                                        ctaClass: "text-[#006B37] dark:text-emerald-300",
                                     },
                                     {
-                                        q: "What is a WebRTC leak and how does it compromise my VPN?",
-                                        a: "WebRTC allows video calls and peer-to-peer data in browsers. Even when using a VPN, WebRTC can communicate with STUN servers and expose your real public or local network IP address. MySupportInfo scans your browser's active ICE candidates to ensure no leaks exist."
+                                        href: "/what-is-my-browser",
+                                        title: "What Is My Browser",
+                                        desc: "Detect exact browser version, Blink/Gecko/WebKit engine, Client Hints, and User-Agent.",
+                                        cta: "Check Browser Specs",
+                                        icon: Globe,
+                                        cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-primary/40",
+                                        iconWrapClass: "bg-primary/15 dark:bg-primary/25",
+                                        iconClass: "text-[#B84617] dark:text-primary",
+                                        titleClass: "text-background-dark dark:text-white",
+                                        descClass: "text-background-dark/70 dark:text-white/75",
+                                        ctaClass: "text-[#B84617] dark:text-primary",
                                     },
                                     {
-                                        q: "Is my personal data stored or logged when using this tool?",
-                                        a: "Never. All detection occurs client-side in your local browser sandbox. We do not store IP addresses in databases, use no tracking cookies, and never build user profiles. All data disappears the moment you close your browser tab."
+                                        href: "/what-is-my-screen-resolution",
+                                        title: "What Is My Screen Resolution",
+                                        desc: "Measure display size, live CSS viewport pixels on zoom, DPR scaling, and breakpoints.",
+                                        cta: "Measure Display",
+                                        icon: Monitor,
+                                        cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-accent/40",
+                                        iconWrapClass: "bg-background-dark/10 dark:bg-white/10",
+                                        iconClass: "text-background-dark dark:text-accent",
+                                        titleClass: "text-background-dark dark:text-white",
+                                        descClass: "text-background-dark/70 dark:text-white/75",
+                                        ctaClass: "text-background-dark dark:text-accent",
                                     },
                                     {
-                                        q: "How can I test my network for gaming and video call lag?",
-                                        a: "Head to our Bufferbloat Test tool (/bufferbloat). It simulates real download and upload loads to measure whether your router buffers packets and spikes latency, assigning you an official Quality of Experience grade from A to F."
-                                    }
-                                ].map((item, idx) => (
-                                    <div
-                                        key={item.q}
-                                        className="bg-white border-2 border-background-dark rounded-2xl overflow-hidden shadow-block-sm transition-all duration-200"
+                                        href: "/privacy",
+                                        title: "Privacy Centre",
+                                        desc: "Review our client-side architecture, session storage TTL, and GDPR/CCPA practices.",
+                                        cta: "View Policy",
+                                        icon: EyeOff,
+                                        cardClass: "bg-accent dark:bg-[#062b24] border-background-dark dark:border-accent/40",
+                                        iconWrapClass: "bg-[#FAF6F0] dark:bg-accent/20 border border-background-dark/15 dark:border-accent/35",
+                                        iconClass: "text-[#00473E] dark:text-accent",
+                                        titleClass: "text-background-dark dark:text-white",
+                                        descClass: "text-background-dark/80 dark:text-white/80",
+                                        ctaClass: "text-background-dark dark:text-accent",
+                                    },
+                                    {
+                                        href: "/faq",
+                                        title: "Knowledge Base",
+                                        desc: "Answers on network testing, hardware estimation limits, and support sharing workflows.",
+                                        cta: "Read FAQ",
+                                        icon: HelpCircle,
+                                        cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-secondary/40",
+                                        iconWrapClass: "bg-secondary/15 dark:bg-secondary/25",
+                                        iconClass: "text-[#006B37] dark:text-emerald-300",
+                                        titleClass: "text-background-dark dark:text-white",
+                                        descClass: "text-background-dark/70 dark:text-white/75",
+                                        ctaClass: "text-background-dark dark:text-emerald-300",
+                                    },
+                                ].map((item) => (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={`group relative overflow-hidden rounded-3xl border-2 shadow-block hover:scale-102 transition-all duration-300 ${item.cardClass}`}
                                     >
-                                        <button
-                                            id={`home-faq-btn-${idx}`}
-                                            onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                                            className="w-full p-5 text-left flex justify-between items-center gap-4 hover:bg-background/20 transition-colors cursor-pointer"
-                                            aria-expanded={openFaq === idx}
-                                            aria-controls={`home-faq-${idx}`}
-                                        >
-                                            <span className="font-extrabold text-background-dark text-base">{item.q}</span>
-                                            <span className={`material-symbols-outlined transition-transform duration-300 ease-out text-background-dark/60 flex-shrink-0 ml-2 ${openFaq === idx ? "rotate-180 text-primary" : ""}`}>
-                                                expand_more
-                                            </span>
-                                        </button>
-                                        <div
-                                            id={`home-faq-${idx}`}
-                                            role="region"
-                                            aria-labelledby={`home-faq-btn-${idx}`}
-                                            className={`grid transition-[grid-template-rows] duration-300 ease-out ${openFaq === idx ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
-                                        >
-                                            <div className="overflow-hidden">
-                                                <div className={`px-5 pb-5 pt-1 text-sm text-background-dark/75 leading-relaxed font-medium border-t border-background-dark/10 transition-opacity duration-200 ${openFaq === idx ? "opacity-100" : "opacity-0"}`}>
-                                                    {item.a}
+                                        <div className="p-8 flex flex-col justify-between min-h-card">
+                                            <div>
+                                                <div className={`size-12 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 ${item.iconWrapClass}`}>
+                                                    <item.icon size={22} className={item.iconClass} aria-hidden="true" />
                                                 </div>
+                                                <h3 className={`text-lg font-bold mb-2 ${item.titleClass}`}>{item.title}</h3>
+                                                <p className={`text-sm leading-relaxed ${item.descClass}`}>{item.desc}</p>
+                                            </div>
+                                            <div className={`flex items-center gap-1.5 font-bold uppercase tracking-widest text-3xs mt-6 ${item.ctaClass}`}>
+                                                <span>{item.cta}</span>
+                                                <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </FadeIn>
+                    </section>
+
+                    {/* Homepage FAQ Accordion */}
+                    <section className="pt-8 pb-10 border-t-2 border-background-dark/10">
+                        <div className="text-center max-w-2xl mx-auto mb-10">
+                            <h2 className="text-fluid-h2 font-extrabold text-background-dark font-serif mb-3">
+                                Browser & Support Details FAQ
+                            </h2>
+                            <p className="text-sm text-background-dark/70 font-medium">
+                                Quick answers to common questions about device detection, user-agent data, and privacy protection.
+                            </p>
+                        </div>
+                        <div className="max-w-3xl mx-auto space-y-3">
+                            {[
+                                {
+                                    q: "Why do support technicians need my browser version and operating system?",
+                                    a: "Web browsers render HTML, CSS, and JavaScript differently across operating systems. A bug affecting Safari on macOS might look completely fine in Google Chrome on Windows. Knowing your exact browser version and OS allows developers to reproduce the issue in an identical environment."
+                                },
+                                {
+                                    q: "How does MySupportInfo detect my graphics card (GPU) and hardware specs?",
+                                    a: "MySupportInfo utilizes standard browser APIs: the WebGL debug renderer info extension queries your graphics hardware string, the Device Memory API provides memory estimations, and navigator.hardwareConcurrency detects available CPU thread cores."
+                                },
+                                {
+                                    q: "What is a WebRTC leak and how does it compromise my VPN?",
+                                    a: "WebRTC allows video calls and peer-to-peer data in browsers. Even when using a VPN, WebRTC can communicate with STUN servers and expose your real public or local network IP address. MySupportInfo scans your browser's active ICE candidates to ensure no leaks exist."
+                                },
+                                {
+                                    q: "Is my personal data stored or logged when using this tool?",
+                                    a: "Never. All detection occurs client-side in your local browser sandbox. We do not store IP addresses in databases, use no tracking cookies, and never build user profiles. All data disappears the moment you close your browser tab."
+                                },
+                                {
+                                    q: "How can I test my network for gaming and video call lag?",
+                                    a: "Head to our Bufferbloat Test tool (/bufferbloat). It simulates real download and upload loads to measure whether your router buffers packets and spikes latency, assigning you an official Quality of Experience grade from A to F."
+                                }
+                            ].map((item, idx) => (
+                                <div
+                                    key={item.q}
+                                    className="bg-white border-2 border-background-dark rounded-2xl overflow-hidden shadow-block-sm transition-all duration-200"
+                                >
+                                    <button
+                                        id={`home-faq-btn-${idx}`}
+                                        onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                                        className="w-full p-5 text-left flex justify-between items-center gap-4 hover:bg-background/20 transition-colors cursor-pointer"
+                                        aria-expanded={openFaq === idx}
+                                        aria-controls={`home-faq-${idx}`}
+                                    >
+                                        <span className="font-extrabold text-background-dark text-base">{item.q}</span>
+                                        <span className={`material-symbols-outlined transition-transform duration-300 ease-out text-background-dark/60 flex-shrink-0 ml-2 ${openFaq === idx ? "rotate-180 text-primary" : ""}`}>
+                                            expand_more
+                                        </span>
+                                    </button>
+                                    <div
+                                        id={`home-faq-${idx}`}
+                                        role="region"
+                                        aria-labelledby={`home-faq-btn-${idx}`}
+                                        className={`grid transition-[grid-template-rows] duration-300 ease-out ${openFaq === idx ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                                    >
+                                        <div className="overflow-hidden">
+                                            <div className={`px-5 pb-5 pt-1 text-sm text-background-dark/75 leading-relaxed font-medium border-t border-background-dark/10 transition-opacity duration-200 ${openFaq === idx ? "opacity-100" : "opacity-0"}`}>
+                                                {item.a}
                                             </div>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        </section>
-
-                    </article>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
                 </div>
             </div>
 

@@ -72,46 +72,46 @@ export default function Footer() {
                     {/* Col 1: Brand & Core Mission (5 cols) */}
                     <div className="md:col-span-5 flex flex-col gap-3">
                         <Logo theme="dark" size="sm" />
-                        <p className="text-accent/75 text-xs sm:text-sm leading-relaxed max-w-sm font-medium">
+                        <p className="text-accent/85 text-xs sm:text-sm leading-relaxed max-w-sm font-medium">
                             One link to diagnose any device. Private, client-side browser intelligence and bufferbloat latency testing built for IT support, remote teams, and sysadmins.
                         </p>
-                        <p className="text-3xs text-accent/50 font-medium tracking-wide">
+                        <p className="text-3xs text-accent/80 font-medium tracking-wide">
                             100% in-browser processing &middot; Zero database logs &middot; Encrypted TLS
                         </p>
                     </div>
 
                     {/* Col 2: Navigation Links (3 cols) */}
-                    <div className="md:col-span-3 flex flex-col gap-2.5">
-                        <span className="text-3xs font-black uppercase text-primary tracking-widest">
+                    <div className="md:col-span-3 flex flex-col gap-2">
+                        <span className="text-3xs font-black uppercase text-primary tracking-widest mb-0.5">
                             Diagnostics &amp; Tools
                         </span>
-                        <nav aria-label="Footer diagnostics navigation" className="flex flex-col gap-1.5 text-xs font-semibold text-accent/75">
-                            <Link className="hover:text-primary transition-colors flex items-center justify-between w-fit gap-2" href="/what-is-my-browser">
+                        <nav aria-label="Footer diagnostics navigation" className="flex flex-col gap-1 text-xs font-semibold text-accent/85">
+                            <Link className="hover:text-primary transition-colors flex items-center w-fit gap-2 min-h-[24px] py-0.5" href="/what-is-my-browser">
                                 <span>What Is My Browser</span>
                             </Link>
-                            <Link className="hover:text-primary transition-colors flex items-center justify-between w-fit gap-2" href="/what-is-my-ip">
+                            <Link className="hover:text-primary transition-colors flex items-center w-fit gap-2 min-h-[24px] py-0.5" href="/what-is-my-ip">
                                 <span>What Is My IP Address</span>
                             </Link>
-                            <Link className="hover:text-primary transition-colors flex items-center justify-between w-fit gap-2" href="/what-is-my-screen-resolution">
+                            <Link className="hover:text-primary transition-colors flex items-center w-fit gap-2 min-h-[24px] py-0.5" href="/what-is-my-screen-resolution">
                                 <span>What Is My Screen Size</span>
                             </Link>
-                            <Link className="hover:text-primary transition-colors flex items-center gap-2 w-fit" href="/bufferbloat">
+                            <Link className="hover:text-primary transition-colors flex items-center gap-2 w-fit min-h-[24px] py-0.5" href="/bufferbloat">
                                 <span>Bufferbloat Test</span>
-                                <span className="text-4xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold uppercase leading-none">
+                                <span className="text-4xs px-1.5 py-0.5 rounded bg-primary text-background-dark font-extrabold uppercase leading-none">
                                     Latency
                                 </span>
                             </Link>
-                            <Link className="hover:text-primary transition-colors w-fit" href="/faq">
+                            <Link className="hover:text-primary transition-colors flex items-center w-fit min-h-[24px] py-0.5" href="/faq">
                                 Knowledge Base (FAQ)
                             </Link>
                             <a
                                 href="mailto:report@mysupportinfo.com?subject=Detection%20Error%20Report%20-%20MySupportInfo"
-                                className="hover:text-primary text-primary/90 transition-colors flex items-center gap-1.5 w-fit font-bold pt-0.5"
+                                className="hover:text-primary text-accent transition-colors flex items-center gap-1.5 w-fit font-bold min-h-[24px] py-0.5"
                             >
                                 <span>&#9888;</span>
                                 <span>Report Detection Error</span>
                             </a>
-                            <div className="flex items-center gap-2 pt-1 text-accent/50 text-3xs flex-wrap">
+                            <div className="flex items-center gap-2.5 pt-1 text-accent/80 text-3xs flex-wrap">
                                 <Link className="hover:text-accent transition-colors underline-offset-2 hover:underline" href="/privacy">
                                     Privacy
                                 </Link>
@@ -131,7 +131,7 @@ export default function Footer() {
                             <span className="text-3xs font-black uppercase text-primary tracking-widest">
                                 Active Environment
                             </span>
-                            <span className="text-4xs font-bold text-accent/50 uppercase tracking-widest font-mono">
+                            <span className="text-4xs font-bold text-accent/80 uppercase tracking-widest font-mono">
                                 In-Memory
                             </span>
                         </div>
@@ -139,15 +139,15 @@ export default function Footer() {
                         {/* Compact Glass Telemetry Card */}
                         <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-2 text-2xs font-mono backdrop-blur-sm shadow-sm">
                             <div className="flex items-center justify-between">
-                                <span className="text-accent/50 font-sans font-medium text-3xs">Host OS</span>
+                                <span className="text-accent/80 font-sans font-medium text-3xs">Host OS</span>
                                 <span className="text-white font-bold truncate max-w-[180px]">{clientInfo.os}</span>
                             </div>
                             <div className="flex items-center justify-between border-t border-white/5 pt-1.5">
-                                <span className="text-accent/50 font-sans font-medium text-3xs">Browser</span>
+                                <span className="text-accent/80 font-sans font-medium text-3xs">Browser</span>
                                 <span className="text-white font-bold truncate max-w-[180px]">{clientInfo.browser}</span>
                             </div>
                         </div>
-                        <p className="text-4xs text-accent/40 leading-normal">
+                        <p className="text-4xs text-accent/75 leading-normal">
                             Telemetry evaluated in browser memory. Disappears when tab closes.
                         </p>
                     </div>
@@ -157,7 +157,7 @@ export default function Footer() {
                 {/* Bottom Row: Compact AI Prompt Strip, Theme Selector & Copyright */}
                 <div className="pt-5 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
                     <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="text-3xs font-bold text-accent/60 uppercase tracking-wider">
+                        <span className="text-3xs font-bold text-accent/80 uppercase tracking-wider">
                             Ask AI:
                         </span>
                         <AskAI variant="dark" compact={true} />
@@ -165,10 +165,10 @@ export default function Footer() {
 
                     <div className="flex items-center gap-4">
                         <ThemeToggle compact variant="dark" />
-                        <div className="flex items-center gap-2 text-3xs font-bold text-accent/40 uppercase tracking-wider">
+                        <div className="flex items-center gap-2 text-3xs font-bold text-accent/80 uppercase tracking-wider">
                             <span>&copy; {new Date().getFullYear()} MySupportInfo.com</span>
                             <span>&middot;</span>
-                            <span className="normal-case font-medium text-accent/35">Private System Diagnostics</span>
+                            <span className="normal-case font-medium text-accent/80">Private System Diagnostics</span>
                         </div>
                     </div>
                 </div>
