@@ -91,7 +91,7 @@ export default function BufferbloatLayout({ children }: { children: React.ReactN
                 "@type": "ListItem",
                 position: 1,
                 name: "Home",
-                item: "https://mysupportinfo.com/",
+                item: "https://mysupportinfo.com",
               },
               {
                 "@type": "ListItem",

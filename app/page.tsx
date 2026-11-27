@@ -1173,13 +1173,13 @@ export default function Home() {
                                 "@type": "HowToStep",
                                 "name": "Review System Diagnostics",
                                 "text": "Your browser version, operating system, public IP address, screen resolution, GPU, RAM, and WebRTC privacy status load instantly in under 3 seconds.",
-                                "url": "https://mysupportinfo.com/"
+                                "url": "https://mysupportinfo.com"
                             },
                             {
                                 "@type": "HowToStep",
                                 "name": "Export or Share Diagnostic Data",
                                 "text": "Click 'Copy All Info' to copy raw text, 'Screenshot Report' to download a clean visual PNG card, or 'Export CSV' for IT ticketing systems.",
-                                "url": "https://mysupportinfo.com/"
+                                "url": "https://mysupportinfo.com"
                             }
                         ]
                     })
@@ -1520,59 +1520,106 @@ export default function Home() {
                             <p className="mt-2 max-w-2xl text-sm text-background-dark/65 font-medium leading-relaxed">Run deeper network tests, review privacy details, or learn how each device metric is detected.</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-1">
-                            <Link href="/bufferbloat" className="group relative overflow-hidden rounded-3xl bg-background-dark border-2 border-background-dark shadow-block hover:scale-102 transition-all duration-300">
-                                <div className="p-8 flex flex-col justify-between min-h-card">
-                                    <div>
-                                        <div className="size-12 rounded-2xl bg-primary flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
-                                            <Signal size={22} className="text-background-dark" />
+                            {[
+                                {
+                                    href: "/bufferbloat",
+                                    title: "Bufferbloat Test",
+                                    desc: "Analyse network latency under load to detect lag in gaming, calls, and streaming.",
+                                    cta: "Run Diagnostic",
+                                    icon: Signal,
+                                    cardClass: "bg-background-dark border-background-dark",
+                                    iconWrapClass: "bg-primary",
+                                    iconClass: "text-background-dark",
+                                    titleClass: "text-white",
+                                    descClass: "text-accent",
+                                    ctaClass: "text-primary",
+                                },
+                                {
+                                    href: "/what-is-my-ip",
+                                    title: "What Is My IP Address",
+                                    desc: "Check public IPv4 & IPv6 addresses, ISP routing, approximate city, and WebRTC VPN leaks.",
+                                    cta: "Inspect IP & WebRTC",
+                                    icon: Wifi,
+                                    cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-secondary/40",
+                                    iconWrapClass: "bg-secondary/15 dark:bg-secondary/25",
+                                    iconClass: "text-secondary",
+                                    titleClass: "text-background-dark dark:text-white",
+                                    descClass: "text-background-dark/70 dark:text-white/75",
+                                    ctaClass: "text-secondary",
+                                },
+                                {
+                                    href: "/what-is-my-browser",
+                                    title: "What Is My Browser",
+                                    desc: "Detect exact browser version, Blink/Gecko/WebKit engine, Client Hints, and full User-Agent.",
+                                    cta: "Check Browser Specs",
+                                    icon: Globe,
+                                    cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-primary/40",
+                                    iconWrapClass: "bg-primary/15 dark:bg-primary/25",
+                                    iconClass: "text-primary",
+                                    titleClass: "text-background-dark dark:text-white",
+                                    descClass: "text-background-dark/70 dark:text-white/75",
+                                    ctaClass: "text-primary",
+                                },
+                                {
+                                    href: "/what-is-my-screen-resolution",
+                                    title: "What Is My Screen Resolution",
+                                    desc: "Measure display size, CSS viewport pixels on zoom, Device Pixel Ratio (DPR), and breakpoints.",
+                                    cta: "Measure Display",
+                                    icon: Monitor,
+                                    cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-accent/40",
+                                    iconWrapClass: "bg-background-dark/10 dark:bg-white/10",
+                                    iconClass: "text-background-dark dark:text-accent",
+                                    titleClass: "text-background-dark dark:text-white",
+                                    descClass: "text-background-dark/70 dark:text-white/75",
+                                    ctaClass: "text-background-dark dark:text-accent",
+                                },
+                                {
+                                    href: "/privacy",
+                                    title: "Privacy Centre",
+                                    desc: "Review how we handle your data locally — zero tracking, GDPR & CCPA compliant.",
+                                    cta: "View Policy",
+                                    icon: EyeOff,
+                                    cardClass: "bg-accent dark:bg-[#062b24] border-background-dark dark:border-accent/40",
+                                    iconWrapClass: "bg-background-dark dark:bg-accent/20",
+                                    iconClass: "text-accent",
+                                    titleClass: "text-background-dark dark:text-white",
+                                    descClass: "text-background-dark/80 dark:text-accent/80",
+                                    ctaClass: "text-background-dark dark:text-accent",
+                                },
+                                {
+                                    href: "/faq",
+                                    title: "Knowledge Base",
+                                    desc: "Common questions about network testing, privacy, and what each diagnostic metric means.",
+                                    cta: "Read FAQ",
+                                    icon: HelpCircle,
+                                    cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-secondary/40",
+                                    iconWrapClass: "bg-secondary/15 dark:bg-secondary/25",
+                                    iconClass: "text-secondary",
+                                    titleClass: "text-background-dark dark:text-white",
+                                    descClass: "text-background-dark/70 dark:text-white/75",
+                                    ctaClass: "text-background-dark dark:text-secondary",
+                                },
+                            ].map((item) => (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={`group relative overflow-hidden rounded-3xl border-2 shadow-block hover:scale-102 transition-all duration-300 ${item.cardClass}`}
+                                >
+                                    <div className="p-8 flex flex-col justify-between min-h-card">
+                                        <div>
+                                            <div className={`size-12 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 ${item.iconWrapClass}`}>
+                                                <item.icon size={22} className={item.iconClass} aria-hidden="true" />
+                                            </div>
+                                            <h3 className={`text-lg font-bold mb-2 ${item.titleClass}`}>{item.title}</h3>
+                                            <p className={`text-sm leading-relaxed ${item.descClass}`}>{item.desc}</p>
                                         </div>
-                                        <h3 className="text-lg font-bold text-white mb-2">Bufferbloat Test</h3>
-                                        <p className="text-accent text-sm leading-relaxed">Analyse network latency under load to detect lag in gaming, calls, and streaming.</p>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 text-primary font-bold uppercase tracking-widest text-3xs mt-6">
-                                        <span>Run Diagnostic</span>
-                                        <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                                    </div>
-                                </div>
-                            </Link>
-
-                            <Link
-                                href="/privacy"
-                                className="group relative overflow-hidden rounded-3xl bg-accent dark:bg-[#062b24] border-2 border-background-dark dark:border-accent/40 shadow-block hover:scale-102 transition-all duration-300"
-                            >
-                                <div className="p-8 flex flex-col justify-between min-h-card">
-                                    <div>
-                                        <div className="size-12 rounded-2xl bg-background-dark dark:bg-accent/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
-                                            <EyeOff size={22} className="text-accent" />
+                                        <div className={`flex items-center gap-1.5 font-bold uppercase tracking-widest text-3xs mt-6 ${item.ctaClass}`}>
+                                            <span>{item.cta}</span>
+                                            <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                                         </div>
-                                        <h3 className="text-lg font-bold text-background-dark dark:text-white mb-2">Privacy Centre</h3>
-                                        <p className="text-background-dark/80 dark:text-accent/80 text-sm leading-relaxed">Review how we handle your data locally — zero tracking, GDPR compliant.</p>
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-background-dark dark:text-accent font-bold uppercase tracking-widest text-3xs mt-6">
-                                        <span>View Policy</span>
-                                        <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                                    </div>
-                                </div>
-                            </Link>
-
-                            <Link
-                                href="/faq"
-                                className="group relative overflow-hidden rounded-3xl bg-white dark:bg-[#062b24] border-2 border-background-dark dark:border-secondary/40 shadow-block hover:scale-102 transition-all duration-300"
-                            >
-                                <div className="p-8 flex flex-col justify-between min-h-card">
-                                    <div>
-                                        <div className="size-12 rounded-2xl bg-secondary/15 dark:bg-secondary/25 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
-                                            <HelpCircle size={22} className="text-secondary" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-background-dark dark:text-white mb-2">Knowledge Base</h3>
-                                        <p className="text-background-dark/70 dark:text-white/75 text-sm leading-relaxed">Common questions about network testing, privacy, and what each metric means.</p>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 text-background-dark dark:text-secondary font-bold uppercase tracking-widest text-3xs mt-6">
-                                        <span>Read FAQ</span>
-                                        <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                                    </div>
-                                </div>
-                            </Link>
+                                </Link>
+                            ))}
                         </div>
                     </FadeIn>
 

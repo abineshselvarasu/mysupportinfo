@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-    Globe, Terminal, Copy, Check,
+    Terminal, Copy, Check,
     RefreshCw, CheckCircle, Monitor, Wifi
 } from "lucide-react";
+import DiagnosticFaqSection, { type DiagnosticFaqItem } from "@/components/ui/DiagnosticFaqSection";
 
 interface BrowserDetails {
     browserName: string;
@@ -18,10 +19,9 @@ interface BrowserDetails {
     language: string;
 }
 
-export default function WhatIsMyBrowserClient() {
+export default function WhatIsMyBrowserClient({ faqs }: { faqs: DiagnosticFaqItem[] }) {
     const [details, setDetails] = useState<BrowserDetails | null>(null);
     const [copiedUA, setCopiedUA] = useState(false);
-    const [openFaq, setOpenFaq] = useState<number | null>(null);
 
     useEffect(() => {
         const ua = navigator.userAgent;
@@ -88,21 +88,20 @@ export default function WhatIsMyBrowserClient() {
                 <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-3xs font-extrabold uppercase tracking-widest text-background-dark/50">
                     <Link href="/" className="hover:text-primary transition-colors">Home</Link>
                     <span>/</span>
-                    <span className="text-primary font-bold">What Is My Browser</span>
+                    <span className="text-primary font-bold" aria-current="page">What Is My Browser</span>
                 </nav>
             </div>
 
             {/* Hero Header */}
             <div className="text-center px-6 pt-8 pb-10 max-w-3xl mx-auto">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-3xs font-extrabold uppercase tracking-wider mb-4">
-                    <Globe size={13} />
-                    <span>Instant Client-Side Detection</span>
-                </div>
+                <p className="text-xs font-black uppercase tracking-widest text-primary mb-3">
+                    Instant Client-Side Browser &amp; User-Agent Check
+                </p>
                 <h1 className="font-serif text-fluid-h1 font-bold text-background-dark leading-tight mb-4">
                     What Is My Browser?
                 </h1>
                 <p className="text-fluid-lead text-background-dark/70 font-medium leading-relaxed">
-                    Check your web browser name, version, rendering engine, and user agent string. All detected locally in your browser with zero data logging.
+                    Check your exact web browser name, version, rendering engine, cookie status, and full User-Agent string locally in your browser with zero server tracking.
                 </p>
             </div>
 
@@ -123,18 +122,25 @@ export default function WhatIsMyBrowserClient() {
                                 )}
                             </div>
                             <p className="text-xs sm:text-sm text-background-dark/70 mt-2 font-medium">
-                                Running on <span className="font-bold text-background-dark">{details?.osName}</span> with <span className="font-bold text-background-dark">{details?.engine}</span> engine.
+                                {details ? (
+                                    <>
+                                        Running on <span className="font-bold text-background-dark">{details.osName}</span> with{" "}
+                                        <span className="font-bold text-background-dark">{details.engine}</span> rendering engine.
+                                    </>
+                                ) : (
+                                    <span>Detecting operating system and browser rendering engine…</span>
+                                )}
                             </p>
                         </div>
 
                         <div className="flex flex-wrap gap-2.5">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/15 text-secondary border border-secondary/25 text-3xs font-extrabold uppercase tracking-wider">
-                                <CheckCircle size={13} />
+                                <CheckCircle size={13} aria-hidden="true" />
                                 JavaScript Enabled
                             </span>
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/15 text-secondary border border-secondary/25 text-3xs font-extrabold uppercase tracking-wider">
-                                <CheckCircle size={13} />
-                                Cookies {details?.cookiesEnabled ? "Enabled" : "Disabled"}
+                                <CheckCircle size={13} aria-hidden="true" />
+                                Cookies {details ? (details.cookiesEnabled ? "Enabled" : "Disabled") : "Checking"}
                             </span>
                         </div>
                     </div>
@@ -143,19 +149,19 @@ export default function WhatIsMyBrowserClient() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6 border-b-2 border-background-dark/10">
                         <div className="p-4 rounded-2xl bg-background-dark/5 border border-background-dark/10">
                             <span className="text-4xs uppercase tracking-wider font-bold text-background-dark/60 block mb-1">Rendering Engine</span>
-                            <span className="font-bold text-sm text-background-dark">{details?.engine || "Detecting…"}</span>
+                            <span className="font-bold text-sm text-background-dark">{details?.engine || "—"}</span>
                         </div>
                         <div className="p-4 rounded-2xl bg-background-dark/5 border border-background-dark/10">
                             <span className="text-4xs uppercase tracking-wider font-bold text-background-dark/60 block mb-1">Host Platform</span>
-                            <span className="font-bold text-sm text-background-dark">{details?.osName || "Detecting…"}</span>
+                            <span className="font-bold text-sm text-background-dark">{details?.osName || "—"}</span>
                         </div>
                         <div className="p-4 rounded-2xl bg-background-dark/5 border border-background-dark/10">
                             <span className="text-4xs uppercase tracking-wider font-bold text-background-dark/60 block mb-1">Language</span>
                             <span className="font-bold text-sm text-background-dark font-mono">{details?.language || "en"}</span>
                         </div>
                         <div className="p-4 rounded-2xl bg-background-dark/5 border border-background-dark/10">
-                            <span className="text-4xs uppercase tracking-wider font-bold text-background-dark/60 block mb-1">Update Status</span>
-                            <span className="font-bold text-sm text-secondary">Active</span>
+                            <span className="text-4xs uppercase tracking-wider font-bold text-background-dark/60 block mb-1">JavaScript Status</span>
+                            <span className="font-bold text-sm text-secondary">{details ? "Active" : "Checking"}</span>
                         </div>
                     </div>
 
@@ -163,13 +169,14 @@ export default function WhatIsMyBrowserClient() {
                     <div className="pt-6">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-3xs font-extrabold uppercase tracking-wider text-background-dark/70 flex items-center gap-1.5">
-                                <Terminal size={13} />
+                                <Terminal size={13} aria-hidden="true" />
                                 Full User-Agent String
                             </span>
                             <button
                                 onClick={copyUA}
+                                disabled={!details}
                                 aria-label={copiedUA ? "User-agent string copied to clipboard" : "Copy full user-agent string to clipboard"}
-                                className="flex items-center gap-1.5 text-3xs font-black uppercase tracking-wider px-3 py-1 rounded-lg bg-background-dark text-white hover:bg-foreground transition-all cursor-pointer"
+                                className="flex items-center gap-1.5 text-3xs font-black uppercase tracking-wider px-3 py-1 rounded-lg bg-background-dark text-white hover:bg-foreground transition-all cursor-pointer disabled:opacity-50"
                             >
                                 {copiedUA ? <Check size={11} strokeWidth={3} aria-hidden="true" /> : <Copy size={11} aria-hidden="true" />}
                                 <span>{copiedUA ? "Copied" : "Copy UA"}</span>
@@ -190,13 +197,13 @@ export default function WhatIsMyBrowserClient() {
                 {/* Guide 1 */}
                 <section className="bg-white border-2 border-background-dark rounded-3xl p-8 shadow-block-sm space-y-4">
                     <h2 className="font-serif text-fluid-h2 font-bold text-background-dark">
-                        How Browser Detection Works
+                        How Browser Detection &amp; Client Hints Work
                     </h2>
                     <p className="text-fluid-body text-background-dark/80 leading-relaxed font-medium">
-                        Every time you visit a website, your web browser transmits a small identification string known as the <strong>User-Agent (UA)</strong>. This string informs the web server which rendering engine and operating system you are running, enabling the server to deliver compatible HTML, CSS stylesheets, and modern media assets.
+                        Every time you visit a website, your browser transmits an identification token called the <strong>User-Agent (UA)</strong> string. This metadata lets web applications determine which HTML5 features, JavaScript APIs, video codecs, and CSS layout engines your software supports.
                     </p>
                     <p className="text-fluid-body text-background-dark/80 leading-relaxed font-medium">
-                        Modern web browsers (including Google Chrome, Microsoft Edge, and Brave) also expose <strong>User-Agent Client Hints (UA-CH)</strong>. Client hints provide structured, privacy-preserving headers that prevent third-party advertisers from tracking your device via browser fingerprinting.
+                        Modern Chromium browsers (Chrome, Microsoft Edge, Brave, Opera) also implement <strong>User-Agent Client Hints (UA-CH)</strong> alongside frozen User-Agent strings. Because frozen UA strings mask minor version builds and exact CPU architecture (`0.0.0`), developers and IT engineers check both strings when diagnosing OS-specific regressions or rendering glitches.
                     </p>
                 </section>
 
@@ -213,7 +220,7 @@ export default function WhatIsMyBrowserClient() {
                                 </span>
                                 <h3 className="font-bold text-lg text-background-dark mb-2">Chromium Family</h3>
                                 <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
-                                    Powers Chrome, Microsoft Edge, Brave, Opera, and Vivaldi. Built by Google and the open-source Chromium community.
+                                    Powers Google Chrome, Microsoft Edge, Brave, Opera, and Vivaldi. Paired with the V8 JavaScript engine for fast WebAssembly and modern CSS Grid execution.
                                 </p>
                             </div>
                         </div>
@@ -225,7 +232,7 @@ export default function WhatIsMyBrowserClient() {
                                 </span>
                                 <h3 className="font-bold text-lg text-background-dark mb-2">Mozilla Firefox</h3>
                                 <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
-                                    Independent engine developed by Mozilla. Emphasizes tracking protection, standards compliance, and web decentralization.
+                                    Independent open-source engine developed by Mozilla. Emphasizes Enhanced Tracking Protection, Total Cookie Protection, and strict web standards compliance.
                                 </p>
                             </div>
                         </div>
@@ -237,69 +244,53 @@ export default function WhatIsMyBrowserClient() {
                                 </span>
                                 <h3 className="font-bold text-lg text-background-dark mb-2">Apple Safari</h3>
                                 <p className="text-xs text-background-dark/70 leading-relaxed font-medium">
-                                    Powers Safari on macOS, iOS, and iPadOS. Highly optimized for Apple Silicon efficiency, battery life, and color gamut.
+                                    Powers Safari across macOS, iOS, and iPadOS. Highly tuned for Apple Silicon battery efficiency, Intelligent Tracking Prevention (ITP), and P3 wide color gamut.
                                 </p>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                {/* FAQ Accordion */}
-                <section className="space-y-4">
+                {/* Troubleshooting Checklist for Support Tickets */}
+                <section className="bg-white border-2 border-background-dark rounded-3xl p-8 shadow-block-sm space-y-4">
                     <h2 className="font-serif text-fluid-h2 font-bold text-background-dark">
-                        Frequently Asked Questions
+                        Why Support Teams Request Your Browser Version &amp; Cookies Status
                     </h2>
-                    <div className="space-y-3">
-                        {[
-                            {
-                                q: "How do I check my browser version manually?",
-                                a: "In Chrome, Edge, and Brave: click the 3-dot menu in the top-right corner, select 'Help', and choose 'About [Browser]'. In Safari on Mac, click 'Safari' in the top menu bar and select 'About Safari'. In Firefox, click the hamburger menu and go to 'Help' > 'About Firefox'."
-                            },
-                            {
-                                q: "Why do tech support teams ask for my browser version?",
-                                a: "Different browser versions support different CSS standards, JavaScript APIs, and security protocols. If a web application encounters a layout glitch or payment failure, knowing your exact browser version allows developers to recreate the environment and deploy a patch."
-                            },
-                            {
-                                q: "Does MySupportInfo store or log my browser data?",
-                                a: "No. MySupportInfo operates entirely in client-side JavaScript. We do not store your user agent, IP address, or device specifications on any server database."
-                            }
-                        ].map((item, idx) => (
-                            <div key={idx} className="bg-white border-2 border-background-dark rounded-2xl overflow-hidden shadow-block-sm">
-                                <button
-                                    onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                                    className="w-full p-5 text-left flex justify-between items-center gap-4 hover:bg-background/20 transition-colors cursor-pointer"
-                                >
-                                    <span className="font-bold text-background-dark text-base">{item.q}</span>
-                                    <span className={`material-symbols-outlined text-background-dark/60 transition-transform duration-200 ${openFaq === idx ? "rotate-180 text-primary" : ""}`}>
-                                        expand_more
-                                    </span>
-                                </button>
-                                {openFaq === idx && (
-                                    <div className="px-5 pb-5 pt-1 text-sm text-background-dark/75 leading-relaxed font-medium border-t border-background-dark/10">
-                                        {item.a}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                    <ul className="space-y-3 text-sm text-background-dark/80 font-medium leading-relaxed">
+                        <li className="flex items-start gap-2.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-2 flex-shrink-0" />
+                            <span><strong>Outdated TLS / Security Certificates:</strong> Legacy browsers more than 2 years behind often fail TLS 1.3 handshakes with banking, SaaS, and checkout APIs.</span>
+                        </li>
+                        <li className="flex items-start gap-2.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-2 flex-shrink-0" />
+                            <span><strong>Session Cookie &amp; Login Failures:</strong> If cookies are blocked globally or stripped by aggressive privacy add-ons, single sign-on (SSO / OAuth) loops repeatedly.</span>
+                        </li>
+                        <li className="flex items-start gap-2.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-2 flex-shrink-0" />
+                            <span><strong>Engine-Specific Layout Bugs:</strong> A flexbox, sticky scroll, or WebGL canvas bug in Apple WebKit may work properly in Blink or Gecko—reproducing the exact engine cuts support resolution time in half.</span>
+                        </li>
+                    </ul>
                 </section>
+
+                {/* SSR-Complete Accessible FAQ Accordion */}
+                <DiagnosticFaqSection items={faqs} />
 
                 {/* Related Diagnostics Hub */}
                 <section className="pt-8 border-t-2 border-background-dark/10">
                     <h3 className="text-3xs font-extrabold uppercase tracking-widest text-primary mb-4">Explore More Diagnostics</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <Link href="/what-is-my-ip" className="p-5 rounded-2xl bg-white border-2 border-background-dark shadow-block-sm hover:translate-x-px hover:translate-y-px transition-all">
-                            <Wifi size={18} className="text-secondary mb-2" />
+                            <Wifi size={18} className="text-secondary mb-2" aria-hidden="true" />
                             <div className="font-bold text-sm text-background-dark">What Is My IP</div>
                             <p className="text-3xs text-background-dark/60 mt-1">Check public IPv4, IPv6 &amp; ISP</p>
                         </Link>
                         <Link href="/what-is-my-screen-resolution" className="p-5 rounded-2xl bg-white border-2 border-background-dark shadow-block-sm hover:translate-x-px hover:translate-y-px transition-all">
-                            <Monitor size={18} className="text-primary mb-2" />
+                            <Monitor size={18} className="text-primary mb-2" aria-hidden="true" />
                             <div className="font-bold text-sm text-background-dark">Screen Resolution</div>
                             <p className="text-3xs text-background-dark/60 mt-1">Hardware &amp; viewport dimensions</p>
                         </Link>
                         <Link href="/bufferbloat" className="p-5 rounded-2xl bg-white border-2 border-background-dark shadow-block-sm hover:translate-x-px hover:translate-y-px transition-all">
-                            <RefreshCw size={18} className="text-background-dark mb-2" />
+                            <RefreshCw size={18} className="text-background-dark mb-2" aria-hidden="true" />
                             <div className="font-bold text-sm text-background-dark">Bufferbloat Test</div>
                             <p className="text-3xs text-background-dark/60 mt-1">Test gaming &amp; video latency</p>
                         </Link>

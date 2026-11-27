@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import WhatIsMyScreenResolutionClient from "./WhatIsMyScreenResolutionClient";
+import type { DiagnosticFaqItem } from "@/components/ui/DiagnosticFaqSection";
+import { buildToolJsonLd } from "@/lib/seo-schema";
 
 export const metadata: Metadata = {
     title: "What Is My Screen Resolution? Viewport, DPR & Aspect Ratio",
-    description: "Check your screen resolution, browser viewport size, device pixel ratio (DPR), and color depth live in your browser. Free display checker.",
+    description:
+        "Check your physical screen resolution, live CSS browser viewport size, device pixel ratio (DPR), responsive breakpoint, and color depth live in your browser.",
     keywords: [
         "what is my screen resolution",
         "check screen size",
@@ -12,57 +15,69 @@ export const metadata: Metadata = {
         "device pixel ratio",
         "DPR checker",
         "color depth tester",
-        "display aspect ratio"
+        "display aspect ratio",
+        "css viewport size",
     ],
     alternates: {
         canonical: "/what-is-my-screen-resolution",
     },
     openGraph: {
         title: "What Is My Screen Resolution? Viewport, DPR & Aspect Ratio",
-        description: "Check your screen resolution, browser viewport size, and device pixel ratio live in your browser.",
+        description:
+            "Check your screen resolution, browser viewport size, responsive breakpoint, and device pixel ratio live in your browser.",
         url: "/what-is-my-screen-resolution",
     },
 };
 
+const screenFaqs: DiagnosticFaqItem[] = [
+    {
+        q: "What is the difference between screen resolution and browser viewport?",
+        a: "Screen resolution is the total pixel grid reported by your monitor hardware (for example, 1920x1080 or 3840x2160 scaled by OS DPI). Browser viewport size is the inner CSS pixel area inside your active browser window excluding OS taskbars, tabs, bookmarks bars, and scrollbars.",
+    },
+    {
+        q: "What is Device Pixel Ratio (DPR)?",
+        a: "Device Pixel Ratio (DPR) is the ratio between physical hardware pixels on your display panel and logical CSS pixels used by web layouts. On Retina and 4K monitors configured at 200% scaling (DPR 2.0), a 2x2 grid of 4 physical sub-pixels renders every 1x1 logical CSS pixel for razor-sharp typography.",
+    },
+    {
+        q: "What is the most common screen resolution and viewport in 2026?",
+        a: "1920x1080 (Full HD 16:9) remains the top desktop resolution globally, followed by 2560x1440 (QHD) and 1512x982 logical macOS Retina laptops. On mobile devices, logical viewports between 390x844 and 412x915 CSS pixels cover the majority of modern smartphones.",
+    },
+    {
+        q: "How do I change my screen resolution on Windows or macOS?",
+        a: "On Windows 11, right-click your desktop, choose Display settings, and adjust Scale or Display resolution. On macOS, open Apple Menu > System Settings > Displays and choose a scaled resolution preset such as Default or More Space.",
+    },
+    {
+        q: "Why does zooming my browser with Ctrl + / - change the reported viewport size?",
+        a: "Browser zoom enlarges each CSS pixel relative to physical hardware pixels. Increasing zoom from 100% to 125% or 150% reduces how many CSS pixels fit across the window, causing responsive CSS media queries (like md: or lg: breakpoints) to reflow automatically.",
+    },
+];
+
 export default function WhatIsMyScreenResolutionPage() {
+    const schemas = buildToolJsonLd({
+        name: "MySupportInfo — What Is My Screen Resolution & Viewport Checker",
+        description:
+            "Free in-browser screen resolution, live CSS viewport size, device pixel ratio (DPR), and aspect ratio diagnostic tool.",
+        path: "/what-is-my-screen-resolution",
+        breadcrumbLabel: "What Is My Screen Resolution",
+        featureList: [
+            "Real-time physical monitor resolution and aspect ratio calculation",
+            "Live CSS browser viewport width and height on resize and zoom",
+            "Device Pixel Ratio (DPR) and active CSS breakpoint detection",
+            "Display bit color depth and screen orientation API readout",
+        ],
+        faqs: screenFaqs,
+    });
+
     return (
         <>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify({
-                        "@context": "https://schema.org",
-                        "@type": "FAQPage",
-                        "mainEntity": [
-                            {
-                                "@type": "Question",
-                                "name": "What is the difference between screen resolution and browser viewport?",
-                                "acceptedAnswer": {
-                                    "@type": "Answer",
-                                    "text": "Screen resolution is the total physical pixel grid of your monitor hardware (e.g. 1920x1080 or 3840x2160). Viewport size is the inner pixel area of your browser window where web pages render, excluding toolbars, scrollbars, and bookmarks."
-                                }
-                            },
-                            {
-                                "@type": "Question",
-                                "name": "What is Device Pixel Ratio (DPR)?",
-                                "acceptedAnswer": {
-                                    "@type": "Answer",
-                                    "text": "Device Pixel Ratio (DPR) represents the ratio between physical hardware pixels and logical CSS pixels. On high-DPI displays (such as Apple Retina or 4K monitors), a DPR of 2x means that 4 physical pixels render each logical CSS pixel for crisp text rendering."
-                                }
-                            },
-                            {
-                                "@type": "Question",
-                                "name": "What is the most common screen resolution in 2026?",
-                                "acceptedAnswer": {
-                                    "@type": "Answer",
-                                    "text": "1920x1080 (Full HD) remains the most prevalent desktop resolution globally, followed by 2560x1440 (2K QHD). On mobile devices, 390x844 and 412x915 logical pixels account for the majority of smartphones."
-                                }
-                            }
-                        ]
-                    })
-                }}
-            />
-            <WhatIsMyScreenResolutionClient />
+            {schemas.map((schema, i) => (
+                <script
+                    key={i}
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+                />
+            ))}
+            <WhatIsMyScreenResolutionClient faqs={screenFaqs} />
         </>
     );
 }

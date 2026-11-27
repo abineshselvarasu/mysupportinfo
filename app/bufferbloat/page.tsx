@@ -108,7 +108,7 @@ export default function BufferbloatPage() {
 
     return (
         <div className="flex flex-col overflow-x-hidden text-foreground">
-            <main className="max-w-site mx-auto px-6 py-12 w-full">
+            <div className="max-w-site mx-auto px-6 py-12 w-full">
 
                 {/* Breadcrumb Navigation */}
                 <nav aria-label="Breadcrumb" className="flex items-center gap-2 mb-8">
@@ -641,7 +641,7 @@ export default function BufferbloatPage() {
 
                 </article>
 
-            </main>
+            </div>
         </div>
     );
 }

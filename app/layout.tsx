@@ -149,7 +149,7 @@ export default function RootLayout({
                 "IP Address Checker",
                 "Browser Privacy Checker"
               ],
-              url: "https://mysupportinfo.com/",
+              url: "https://mysupportinfo.com",
               description:
                 "What is my browser? Free IP, device info, and bufferbloat latency checker — instantly detect browser version, OS, IP address, GPU, RAM, screen size, WebRTC leaks, and network quality with zero tracking.",
             }),
@@ -183,7 +183,7 @@ export default function RootLayout({
               publisher: {
                 "@type": "Organization",
                 name: "MySupportInfo",
-                url: "https://mysupportinfo.com/",
+                url: "https://mysupportinfo.com",
               },
               creator: {
                 "@type": "Organization",
