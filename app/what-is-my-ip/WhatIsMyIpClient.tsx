@@ -4,16 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { ShieldCheck, ShieldAlert, Copy, Check, ChevronRight, ArrowRight } from "lucide-react";
 import DiagnosticFaqSection, { type DiagnosticFaqItem } from "@/components/ui/DiagnosticFaqSection";
-
-interface IpDetails {
-    ip: string;
-    ipv6: string;
-    ispName: string;
-    city: string;
-    country: string;
-    countryCode: string;
-    vpnDetected: boolean;
-}
+import { fetchNetworkDiagnostics, scanWebRtcLeak, type NetworkDiagnostics } from "@/lib/network-detect";
+import { copyToClipboard } from "@/lib/clipboard";
 
 const IP_RANGE_REFERENCE = [
     { cidr: "10.0.0.0/8", scope: "Private (RFC 1918)", usage: "Corporate LANs, cloud VPCs, enterprise VPN subnets" },
@@ -24,99 +16,32 @@ const IP_RANGE_REFERENCE = [
 ];
 
 export default function WhatIsMyIpClient({ faqs }: { faqs: DiagnosticFaqItem[] }) {
-    const [ipData, setIpData] = useState<IpDetails | null>(null);
+    const [ipData, setIpData] = useState<NetworkDiagnostics | null>(null);
     const [loading, setLoading] = useState(true);
     const [webrtcLeak, setWebrtcLeak] = useState<string>("Scanning…");
     const [copiedIp, setCopiedIp] = useState(false);
 
     useEffect(() => {
-        const fetchIp = async () => {
-            let ip = "Unavailable";
-            let ipv6 = "Not Available";
-            let ispName = "Unknown ISP";
-            let city = "";
-            let country = "";
-            let countryCode = "";
-            let vpnDetected = false;
-
-            try {
-                const res = await fetch("https://ipwho.is/");
-                const data = await res.json();
-                if (data.success) {
-                    ip = data.ip || "Unavailable";
-                    ispName = data.connection?.isp || data.connection?.org || "Unknown ISP";
-                    city = data.city || "";
-                    country = data.country || "";
-                    countryCode = data.country_code || "";
-                } else {
-                    throw new Error();
-                }
-            } catch {
-                try {
-                    const res = await fetch("https://api.ipify.org?format=json");
-                    ip = (await res.json()).ip || "Unavailable";
-                } catch { /* ignore */ }
-            }
-
-            try {
-                const res = await fetch("https://api64.ipify.org?format=json");
-                const d = await res.json();
-                if (d.ip?.includes(":")) ipv6 = d.ip;
-            } catch { /* ignore */ }
-
-            if (ip.includes(":")) {
-                if (ipv6 === "Not Available") ipv6 = ip;
-                try {
-                    const res4 = await fetch("https://api.ipify.org?format=json");
-                    const d4 = await res4.json();
-                    ip = d4.ip && !d4.ip.includes(":") ? d4.ip : "Not Available (IPv6-only)";
-                } catch {
-                    ip = "Not Available (IPv6-only)";
-                }
-            }
-
-            const vpnKeywords = ["vpn", "mullvad", "nordvpn", "expressvpn", "surfshark", "digitalocean", "cloudflare", "linode", "hetzner"];
-            vpnDetected = vpnKeywords.some((k) => ispName.toLowerCase().includes(k));
-
-            setIpData({ ip, ipv6, ispName, city, country, countryCode, vpnDetected });
+        let active = true;
+        fetchNetworkDiagnostics(true).then((res) => {
+            if (!active) return;
+            setIpData(res);
             setLoading(false);
+        });
+        scanWebRtcLeak(3000).then((leak) => {
+            if (active) setWebrtcLeak(leak);
+        });
+        return () => {
+            active = false;
         };
-        fetchIp();
-    }, []);
-
-    useEffect(() => {
-        const checkWebrtc = async () => {
-            try {
-                const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-                pc.createDataChannel("");
-                const ips = new Set<string>();
-                await new Promise<void>((resolve) => {
-                    pc.onicecandidate = (e) => {
-                        if (!e.candidate) {
-                            resolve();
-                            return;
-                        }
-                        const m4 = e.candidate.candidate.match(/\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/);
-                        if (m4 && !m4[0].startsWith("0.") && !m4[0].startsWith("127.")) ips.add(m4[0]);
-                    };
-                    pc.createOffer().then((o) => pc.setLocalDescription(o)).catch(() => resolve());
-                    setTimeout(resolve, 2500);
-                });
-                pc.close();
-                if (ips.size === 0) setWebrtcLeak("No Leak (Protected)");
-                else setWebrtcLeak(`Candidate Detected: ${[...ips].join(", ")}`);
-            } catch {
-                setWebrtcLeak("Unsupported");
-            }
-        };
-        checkWebrtc();
     }, []);
 
     const copyIp = async () => {
         if (!ipData) return;
-        await navigator.clipboard.writeText(ipData.ip);
-        setCopiedIp(true);
-        setTimeout(() => setCopiedIp(false), 2000);
+        if (await copyToClipboard(ipData.ip)) {
+            setCopiedIp(true);
+            setTimeout(() => setCopiedIp(false), 2000);
+        }
     };
 
     const locationLabel = ipData

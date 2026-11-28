@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useId } from "react";
 import { AlertCircle, X, Mail, Copy, Check, Terminal, ExternalLink } from "lucide-react";
+import { copyToClipboard } from "@/lib/clipboard";
 
 export interface ReportErrorModalProps {
     isOpen: boolean;
@@ -61,12 +62,9 @@ export default function ReportErrorModal({ isOpen, onClose, systemStats }: Repor
         ].join("\n");
 
     const handleCopyPayload = async () => {
-        try {
-            await navigator.clipboard.writeText(buildDiagnosticPayload());
+        if (await copyToClipboard(buildDiagnosticPayload())) {
             setCopied(true);
             setTimeout(() => setCopied(false), 2200);
-        } catch {
-            // fallback
         }
     };
 
@@ -136,6 +134,7 @@ export default function ReportErrorModal({ isOpen, onClose, systemStats }: Repor
                                 <button
                                     key={m.id}
                                     type="button"
+                                    aria-pressed={selectedMetric === m.id}
                                     onClick={() => setSelectedMetric(m.id)}
                                     className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-colors text-left cursor-pointer ${
                                         selectedMetric === m.id

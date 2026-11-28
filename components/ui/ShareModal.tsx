@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useId } from "react";
 import { Share2, X, Copy, Check, Shield } from "lucide-react";
 import { encodeReport } from "@/lib/report-share";
+import { copyToClipboard as writeClipboardText } from "@/lib/clipboard";
 
 export interface ShareModalProps {
     isOpen: boolean;
     onClose: () => void;
+    webrtcLeak?: string;
     stats: {
         browserName?: string;
         browserVersion?: string;
@@ -15,22 +17,34 @@ export interface ShareModalProps {
         windowSize?: string;
         pixelRatio?: string;
         colorDepth?: string;
+        orientation?: string;
+        touchSupport?: string;
         cpuCores?: number | string;
         ram?: string;
         webglVendor?: string;
+        batteryLevel?: string;
+        batteryCharging?: string;
         language?: string;
         persistence?: string;
         doNotTrack?: string;
+        globalPrivacyControl?: string;
+        adBlocker?: string;
         ip?: string;
         ipv6?: string;
         ispName?: string;
         city?: string;
         country?: string;
+        countryCode?: string;
+        vpnDetected?: boolean;
+        latency?: string;
+        connectionType?: string;
+        connectionSpeed?: string;
+        userAgent?: string;
         timezone?: string;
     } | null;
 }
 
-export default function ShareModal({ isOpen, onClose, stats }: ShareModalProps) {
+export default function ShareModal({ isOpen, onClose, stats, webrtcLeak }: ShareModalProps) {
     const [maskSensitive, setMaskSensitive] = useState(true);
     const [copied, setCopied] = useState(false);
     const [shareUrl, setShareUrl] = useState("");
@@ -38,9 +52,9 @@ export default function ShareModal({ isOpen, onClose, stats }: ShareModalProps) 
 
     useEffect(() => {
         if (!isOpen || !stats || typeof window === "undefined") return;
-        const encoded = encodeReport(stats, maskSensitive);
+        const encoded = encodeReport({ ...stats, webrtcLeak }, maskSensitive);
         setShareUrl(`${window.location.origin}/?report=${encoded}`);
-    }, [isOpen, stats, maskSensitive]);
+    }, [isOpen, stats, webrtcLeak, maskSensitive]);
 
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "";
@@ -61,12 +75,9 @@ export default function ShareModal({ isOpen, onClose, stats }: ShareModalProps) 
 
     const copyToClipboard = async () => {
         if (!shareUrl) return;
-        try {
-            await navigator.clipboard.writeText(shareUrl);
+        if (await writeClipboardText(shareUrl)) {
             setCopied(true);
             setTimeout(() => setCopied(false), 2500);
-        } catch {
-            // clipboard write failed
         }
     };
 

@@ -15,6 +15,15 @@ import ShareModal from "@/components/ui/ShareModal";
 import ReportErrorModal from "@/components/ui/ReportErrorModal";
 import { decodeReport, SharedReportData } from "@/lib/report-share";
 import { downloadDiagnosticPDF, type DiagnosticPdfGroup } from "@/lib/export-pdf";
+import { copyToClipboard } from "@/lib/clipboard";
+import {
+    detectBrowserInfo,
+    detectGlobalPrivacyControl,
+    detectOSName,
+    formatDPR,
+    getScreenOrientation,
+} from "@/lib/device-detect";
+import { fetchNetworkDiagnostics, scanWebRtcLeak } from "@/lib/network-detect";
 
 type TabType = "overview" | "network" | "browser" | "hardware" | "privacy";
 type AudienceMode = "simple" | "technical";
@@ -47,6 +56,7 @@ interface SystemStats {
     batteryCharging: string;
     persistence: string;
     doNotTrack: string;
+    globalPrivacyControl: string;
     adBlocker: string;
     userAgent: string;
     timezone: string;
@@ -71,53 +81,6 @@ interface MetricRowDef {
     action?: React.ReactNode;
 }
 
-type NavigatorWithUserAgentData = Navigator & {
-    userAgentData?: {
-        platform?: string;
-        getHighEntropyValues?: (hints: string[]) => Promise<{ platform?: string }>;
-    };
-};
-
-const platformToOS = (platform: string, ua: string): string | null => {
-    const value = platform.toLowerCase();
-    const hasTouch = typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
-
-    if (value.includes("android")) return "Android";
-    if (value.includes("ios") || value.includes("iphone") || value.includes("ipad")) return "iOS";
-    if (value.includes("windows") || value.includes("win")) return "Windows";
-    if (value.includes("chrome os") || value.includes("cros")) return "ChromeOS";
-    if (value.includes("mac")) {
-        return ua.includes("Macintosh") && navigator.maxTouchPoints > 1 ? "iPadOS" : "macOS";
-    }
-    if (value.includes("linux")) {
-        if (/Android/i.test(ua)) return "Android";
-        if (hasTouch) return "Android/Linux Tablet";
-        return "Linux";
-    }
-    return null;
-};
-
-const detectOSName = async (ua: string): Promise<string> => {
-    const nav = navigator as NavigatorWithUserAgentData;
-    try {
-        const hints = await nav.userAgentData?.getHighEntropyValues?.(["platform"]);
-        const osFromHints = platformToOS(hints?.platform || nav.userAgentData?.platform || "", ua);
-        if (osFromHints) return osFromHints;
-    } catch { /* ignore unavailable client hints */ }
-
-    const platform = platformToOS(navigator.platform || "", ua);
-    if (platform && platform !== "Linux") return platform;
-
-    if (/Android/i.test(ua)) return "Android";
-    if (/iPad/i.test(ua)) return "iPadOS";
-    if (/iPhone|iPod/i.test(ua)) return "iOS";
-    if (/Windows NT|Win64|Win32/i.test(ua)) return "Windows";
-    if (/CrOS/i.test(ua)) return "ChromeOS";
-    if (/Macintosh|Mac OS X/i.test(ua)) return navigator.maxTouchPoints > 1 ? "iPadOS" : "macOS";
-    if (/Linux/i.test(ua)) return navigator.maxTouchPoints > 0 ? "Android/Linux Tablet" : "Linux";
-    return platform || "Unknown OS";
-};
-
 const getLatencyStatus = (val: string): "good" | "warn" | "bad" | "neutral" => {
     const ms = parseInt(val);
     if (isNaN(ms)) return "neutral";
@@ -125,9 +88,6 @@ const getLatencyStatus = (val: string): "good" | "warn" | "bad" | "neutral" => {
     if (ms < 150) return "warn";
     return "bad";
 };
-
-const IP_CACHE_KEY = "msi_ip_v3";
-const IP_CACHE_TTL = 5 * 60 * 1000;
 
 const HOME_FAQS: DiagnosticFaqItem[] = [
     {
@@ -228,37 +188,38 @@ export default function Home() {
                     browserVersion: decoded.browserVersion,
                     osName: decoded.osName,
                     language: decoded.language,
-                    connectionType: "N/A",
-                    connectionSpeed: "N/A",
-                    latency: "N/A",
+                    connectionType: decoded.connectionType || "N/A",
+                    connectionSpeed: decoded.connectionSpeed || "N/A",
+                    latency: decoded.latency || "N/A",
                     ip: decoded.ip,
                     ipv6: decoded.ipv6,
                     ispName: decoded.ispName,
                     city: decoded.location.split(",")[0]?.trim() || "",
                     country: decoded.location.split(",")[1]?.trim() || "",
-                    countryCode: "",
-                    vpnDetected: false,
+                    countryCode: decoded.countryCode || "",
+                    vpnDetected: Boolean(decoded.vpnDetected),
                     resolution: decoded.resolution,
                     windowSize: decoded.windowSize,
                     pixelRatio: decoded.pixelRatio,
                     colorDepth: decoded.colorDepth,
-                    orientation: "Unknown",
-                    touchSupport: "N/A",
+                    orientation: decoded.orientation || "Unknown",
+                    touchSupport: decoded.touchSupport || "N/A",
                     cpuCores: decoded.cpuCores,
                     ram: decoded.ram,
                     webglVendor: decoded.webglVendor,
-                    batteryLevel: "N/A",
-                    batteryCharging: "N/A",
+                    batteryLevel: decoded.batteryLevel || "N/A",
+                    batteryCharging: decoded.batteryCharging || "N/A",
                     persistence: decoded.persistence,
                     doNotTrack: decoded.doNotTrack,
-                    adBlocker: "N/A",
-                    userAgent: "Shared device snapshot",
+                    globalPrivacyControl: decoded.globalPrivacyControl || "Not Set",
+                    adBlocker: decoded.adBlocker || "N/A",
+                    userAgent: decoded.userAgent || "Shared device snapshot",
                     timezone: decoded.timezone,
                 });
                 setLoading(false);
                 setIpLoading(false);
                 setWebrtcLoading(false);
-                setWebrtcLeak("Protected (Report)");
+                setWebrtcLeak(decoded.webrtcLeak || "Protected (Report)");
             }
         }
     }, []);
@@ -273,69 +234,18 @@ export default function Home() {
 
     // Main stats detection
     useEffect(() => {
+        let active = true;
         const fetchStats = async () => {
             if (typeof window !== "undefined" && window.location.search.includes("report=")) {
                 const p = new URLSearchParams(window.location.search);
                 if (p.get("report") && decodeReport(p.get("report")!)) return;
             }
             const ua = navigator.userAgent;
-            let browserName = "Unknown";
-            let browserVersion = "";
+            const [{ browserName, browserVersion }, osName] = await Promise.all([
+                detectBrowserInfo(ua),
+                detectOSName(ua),
+            ]);
 
-            if (ua.includes("Edg/") || ua.includes("Edge/") || ua.includes("EdgA/") || ua.includes("EdgiOS/")) {
-                browserName = "Microsoft Edge";
-                browserVersion = ua.match(/Edg\/(\d+)/)?.[1] || ua.match(/Edge\/(\d+)/)?.[1] || ua.match(/EdgA\/(\d+)/)?.[1] || ua.match(/EdgiOS\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("SamsungBrowser/")) {
-                browserName = "Samsung Internet";
-                browserVersion = ua.match(/SamsungBrowser\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("YaBrowser/")) {
-                browserName = "Yandex Browser";
-                browserVersion = ua.match(/YaBrowser\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("UCBrowser/")) {
-                browserName = "UC Browser";
-                browserVersion = ua.match(/UCBrowser\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("DuckDuckGo/")) {
-                browserName = "DuckDuckGo";
-                browserVersion = ua.match(/DuckDuckGo\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("Vivaldi/")) {
-                browserName = "Vivaldi";
-                browserVersion = ua.match(/Vivaldi\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("OPR/") || ua.includes("OPT/")) {
-                browserName = "Opera";
-                browserVersion = ua.match(/OPR\/(\d+)/)?.[1] || ua.match(/OPT\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("Opera Mini") || ua.includes("OPiOS/")) {
-                browserName = "Opera Mini";
-                browserVersion = ua.match(/Opera Mini\/(\d+)/)?.[1] || ua.match(/OPiOS\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("CriOS/")) {
-                browserName = "Chrome";
-                browserVersion = ua.match(/CriOS\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("FxiOS/")) {
-                browserName = "Firefox";
-                browserVersion = ua.match(/FxiOS\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("Firefox/")) {
-                browserName = "Firefox";
-                browserVersion = ua.match(/Firefox\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("Silk/")) {
-                browserName = "Amazon Silk";
-                browserVersion = ua.match(/Silk\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("Chrome/")) {
-                browserName = "Chrome";
-                browserVersion = ua.match(/Chrome\/(\d+)/)?.[1] || "";
-            } else if (ua.includes("Safari/")) {
-                browserName = "Safari";
-                browserVersion = ua.match(/Version\/(\d+)/)?.[1] || "";
-            }
-
-            // @ts-expect-error - Brave specific API
-            if (typeof navigator !== "undefined" && navigator.brave?.isBrave) {
-                try {
-                    // @ts-expect-error - Brave specific API
-                    const isBrave = await navigator.brave.isBrave();
-                    if (isBrave) browserName = "Brave";
-                } catch { /* ignore */ }
-            }
-
-            const osName = await detectOSName(ua);
             // @ts-expect-error - Experimental Network Info API
             const conn = navigator.connection;
             const connType = conn?.effectiveType?.toUpperCase() || "N/A";
@@ -356,14 +266,15 @@ export default function Home() {
             }
 
             const dnt = navigator.doNotTrack === "1" ? "ENABLED" : "DISABLED";
+            const gpc = detectGlobalPrivacyControl();
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
             const language = navigator.language || "Unknown";
             const touchPoints = navigator.maxTouchPoints;
             const touchSupport = touchPoints > 0 ? `Supported (${touchPoints} pt)` : "Not Supported";
-            const orientation = screen.orientation?.type?.replace("-primary", "").replace("-secondary", " (alt)") || "Unknown";
+            const orientation = getScreenOrientation();
             const screenRes = `${window.screen.width} × ${window.screen.height}`;
             const windowSizeVal = `${window.innerWidth} × ${window.innerHeight}`;
-            const pixelRatioVal = `${window.devicePixelRatio}x`;
+            const pixelRatioVal = formatDPR(window.devicePixelRatio);
             const colorDepthVal = `${window.screen.colorDepth} bit`;
 
             let adBlocker = "Not Detected";
@@ -415,98 +326,8 @@ export default function Home() {
                 }
             } catch { /* ignore */ }
 
-            let ip = "Unavailable";
-            let ipv6 = "Not Available";
-            let ispName = "Unknown ISP";
-            let city = "";
-            let country = "";
-            let countryCode = "";
-            let vpnDetected = false;
-            let usedCache = false;
-
-            try {
-                const raw = sessionStorage.getItem(IP_CACHE_KEY);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (Date.now() - parsed.ts < IP_CACHE_TTL) {
-                        ({ ip, ipv6, ispName, city, country, countryCode, vpnDetected } = parsed);
-                        usedCache = true;
-                    }
-                }
-            } catch { /* ignore */ }
-
-            if (!usedCache) {
-                try {
-                    const ctrl = new AbortController();
-                    const tid = setTimeout(() => ctrl.abort(), 5000);
-                    const res = await fetch("https://ipapi.co/json/", { signal: ctrl.signal });
-                    clearTimeout(tid);
-                    if (!res.ok) throw new Error("ipapi failed");
-                    const data = await res.json();
-                    if (data.error) throw new Error(data.reason || "ipapi error");
-                    ip = data.ip || "Unavailable";
-                    ispName = data.org || "Unknown ISP";
-                    city = data.city || "";
-                    country = data.country_name || "";
-                    countryCode = data.country_code || "";
-                } catch {
-                    try {
-                        const ctrl = new AbortController();
-                        const tid = setTimeout(() => ctrl.abort(), 5000);
-                        const res = await fetch("https://ipwho.is/", { signal: ctrl.signal });
-                        clearTimeout(tid);
-                        const data = await res.json();
-                        if (data.success) {
-                            ip = data.ip || "Unavailable";
-                            ispName = data.connection?.isp || data.connection?.org || "Unknown ISP";
-                            city = data.city || "";
-                            country = data.country || "";
-                            countryCode = data.country_code || "";
-                        } else {
-                            throw new Error("ipwho.is failed");
-                        }
-                    } catch {
-                        try {
-                            const res = await fetch("https://api.ipify.org?format=json");
-                            ip = (await res.json()).ip || "Unavailable";
-                        } catch {
-                            ip = "Unavailable";
-                        }
-                    }
-                }
-
-                const vpnKeywords = [
-                    "vpn", "mullvad", "nordvpn", "expressvpn", "surfshark", "cyberghost",
-                    "protonvpn", "torguard", "ipvanish", "windscribe", "ovh", "digitalocean",
-                    "linode", "hetzner", "cloudflare",
-                ];
-                vpnDetected = vpnKeywords.some((k) => ispName.toLowerCase().includes(k));
-
-                try {
-                    const res = await fetch("https://api64.ipify.org?format=json");
-                    const data = await res.json();
-                    if (data.ip?.includes(":")) ipv6 = data.ip;
-                } catch { /* ignore */ }
-
-                // If primary geo lookup connected over IPv6 on dual-stack networks, preserve IPv6 and fetch true IPv4
-                if (ip.includes(":")) {
-                    if (ipv6 === "Not Available") ipv6 = ip;
-                    try {
-                        const res4 = await fetch("https://api.ipify.org?format=json");
-                        const d4 = await res4.json();
-                        ip = d4.ip && !d4.ip.includes(":") ? d4.ip : "Not Available (IPv6-only)";
-                    } catch {
-                        ip = "Not Available (IPv6-only)";
-                    }
-                }
-
-                try {
-                    sessionStorage.setItem(
-                        IP_CACHE_KEY,
-                        JSON.stringify({ ts: Date.now(), ip, ipv6, ispName, city, country, countryCode, vpnDetected })
-                    );
-                } catch { /* ignore */ }
-            }
+            const { ip, ipv6, ispName, city, country, countryCode, vpnDetected } = await fetchNetworkDiagnostics(true);
+            if (!active) return;
 
             setIpLoading(false);
             setStats({
@@ -537,6 +358,7 @@ export default function Home() {
                 batteryCharging,
                 persistence,
                 doNotTrack: dnt,
+                globalPrivacyControl: gpc,
                 adBlocker,
                 userAgent: ua,
                 timezone: tz,
@@ -544,72 +366,51 @@ export default function Home() {
             setLoading(false);
         };
         fetchStats();
+        return () => {
+            active = false;
+        };
     }, []);
 
     // WebRTC leak scan
     useEffect(() => {
+        let active = true;
         const detect = async () => {
             if (typeof window !== "undefined" && window.location.search.includes("report=")) {
                 const p = new URLSearchParams(window.location.search);
                 if (p.get("report") && decodeReport(p.get("report")!)) return;
             }
-            try {
-                const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-                pc.createDataChannel("");
-                const ips = new Set<string>();
-                await new Promise<void>((resolve) => {
-                    pc.onicecandidate = (e) => {
-                        if (!e.candidate) {
-                            resolve();
-                            return;
-                        }
-                        const cand = e.candidate.candidate;
-                        const m4 = cand.match(/\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/);
-                        if (m4 && !m4[0].startsWith("0.") && !m4[0].startsWith("127.")) ips.add(m4[0]);
-                        const m6 = cand.match(/([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}/);
-                        if (m6) ips.add(m6[0]);
-                    };
-                    pc.createOffer().then((o) => pc.setLocalDescription(o)).catch(() => resolve());
-                    setTimeout(resolve, 3000);
-                });
-                pc.close();
-
-                if (ips.size === 0) {
-                    setWebrtcLeak("No Leak (Protected)");
-                } else {
-                    const isPublic = [...ips].some(
-                        (candIp) =>
-                            !candIp.startsWith("192.168.") &&
-                            !candIp.startsWith("10.") &&
-                            !/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(candIp)
-                    );
-                    setWebrtcLeak(
-                        isPublic ? `Public IP Exposed: ${[...ips].join(", ")}` : `Local Candidate: ${[...ips].join(", ")}`
-                    );
-                }
-            } catch {
-                setWebrtcLeak("Unsupported");
-            }
+            const leak = await scanWebRtcLeak(3000);
+            if (!active) return;
+            setWebrtcLeak(leak);
             setWebrtcLoading(false);
         };
         detect();
+        return () => {
+            active = false;
+        };
     }, []);
 
-    // Live viewport resize tracking
+    // Live viewport, DPR, display & orientation tracking
     useEffect(() => {
-        const onResize = () =>
+        const onViewportChange = () =>
             setStats((prev) =>
                 prev
                     ? {
                           ...prev,
                           windowSize: `${window.innerWidth} × ${window.innerHeight}`,
-                          pixelRatio: `${window.devicePixelRatio}x`,
+                          pixelRatio: formatDPR(window.devicePixelRatio),
                           resolution: `${window.screen.width} × ${window.screen.height}`,
+                          colorDepth: `${window.screen.colorDepth} bit`,
+                          orientation: getScreenOrientation(),
                       }
                     : prev
             );
-        window.addEventListener("resize", onResize);
-        return () => window.removeEventListener("resize", onResize);
+        window.addEventListener("resize", onViewportChange);
+        screen.orientation?.addEventListener?.("change", onViewportChange);
+        return () => {
+            window.removeEventListener("resize", onViewportChange);
+            screen.orientation?.removeEventListener?.("change", onViewportChange);
+        };
     }, []);
 
     const checkCookies = () =>
@@ -632,7 +433,7 @@ export default function Home() {
         const line = (label: string, value: string) => `${label.padEnd(17, " ")}${value}`;
 
         return [
-            "MySupportInfo — Device Diagnostic Report (22 Metrics)",
+            "MySupportInfo — Device Diagnostic Report (23 Metrics)",
             "",
             "[Browser & System]",
             line("Web Browser:", `${stats.browserName} ${stats.browserVersion}`.trim()),
@@ -668,6 +469,7 @@ export default function Home() {
             "",
             "[Privacy & Security]",
             line("Do Not Track:", stats.doNotTrack),
+            line("Global Privacy:", stats.globalPrivacyControl),
             line("Ad Blocker:", stats.adBlocker),
             line(
                 "VPN / Proxy:",
@@ -684,24 +486,25 @@ export default function Home() {
 
     const copyAllInfo = async () => {
         if (!stats) return;
-        await navigator.clipboard.writeText(buildSupportSummaryText(false));
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
+        if (await copyToClipboard(buildSupportSummaryText(false))) {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2500);
+        }
     };
 
     const handleCopyTicketSnippet = async () => {
         if (!stats) return;
-        await navigator.clipboard.writeText(buildSupportSummaryText(maskTicketIp));
-        setTicketCopied(true);
-        setTimeout(() => setTicketCopied(false), 2500);
+        if (await copyToClipboard(buildSupportSummaryText(maskTicketIp))) {
+            setTicketCopied(true);
+            setTimeout(() => setTicketCopied(false), 2500);
+        }
     };
 
     const handleCopySingleValue = async (id: string, value: string) => {
-        try {
-            await navigator.clipboard.writeText(value);
+        if (await copyToClipboard(value)) {
             setCopiedFieldId(id);
             setTimeout(() => setCopiedFieldId(null), 1800);
-        } catch { /* ignore */ }
+        }
     };
 
     const performCapture = async (fieldsToRender: Set<FieldId>, format: "png" | "pdf" = "png") => {
@@ -788,18 +591,23 @@ export default function Home() {
         setExportingFormat("png");
         setIsCapturing(true);
         setVisibleFields(fieldsToRender);
+        const prevWidth = element.style.width;
+        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+            element.style.width = "1152px";
+        }
         await new Promise((r) => setTimeout(r, 350));
         try {
             const html2canvas = (await import("html2canvas")).default;
             const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+            const captureW = Math.max(element.scrollWidth, 1152);
             const canvas = await html2canvas(element, {
                 backgroundColor: isDark ? "#031915" : "#FAF6F0",
                 scale: 2,
                 logging: false,
                 useCORS: true,
-                width: element.scrollWidth,
+                width: captureW,
                 height: element.scrollHeight,
-                windowWidth: element.scrollWidth,
+                windowWidth: captureW,
                 windowHeight: element.scrollHeight,
                 x: 0,
                 y: 0,
@@ -825,6 +633,7 @@ export default function Home() {
         } catch (err) {
             console.error("PNG export failed:", err);
         } finally {
+            element.style.width = prevWidth;
             setIsCapturing(false);
             setExportingFormat(null);
             setDownloading(false);
@@ -1165,6 +974,17 @@ export default function Home() {
             technicalHelp: "Reads navigator.doNotTrack preference flag.",
         },
         {
+            id: "gpc",
+            fieldId: "privacy",
+            category: "privacy",
+            icon: ShieldCheck,
+            simpleLabel: "Global Privacy Control (GPC)",
+            technicalLabel: "navigator.globalPrivacyControl Signal",
+            value: loading ? "…" : stats?.globalPrivacyControl === "ENABLED" ? "Enabled (Opt-Out Active)" : "Not Set",
+            simpleHelp: "Modern browser-level signal telling websites not to sell or share your personal data.",
+            technicalHelp: "Reads navigator.globalPrivacyControl standard boolean exposed by privacy browsers.",
+        },
+        {
             id: "adblock",
             fieldId: "privacy",
             category: "privacy",
@@ -1476,7 +1296,7 @@ export default function Home() {
                                 return (
                                     <div className="rounded-2xl overflow-hidden border border-line-strong bg-surface shadow-subtle">
                                         {/* Integrated Branded Card Header */}
-                                        <div className="bg-brand text-white px-7 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10">
+                                        <div className="bg-brand text-white px-7 py-5 flex flex-row items-center justify-between gap-4 border-b border-white/10">
                                             <div className="space-y-1.5">
                                                 <div className="flex items-center gap-2.5 flex-wrap">
                                                     <span className="font-extrabold text-xl text-white">
@@ -1499,13 +1319,13 @@ export default function Home() {
                                                     Client-side snapshot generated in browser memory at https://mysupportinfo.com
                                                 </p>
                                             </div>
-                                            <div className="text-xs font-mono text-accent sm:text-right">
+                                            <div className="text-xs font-mono text-accent text-right">
                                                 {new Date().toUTCString()}
                                             </div>
                                         </div>
 
                                         {/* At-a-Glance Highlights Strip */}
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-line bg-well/40 divide-x divide-line">
+                                        <div className="grid grid-cols-4 border-b border-line bg-well/40 divide-x divide-line">
                                             <div className="px-5 py-3.5">
                                                 <div className="text-[11px] font-semibold text-muted mb-0.5">Browser</div>
                                                 <div className="text-sm font-bold text-ink">
@@ -1528,14 +1348,14 @@ export default function Home() {
                                             </div>
                                             <div className="px-5 py-3.5">
                                                 <div className="text-[11px] font-semibold text-muted mb-0.5">Public IP / Ping</div>
-                                                <div className="text-sm font-bold text-ink break-all leading-normal">
+                                                <div className="text-sm font-bold text-ink break-words leading-normal">
                                                     {visibleFields.has("ip") ? `${stats?.ip || "—"} (${stats?.latency || "—"})` : `Ping: ${stats?.latency || "—"}`}
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Balanced 2-Column Categorized Spec Card */}
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-line">
+                                        <div className="grid grid-cols-2 divide-x divide-line">
                                             {[leftGroups, rightGroups].map((colGroups, colIdx) => (
                                                 <div key={colIdx} className="divide-y divide-line">
                                                     {colGroups.map((group) => (
@@ -1783,7 +1603,7 @@ export default function Home() {
                                 <Link
                                     key={tool.href}
                                     href={tool.href}
-                                    className="group p-6 flex flex-col justify-between gap-6 hover:bg-white/5 transition-colors"
+                                    className="group p-6 flex flex-col justify-between gap-6 hover:bg-white/10 transition-colors"
                                 >
                                     <div className="space-y-2">
                                         <h3 className="text-base font-bold text-white group-hover:text-primary transition-colors">
@@ -1892,7 +1712,7 @@ export default function Home() {
                                     </button>
                                 </div>
                             </div>
-                            <pre className="p-4 sm:p-5 text-xs font-mono text-ink leading-relaxed whitespace-pre-wrap break-all bg-surface">
+                            <pre className="p-4 sm:p-5 text-xs font-mono text-ink leading-relaxed whitespace-pre-wrap break-words bg-surface">
                                 {buildSupportSummaryText(maskTicketIp)}
                             </pre>
                         </div>
@@ -1923,6 +1743,7 @@ export default function Home() {
                     isOpen={isShareModalOpen}
                     onClose={() => setIsShareModalOpen(false)}
                     stats={stats}
+                    webrtcLeak={webrtcLeak}
                 />
 
                 <ReportErrorModal

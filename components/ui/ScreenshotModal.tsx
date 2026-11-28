@@ -56,6 +56,7 @@ export interface SystemStatsSummary {
     touchSupport?: string;
     persistence?: string;
     doNotTrack?: string;
+    globalPrivacyControl?: string;
     adBlocker?: string;
     vpnDetected?: boolean;
     userAgent?: string;
@@ -193,10 +194,10 @@ export const SCREENSHOT_FIELDS: ScreenshotFieldDef[] = [
     },
     {
         id: "privacy",
-        title: "Do Not Track & Ad Blocker",
+        title: "Do Not Track, GPC & Ad Blocker",
         category: "privacy",
         icon: EyeOff,
-        getPreview: (s) => (s ? `DNT: ${s.doNotTrack || "Off"} · Ads: ${s.adBlocker || "Off"}` : "Detecting…"),
+        getPreview: (s) => (s ? `DNT: ${s.doNotTrack || "Off"} · GPC: ${s.globalPrivacyControl || "Not Set"}` : "Detecting…"),
     },
     {
         id: "userAgent",

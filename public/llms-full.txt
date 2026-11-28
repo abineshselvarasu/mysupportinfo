@@ -48,10 +48,11 @@ Measures internet connection lag and packet queueing under load:
 1. **Unloaded Baseline Latency:** Measures idle ping to low-latency edge servers.
 2. **Download Latency Under Load:** Streams concurrent multi-threaded downloads while continuously measuring round-trip time (RTT) spikes.
 3. **Upload Latency Under Load:** Performs multi-threaded HTTP POST bursts while tracking latency inflation.
-4. **Scoring:** Assigns an official Bufferbloat Grade:
-   - **Grade A+ / A:** Latency increase < 15ms. Ideal for competitive gaming, Discord, and 4K conferencing.
-   - **Grade B / C:** Latency increase 15ms–60ms. Minor delays during large downloads.
-   - **Grade D / F:** Latency increase > 100ms. Severe packet queueing causing voice cutouts, video freezes, and gaming lag.
+4. **Scoring:** Assigns an official Bufferbloat Grade (A to F):
+   - **Grade A (0–5ms spike):** Ideal for competitive gaming, Discord, and 4K conferencing.
+   - **Grade B (6–30ms spike):** Minimal buffering delay during heavy transfers.
+   - **Grade C (31–60ms spike):** Moderate queue buildup under sustained load.
+   - **Grade D / F (61–100ms / > 100ms spike):** Noticeable to severe packet queueing causing voice cutouts, video freezes, and gaming lag.
 
 ---
 
@@ -61,7 +62,7 @@ Measures internet connection lag and packet queueing under load:
 A: MySupportInfo (https://mysupportinfo.com) is an instant, privacy-first diagnostic tool that detects your browser version, operating system, public IP address, screen resolution, GPU, RAM, WebRTC leaks, and network latency under load—100% inside your browser with zero tracking.
 
 ### Q: Why do IT helpdesks and technicians use MySupportInfo?
-A: Instead of guiding non-technical users through complex system settings or asking them to install screen-sharing software, technicians send a single link (`mysupportinfo.com`). The user opens it, and all diagnostic specifications are displayed in under 3 seconds with 1-click options to copy specs, generate a visual PNG report card, or export an RFC-compliant CSV.
+A: Instead of guiding non-technical users through complex system settings or asking them to install screen-sharing software, technicians send a single link (`mysupportinfo.com`). The user opens it, and all diagnostic specifications are displayed in under 3 seconds with 1-click options to copy specs, generate a PNG report card, download a selectable vector PDF, or export an RFC-compliant CSV.
 
 ### Q: How do I test for WebRTC leaks?
 A: Visit https://mysupportinfo.com. The "WebRTC Leak" card evaluates your active ICE candidates. If your real IP address appears while connected to a VPN, your browser is leaking traffic.

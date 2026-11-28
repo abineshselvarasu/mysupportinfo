@@ -58,14 +58,14 @@ export default function BufferbloatLayout({ children }: { children: React.ReactN
             name: "MySupportInfo Bufferbloat Test",
             url: "https://mysupportinfo.com/bufferbloat",
             description:
-              "Free online bufferbloat test and network latency diagnostic tool. Measures idle latency, download bloat, upload bloat, and packet jitter to grade home router queue management from A+ to F.",
+              "Free online bufferbloat test and network latency diagnostic tool. Measures idle latency, download bloat, upload bloat, and packet jitter to grade home router queue management from A to F.",
             applicationCategory: "UtilityApplication",
             operatingSystem: "Any",
             offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
             featureList: [
               "Real-time download and upload saturation testing",
               "Unloaded baseline ping vs loaded latency comparison",
-              "Bufferbloat score and letter grading (A+ to F)",
+              "Bufferbloat score and letter grading (A to F)",
               "Live interactive SVG latency and throughput charts",
               "Actionable router configuration guide for SQM, CAKE, and QoS",
               "Zero data logging, 100% browser-based execution",
@@ -125,13 +125,13 @@ export default function BufferbloatLayout({ children }: { children: React.ReactN
                 "@type": "HowToStep",
                 position: 2,
                 name: "Run the Bufferbloat Diagnostic Test",
-                text: "Click 'Run Test' on the MySupportInfo Bufferbloat page. The engine will measure your idle latency, saturate download and upload pipes, and track real-time ping spikes.",
+                text: "Click 'Start Bufferbloat Test' on the MySupportInfo Bufferbloat page. The engine will measure your idle latency, saturate download and upload pipes, and track real-time ping spikes.",
               },
               {
                 "@type": "HowToStep",
                 position: 3,
                 name: "Analyze your network grade and latency increase",
-                text: "Review your letter grade (A+ to F). If your latency spikes by more than 30 ms (Grade C, D, or F), your network suffers from bufferbloat.",
+                text: "Review your letter grade (A to F). If your latency spikes by more than 30 ms (Grade C, D, or F), your network suffers from bufferbloat.",
               },
               {
                 "@type": "HowToStep",
@@ -178,7 +178,7 @@ export default function BufferbloatLayout({ children }: { children: React.ReactN
                 name: "What is a good bufferbloat test score?",
                 acceptedAnswer: {
                   "@type": "Answer",
-                  text: "An 'A' or 'A+' grade is optimal, representing an increase of 0 to 5 ms under load. A 'B' grade (6 to 30 ms increase) is good and acceptable for casual use. Grades C, D, and F indicate moderate to severe bufferbloat that requires router adjustments such as SQM or QoS bandwidth limits.",
+                  text: "An 'A' grade is optimal, representing an increase of 0 to 5 ms under load. A 'B' grade (6 to 30 ms increase) is good and acceptable for daily use. Grades C, D, and F indicate moderate to severe bufferbloat that requires router adjustments such as SQM or QoS bandwidth limits.",
                 },
               },
               {

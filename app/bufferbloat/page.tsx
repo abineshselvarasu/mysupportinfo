@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Play, RotateCw, Activity, Waves, Upload, ChevronRight, ArrowRight, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { BufferbloatEngine, TestResult } from "@/lib/bufferbloat-engine";
@@ -70,8 +70,16 @@ export default function BufferbloatPage() {
     const [isRunning, setIsRunning] = useState(false);
     const [runMetrics, setRunMetrics] = useState<RunMetrics | null>(null);
     const [metricsHistory, setMetricsHistory] = useState<RunMetrics[]>([]);
+    const engineRef = useRef<BufferbloatEngine | null>(null);
+
+    useEffect(() => {
+        return () => {
+            engineRef.current?.abort();
+        };
+    }, []);
 
     const startTest = async () => {
+        engineRef.current?.abort();
         setIsRunning(true);
         setProgress(0);
         setRunMetrics(null);
@@ -83,18 +91,24 @@ export default function BufferbloatPage() {
             setRunMetrics(data);
             setMetricsHistory((prev) => [...prev, data]);
         });
-        const data = await engine.runTest();
-        setResult(data);
-        setIsRunning(false);
+        engineRef.current = engine;
+        try {
+            const data = await engine.runTest();
+            setResult(data);
+        } finally {
+            setIsRunning(false);
+        }
     };
 
     const circumference = 816;
     const offset = circumference - (progress / 100) * circumference;
 
     const gaugeStatus = isRunning
-        ? runMetrics && runMetrics.progress < 50
+        ? !runMetrics
+            ? "Calibrating"
+            : runMetrics.progress < 50
             ? "Download"
-            : runMetrics && runMetrics.progress < 80
+            : runMetrics.progress < 80
             ? "Upload"
             : "Finishing"
         : result

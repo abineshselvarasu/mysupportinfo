@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Copy, Check, CheckCircle2, ChevronRight, ArrowRight, Terminal } from "lucide-react";
 import DiagnosticFaqSection, { type DiagnosticFaqItem } from "@/components/ui/DiagnosticFaqSection";
+import { detectBrowserInfo, detectOSName } from "@/lib/device-detect";
+import { copyToClipboard } from "@/lib/clipboard";
 
 interface BrowserDetails {
     browserName: string;
@@ -21,61 +23,37 @@ export default function WhatIsMyBrowserClient({ faqs }: { faqs: DiagnosticFaqIte
     const [copiedUA, setCopiedUA] = useState(false);
 
     useEffect(() => {
-        const ua = navigator.userAgent;
-        let browserName = "Unknown Browser";
-        let browserVersion = "";
-        let engine = "Unknown Engine";
-
-        if (ua.includes("Edg/") || ua.includes("Edge/")) {
-            browserName = "Microsoft Edge";
-            browserVersion = ua.match(/Edg\/(\d+(\.\d+)?)/)?.[1] || "";
-            engine = "Blink (Chromium)";
-        } else if (ua.includes("SamsungBrowser/")) {
-            browserName = "Samsung Internet";
-            browserVersion = ua.match(/SamsungBrowser\/(\d+(\.\d+)?)/)?.[1] || "";
-            engine = "Blink";
-        } else if (ua.includes("OPR/") || ua.includes("OPT/")) {
-            browserName = "Opera";
-            browserVersion = ua.match(/OPR\/(\d+(\.\d+)?)/)?.[1] || "";
-            engine = "Blink";
-        } else if (ua.includes("Firefox/") || ua.includes("FxiOS/")) {
-            browserName = "Mozilla Firefox";
-            browserVersion = ua.match(/(?:Firefox|FxiOS)\/(\d+(\.\d+)?)/)?.[1] || "";
-            engine = "Gecko";
-        } else if (ua.includes("Chrome/") || ua.includes("CriOS/")) {
-            browserName = "Google Chrome";
-            browserVersion = ua.match(/(?:Chrome|CriOS)\/(\d+(\.\d+)?)/)?.[1] || "";
-            engine = "Blink";
-        } else if (ua.includes("Safari/")) {
-            browserName = "Apple Safari";
-            browserVersion = ua.match(/Version\/(\d+(\.\d+)?)/)?.[1] || "";
-            engine = "WebKit";
-        }
-
-        let os = "Unknown OS";
-        if (/Win/i.test(ua)) os = "Windows";
-        else if (/Mac/i.test(ua)) os = navigator.maxTouchPoints > 1 ? "iPadOS" : "macOS";
-        else if (/Android/i.test(ua)) os = "Android";
-        else if (/iPhone|iPod/i.test(ua)) os = "iOS";
-        else if (/Linux/i.test(ua)) os = "Linux";
-
-        setDetails({
-            browserName,
-            browserVersion,
-            engine,
-            osName: os,
-            userAgent: ua,
-            cookiesEnabled: navigator.cookieEnabled,
-            jsEnabled: true,
-            language: navigator.language || "en",
-        });
+        let active = true;
+        const detect = async () => {
+            const ua = navigator.userAgent;
+            const [{ browserName, browserVersion, engine }, osName] = await Promise.all([
+                detectBrowserInfo(ua),
+                detectOSName(ua),
+            ]);
+            if (!active) return;
+            setDetails({
+                browserName,
+                browserVersion,
+                engine,
+                osName,
+                userAgent: ua,
+                cookiesEnabled: navigator.cookieEnabled,
+                jsEnabled: true,
+                language: navigator.language || "en",
+            });
+        };
+        detect();
+        return () => {
+            active = false;
+        };
     }, []);
 
     const copyUA = async () => {
         if (!details) return;
-        await navigator.clipboard.writeText(details.userAgent);
-        setCopiedUA(true);
-        setTimeout(() => setCopiedUA(false), 2000);
+        if (await copyToClipboard(details.userAgent)) {
+            setCopiedUA(true);
+            setTimeout(() => setCopiedUA(false), 2000);
+        }
     };
 
     return (

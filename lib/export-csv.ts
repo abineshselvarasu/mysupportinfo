@@ -30,6 +30,7 @@ export interface DiagnosticExportData {
     adBlocker?: string;
     cookiesEnabled?: boolean;
     doNotTrack?: string;
+    globalPrivacyControl?: string;
     [key: string]: unknown;
 }
 
@@ -74,6 +75,7 @@ export function generateDiagnosticCSV(
         ["privacy", "Privacy & Security", "VPN Detected", data.vpnDetected ? "Yes (Heuristic)" : "No"],
         ["privacy", "Privacy & Security", "Ad Blocker", data.adBlocker || "Not Detected"],
         ["privacy", "Privacy & Security", "Do Not Track", data.doNotTrack || "Unspecified"],
+        ["privacy", "Privacy & Security", "Global Privacy Control (GPC)", data.globalPrivacyControl || "Not Set"],
         ["meta", "Audit Metadata", "Audit Source", "MySupportInfo (mysupportinfo.com)"],
         ["meta", "Audit Metadata", "Platform URL", "https://mysupportinfo.com"],
         ["meta", "Audit Metadata", "Export Timestamp (UTC)", new Date().toISOString()],

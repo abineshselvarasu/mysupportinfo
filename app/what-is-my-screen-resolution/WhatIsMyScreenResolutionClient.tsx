@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, ArrowRight } from "lucide-react";
 import DiagnosticFaqSection, { type DiagnosticFaqItem } from "@/components/ui/DiagnosticFaqSection";
+import { formatDPR, getScreenOrientation } from "@/lib/device-detect";
 
 const RESPONSIVE_BREAKPOINTS = [
     { token: "XS (Mobile)", widthRange: "< 640 px", typicalDevice: "Portrait smartphones (360–430 CSS px)" },
@@ -18,26 +19,31 @@ export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: Diagnos
     const [mounted, setMounted] = useState(false);
     const [screenRes, setScreenRes] = useState({ width: 0, height: 0 });
     const [viewport, setViewport] = useState({ width: 0, height: 0 });
-    const [dpr, setDpr] = useState<number | null>(null);
+    const [dprLabel, setDprLabel] = useState<string | null>(null);
+    const [dprNum, setDprNum] = useState<number | null>(null);
     const [colorDepth, setColorDepth] = useState<number | null>(null);
     const [orientation, setOrientation] = useState<string | null>(null);
 
     useEffect(() => {
         const updateMetrics = () => {
             if (typeof window === "undefined") return;
+            const rawDpr = window.devicePixelRatio || 1;
             setScreenRes({ width: window.screen.width, height: window.screen.height });
             setViewport({ width: window.innerWidth, height: window.innerHeight });
-            setDpr(window.devicePixelRatio || 1);
+            setDprLabel(formatDPR(rawDpr));
+            setDprNum(rawDpr);
             setColorDepth(window.screen.colorDepth || 24);
-            setOrientation(
-                window.screen.orientation?.type?.replace("-primary", "").replace("-secondary", "") || "landscape"
-            );
+            setOrientation(getScreenOrientation());
             setMounted(true);
         };
 
         updateMetrics();
         window.addEventListener("resize", updateMetrics);
-        return () => window.removeEventListener("resize", updateMetrics);
+        screen.orientation?.addEventListener?.("change", updateMetrics);
+        return () => {
+            window.removeEventListener("resize", updateMetrics);
+            screen.orientation?.removeEventListener?.("change", updateMetrics);
+        };
     }, []);
 
     const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
@@ -151,8 +157,8 @@ export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: Diagnos
                     <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-line">
                         <div className="p-4 sm:p-5 space-y-1">
                             <span className="text-xs text-muted font-medium block">Pixel Ratio (DPR)</span>
-                            <span className="font-mono font-bold text-base text-ink">{mounted && dpr !== null ? `${dpr}x` : "—"}</span>
-                            <span className="text-2xs text-muted block">{mounted && dpr && dpr > 1 ? "HiDPI / Retina" : "Standard 1:1"}</span>
+                            <span className="font-mono font-bold text-base text-ink">{mounted && dprLabel ? dprLabel : "—"}</span>
+                            <span className="text-2xs text-muted block">{mounted && dprNum && dprNum > 1 ? "HiDPI / Retina" : "Standard 1:1"}</span>
                         </div>
                         <div className="p-4 sm:p-5 space-y-1">
                             <span className="text-xs text-muted font-medium block">Color Depth</span>

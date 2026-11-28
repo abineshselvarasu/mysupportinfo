@@ -57,23 +57,3 @@ html.dark :focus-visible {
   outline: 2px solid #FF8E60;
   outline-offset: 2px;
 }
-
-/* Subtle section entrance without flashy bounce */
-@layer utilities {
-  .fade-in {
-    opacity: 0;
-    animation: fade-in 0.35s ease-out var(--fade-delay, 0s) both;
-  }
-
-  .fade-in-up { transform: translateY(8px); }
-  .fade-in-down { transform: translateY(-8px); }
-  .fade-in-left { transform: translateX(8px); }
-  .fade-in-right { transform: translateX(-8px); }
-
-  @keyframes fade-in {
-    to {
-      opacity: 1;
-      transform: translate(0, 0);
-    }
-  }
-}
