@@ -316,13 +316,18 @@ export default function BufferbloatPage() {
                 {/* Live Charts */}
                 {hasData && (
                     <section aria-label="Real-time test charts" className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-fluid-h2 font-bold text-ink">Live Bandwidth &amp; Latency Graph</h2>
-                            {result && (
-                                <span className="text-xs font-mono font-semibold text-secondary">Diagnostic Complete</span>
-                            )}
+                        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+                            <div>
+                                <h2 className="text-fluid-h2 font-bold text-ink">Live Bandwidth &amp; Latency Graph</h2>
+                                <p className="text-xs text-muted mt-0.5">
+                                    Synchronized download, upload, and loaded ping telemetry across test phases — hover or drag across either chart to inspect samples.
+                                </p>
+                            </div>
+                            <span className={`text-xs font-mono font-semibold flex-shrink-0 ${result ? "text-secondary" : "text-primary"}`}>
+                                {result ? "Diagnostic Complete" : "Live Streaming…"}
+                            </span>
                         </div>
-                        <ResultsCharts data={metricsHistory} />
+                        <ResultsCharts data={metricsHistory} result={result} />
                     </section>
                 )}
 
