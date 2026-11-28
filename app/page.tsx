@@ -10,10 +10,10 @@ import {
     Wrench, User,
 } from "lucide-react";
 import DiagnosticFaqSection, { type DiagnosticFaqItem } from "@/components/ui/DiagnosticFaqSection";
-import ScreenshotModal, { FieldId, DEFAULT_SELECTED_FIELDS, SENSITIVE_FIELD_IDS } from "@/components/ui/ScreenshotModal";
+import ScreenshotModal, { FieldId, DEFAULT_SELECTED_FIELDS, IP_PRIVACY_FIELD_IDS } from "@/components/ui/ScreenshotModal";
 import ShareModal from "@/components/ui/ShareModal";
 import ReportErrorModal from "@/components/ui/ReportErrorModal";
-import { decodeReport, SharedReportData } from "@/lib/report-share";
+import { decodeReport, isMaskedValue, isSharedReportMasked, SharedReportData } from "@/lib/report-share";
 import { downloadDiagnosticPDF, type DiagnosticPdfGroup } from "@/lib/export-pdf";
 import { copyToClipboard } from "@/lib/clipboard";
 import {
@@ -452,7 +452,7 @@ export default function Home() {
                 "WebRTC Leak:",
                 webrtcLoading
                     ? "Scanning…"
-                    : maskIp && !webrtcSafe && webrtcLeak !== "Unsupported"
+                    : (maskIp && !webrtcSafe && webrtcLeak !== "Unsupported") || isWebRtcMasked
                     ? "[Masked for Privacy]"
                     : webrtcLeak
             ),
@@ -473,7 +473,7 @@ export default function Home() {
             line("Ad Blocker:", stats.adBlocker),
             line(
                 "VPN / Proxy:",
-                maskIp
+                maskIp || isSharedMasked
                     ? "[Masked for Privacy]"
                     : stats.vpnDetected
                     ? "VPN / Datacenter Range"
@@ -514,12 +514,12 @@ export default function Home() {
             setDownloading(true);
             setExportingFormat("pdf");
             try {
-                const isMaskedPii = [...SENSITIVE_FIELD_IDS].every((f) => !fieldsToRender.has(f));
+                const isMaskedPii = isSharedMasked || IP_PRIVACY_FIELD_IDS.every((f) => !fieldsToRender.has(f));
                 const resolveRowText = (row: MetricRowDef): string => {
                     if (row.id === "ip4") {
-                        return ipLoading
-                            ? "Scanning..."
-                            : `${stats?.ip || "—"}${stats?.countryCode && fieldsToRender.has("location") ? ` (${stats.countryCode})` : ""}`;
+                        if (ipLoading) return "Scanning...";
+                        if (isMaskedValue(stats?.ip)) return audienceMode === "simple" ? "Hidden by sender" : "[Masked for Privacy]";
+                        return `${stats?.ip || "—"}${stats?.countryCode && fieldsToRender.has("location") ? ` (${stats.countryCode})` : ""}`;
                     }
                     if (typeof row.value === "string") return row.value;
                     return row.plainValue || row.copyText || "—";
@@ -534,7 +534,12 @@ export default function Home() {
                     .map(({ category, title }) => ({
                         title,
                         items: metricRows
-                            .filter((r) => r.category === category && (!r.fieldId || fieldsToRender.has(r.fieldId)))
+                            .filter(
+                                (r) =>
+                                    r.category === category &&
+                                    (!r.fieldId || fieldsToRender.has(r.fieldId)) &&
+                                    (r.id !== "vpn_check" || fieldsToRender.has("isp"))
+                            )
                             .map((r) => ({
                                 label: audienceMode === "simple" ? r.simpleLabel : r.technicalLabel,
                                 value: resolveRowText(r),
@@ -567,9 +572,10 @@ export default function Home() {
                             },
                             {
                                 label: "Public IP / Ping",
-                                value: fieldsToRender.has("ip")
-                                    ? `${stats?.ip || "—"} (${stats?.latency || "—"})`
-                                    : `Ping: ${stats?.latency || "—"}`,
+                                value:
+                                    fieldsToRender.has("ip") && !isMaskedValue(stats?.ip)
+                                        ? `${stats?.ip || "—"} (${stats?.latency || "—"})`
+                                        : `Ping: ${stats?.latency || "—"}`,
                             },
                         ],
                         groups: pdfGroups,
@@ -640,16 +646,20 @@ export default function Home() {
         }
     };
 
+    const isSharedMasked = isSharedReportMasked(sharedReport);
+    const isWebRtcMasked = isMaskedValue(webrtcLeak);
     const webrtcSafe = webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate");
-    const webrtcStatus: "good" | "warn" | "bad" | "neutral" = webrtcLoading
-        ? "neutral"
-        : webrtcSafe
-        ? "good"
-        : webrtcLeak === "Unsupported"
-        ? "neutral"
-        : "bad";
+    const webrtcStatus: "good" | "warn" | "bad" | "neutral" =
+        webrtcLoading || isWebRtcMasked || webrtcLeak === "Unsupported"
+            ? "neutral"
+            : webrtcSafe
+            ? "good"
+            : "bad";
 
     const latencyStatus = loading ? "neutral" : getLatencyStatus(stats?.latency || "");
+
+    const maskedDisplayText = (raw?: string) =>
+        audienceMode === "simple" ? "Hidden by sender" : raw || "[Masked for Privacy]";
 
     const metricRows: MetricRowDef[] = [
         // Network & IP
@@ -661,7 +671,11 @@ export default function Home() {
             icon: Globe,
             simpleLabel: "Public Internet Address (IPv4)",
             technicalLabel: "Public IPv4 Address",
-            value: ipLoading ? "Scanning…" : isCapturing ? (
+            value: ipLoading ? (
+                "Scanning…"
+            ) : isMaskedValue(stats?.ip) ? (
+                maskedDisplayText(stats?.ip)
+            ) : isCapturing ? (
                 <span className="font-mono">
                     {stats?.ip}
                     {stats?.countryCode && visibleFields.has("location") ? ` (${stats.countryCode})` : ""}
@@ -676,9 +690,13 @@ export default function Home() {
                     )}
                 </span>
             ),
-            copyText: ipLoading ? undefined : stats?.ip,
+            copyText: ipLoading || isMaskedValue(stats?.ip) ? undefined : stats?.ip,
+            status: isMaskedValue(stats?.ip) ? "neutral" : undefined,
+            statusLabel: isMaskedValue(stats?.ip) ? "Masked" : undefined,
             simpleHelp: "This is the public street address websites see when your router connects online.",
-            technicalHelp: `External IPv4 endpoint assigned by ${stats?.ispName || "your ISP"}. Approximate region: ${[stats?.city, stats?.country].filter(Boolean).join(", ") || "Unknown"}.`,
+            technicalHelp: isMaskedValue(stats?.ip)
+                ? "Public IPv4, ISP, and region were omitted from this shared link by the sender."
+                : `External IPv4 endpoint assigned by ${stats?.ispName || "your ISP"}. Approximate region: ${[stats?.city, stats?.country].filter(Boolean).join(", ") || "Unknown"}.`,
         },
         {
             id: "isp",
@@ -688,12 +706,18 @@ export default function Home() {
             icon: Wifi,
             simpleLabel: "Internet Provider",
             technicalLabel: "ISP / ASN Organization",
-            value: ipLoading ? "Scanning…" : stats?.ispName,
-            copyText: ipLoading ? undefined : stats?.ispName,
+            value: ipLoading
+                ? "Scanning…"
+                : isMaskedValue(stats?.ispName)
+                ? maskedDisplayText(stats?.ispName)
+                : stats?.ispName,
+            copyText: ipLoading || isMaskedValue(stats?.ispName) ? undefined : stats?.ispName,
             simpleHelp: "The internet company or mobile carrier currently routing your traffic.",
-            technicalHelp: `Derived from IP WHOIS / ASN registration records.${stats?.vpnDetected ? " Matches a known VPN or datacenter range." : ""}`,
-            status: stats?.vpnDetected ? "warn" : "neutral",
-            statusLabel: stats?.vpnDetected ? "VPN / Datacenter" : undefined,
+            technicalHelp: isMaskedValue(stats?.ispName)
+                ? "ISP details were omitted by the report sender for privacy."
+                : `Derived from IP WHOIS / ASN registration records.${stats?.vpnDetected ? " Matches a known VPN or datacenter range." : ""}`,
+            status: isMaskedValue(stats?.ispName) ? "neutral" : stats?.vpnDetected ? "warn" : "neutral",
+            statusLabel: isMaskedValue(stats?.ispName) ? "Masked" : stats?.vpnDetected ? "VPN / Datacenter" : undefined,
         },
         {
             id: "location",
@@ -704,12 +728,19 @@ export default function Home() {
             technicalLabel: "IP Geolocation (City / Country)",
             value: ipLoading
                 ? "Scanning…"
+                : isMaskedValue(stats?.city)
+                ? maskedDisplayText(stats?.city)
                 : [stats?.city, stats?.country].filter(Boolean).join(", ") || "Unavailable",
-            copyText: ipLoading
-                ? undefined
-                : [stats?.city, stats?.country].filter(Boolean).join(", ") || undefined,
+            copyText:
+                ipLoading || isMaskedValue(stats?.city)
+                    ? undefined
+                    : [stats?.city, stats?.country].filter(Boolean).join(", ") || undefined,
+            status: isMaskedValue(stats?.city) ? "neutral" : undefined,
+            statusLabel: isMaskedValue(stats?.city) ? "Masked" : undefined,
             simpleHelp: "General city or region inferred from your public IP address—never exact street GPS.",
-            technicalHelp: `Derived from IP geolocation lookup (${stats?.countryCode || "Unknown"}).`,
+            technicalHelp: isMaskedValue(stats?.city)
+                ? "City and country geolocation were omitted by the report sender."
+                : `Derived from IP geolocation lookup (${stats?.countryCode || "Unknown"}).`,
         },
         {
             id: "webrtc",
@@ -721,6 +752,8 @@ export default function Home() {
             technicalLabel: "WebRTC ICE Leak Scan",
             value: webrtcLoading
                 ? "Scanning…"
+                : isWebRtcMasked
+                ? maskedDisplayText(webrtcLeak)
                 : audienceMode === "simple"
                 ? webrtcSafe
                     ? "Safe — No IP leak found"
@@ -731,7 +764,15 @@ export default function Home() {
             simpleHelp: "Checks if video-call features accidentally reveal your real home IP behind a VPN.",
             technicalHelp: "Runs local RTCPeerConnection ICE candidate discovery against stun.l.google.com:19302.",
             status: webrtcStatus,
-            statusLabel: webrtcLoading ? "Checking" : webrtcSafe ? "Protected" : webrtcLeak === "Unsupported" ? "N/A" : "Exposed",
+            statusLabel: webrtcLoading
+                ? "Checking"
+                : isWebRtcMasked
+                ? "Masked"
+                : webrtcSafe
+                ? "Protected"
+                : webrtcLeak === "Unsupported"
+                ? "N/A"
+                : "Exposed",
         },
         {
             id: "latency",
@@ -760,11 +801,16 @@ export default function Home() {
             icon: Globe,
             simpleLabel: "Modern IPv6 Address",
             technicalLabel: "Dual-Stack IPv6 Endpoint",
-            value: ipLoading ? "Scanning…" : (stats?.ipv6 || "Not Available"),
-            copyText: !ipLoading && stats?.ipv6 !== "Not Available" ? stats?.ipv6 : undefined,
+            value: ipLoading
+                ? "Scanning…"
+                : isMaskedValue(stats?.ipv6)
+                ? maskedDisplayText(stats?.ipv6)
+                : stats?.ipv6 || "Not Available",
+            copyText: !ipLoading && !isMaskedValue(stats?.ipv6) && stats?.ipv6 !== "Not Available" ? stats?.ipv6 : undefined,
             simpleHelp: "Newer IP address format. Many home routers still only use IPv4, which is completely normal.",
             technicalHelp: "Queried from api64.ipify.org to determine active IPv6 external routing.",
-            status: !ipLoading && stats?.ipv6 !== "Not Available" ? "good" : "neutral",
+            status: !ipLoading && !isMaskedValue(stats?.ipv6) && stats?.ipv6 !== "Not Available" ? "good" : "neutral",
+            statusLabel: isMaskedValue(stats?.ipv6) ? "Masked" : undefined,
         },
         {
             id: "conntype",
@@ -1004,18 +1050,21 @@ export default function Home() {
             technicalLabel: "ISP Hosting / Datacenter Heuristic",
             value: ipLoading
                 ? "Scanning…"
+                : isSharedMasked
+                ? maskedDisplayText()
                 : stats?.vpnDetected
                 ? "VPN / Datacenter Range"
                 : "Standard Home / Mobile ISP",
             simpleHelp: "Indicates whether your IP belongs to a known VPN provider, proxy, or datacenter network.",
             technicalHelp: "Evaluates ASN/ISP organization keywords for commercial VPN and cloud hosting ranges.",
-            status: stats?.vpnDetected ? "warn" : "neutral",
-            statusLabel: stats?.vpnDetected ? "VPN / Cloud" : undefined,
+            status: isSharedMasked ? "neutral" : stats?.vpnDetected ? "warn" : "neutral",
+            statusLabel: isSharedMasked ? "Masked" : stats?.vpnDetected ? "VPN / Cloud" : undefined,
         },
     ];
 
     const visibleRows = metricRows.filter((row) => {
         if (isCapturing) {
+            if (row.id === "vpn_check" && !visibleFields.has("isp")) return false;
             return !row.fieldId || visibleFields.has(row.fieldId);
         }
         if (activeTab === "overview") return row.featuredOnOverview;
@@ -1040,9 +1089,19 @@ export default function Home() {
     const humanVerdict = loading
         ? "Scanning your browser, operating system, screen size, and network connection locally…"
         : `You are using ${stats?.browserName} ${stats?.browserVersion} on ${stats?.osName} (${stats?.resolution}), routed through ${
-              ipLoading ? "your network" : stats?.ispName || "your ISP"
+              ipLoading
+                  ? "your network"
+                  : isSharedMasked || isMaskedValue(stats?.ispName)
+                  ? "a privacy-masked network"
+                  : stats?.ispName || "your ISP"
           } with ${stats?.latency !== "N/A" ? `${stats?.latency} response time` : "active connectivity"} and ${
-              webrtcLoading ? "an active WebRTC check" : webrtcSafe ? "no WebRTC IP leak" : "a visible WebRTC candidate"
+              webrtcLoading
+                  ? "an active WebRTC check"
+                  : isWebRtcMasked
+                  ? "WebRTC details hidden for privacy"
+                  : webrtcSafe
+                  ? "no WebRTC IP leak"
+                  : "a visible WebRTC candidate"
           }.`;
 
     return (
@@ -1105,9 +1164,17 @@ export default function Home() {
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="font-bold text-base text-white">Viewing Shared Device Snapshot</span>
                                         <span className="text-3xs font-mono uppercase bg-white/15 px-2 py-0.5 rounded">Remote Report</span>
+                                        {isSharedMasked && (
+                                            <span className="text-3xs font-mono uppercase bg-emerald-400/20 text-emerald-200 border border-emerald-300/30 px-2 py-0.5 rounded">
+                                                IP &amp; Location Redacted
+                                            </span>
+                                        )}
                                     </div>
                                     <p className="text-xs text-white/80 mt-0.5">
-                                        Recorded {new Date(sharedReport.timestamp).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}. Displaying the sender&apos;s exact browser, OS, and screen setup.
+                                        Recorded {new Date(sharedReport.timestamp).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}.{" "}
+                                        {isSharedMasked
+                                            ? "Sender hid IP address, ISP, and location for privacy."
+                                            : "Displaying the sender\u2019s exact browser, OS, and screen setup."}
                                     </p>
                                 </div>
                             </div>
@@ -1251,6 +1318,8 @@ export default function Home() {
                                                     ? "Scanning…"
                                                     : isCapturing && !visibleFields.has("ip")
                                                     ? "[Masked]"
+                                                    : isMaskedValue(stats?.ip)
+                                                    ? "Hidden"
                                                     : stats?.ip}
                                             </p>
                                         </div>
@@ -1270,7 +1339,7 @@ export default function Home() {
                     <div className="max-w-site mx-auto px-5 sm:px-6">
                         {isCapturing ? (
                             (() => {
-                                const isMaskedPii = [...SENSITIVE_FIELD_IDS].every((f) => !visibleFields.has(f));
+                                const isMaskedPii = isSharedMasked || IP_PRIVACY_FIELD_IDS.every((f) => !visibleFields.has(f));
                                 const captureGroups: { title: string; items: MetricRowDef[] }[] = [
                                     {
                                         title: "Browser & System",
@@ -1286,7 +1355,12 @@ export default function Home() {
                                     },
                                     {
                                         title: "Privacy & Security",
-                                        items: metricRows.filter((r) => r.category === "privacy" && (!r.fieldId || visibleFields.has(r.fieldId))),
+                                        items: metricRows.filter(
+                                            (r) =>
+                                                r.category === "privacy" &&
+                                                (!r.fieldId || visibleFields.has(r.fieldId)) &&
+                                                (r.id !== "vpn_check" || visibleFields.has("isp"))
+                                        ),
                                     },
                                 ].filter((g) => g.items.length > 0);
 
@@ -1349,7 +1423,9 @@ export default function Home() {
                                             <div className="px-5 py-3.5">
                                                 <div className="text-[11px] font-semibold text-muted mb-0.5">Public IP / Ping</div>
                                                 <div className="text-sm font-bold text-ink break-words leading-normal">
-                                                    {visibleFields.has("ip") ? `${stats?.ip || "—"} (${stats?.latency || "—"})` : `Ping: ${stats?.latency || "—"}`}
+                                                    {visibleFields.has("ip") && !isMaskedValue(stats?.ip)
+                                                        ? `${stats?.ip || "—"} (${stats?.latency || "—"})`
+                                                        : `Ping: ${stats?.latency || "—"}`}
                                                 </div>
                                             </div>
                                         </div>
@@ -1404,7 +1480,7 @@ export default function Home() {
                                     <div
                                         role="tablist"
                                         aria-label="Diagnostic detail categories"
-                                        className="flex flex-wrap items-center gap-1.5"
+                                        className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 md:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                                     >
                                         {tabs.map((tab) => {
                                             const active = activeTab === tab.id;
@@ -1481,12 +1557,12 @@ export default function Home() {
                                             const helpText = audienceMode === "simple" ? row.simpleHelp : row.technicalHelp;
 
                                             return (
-                                                <div key={row.id} className="px-4 sm:px-6 py-4 hover:bg-hover/65 transition-colors">
-                                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 items-start md:items-center">
+                                                <div key={row.id} className="px-4 sm:px-6 py-3.5 sm:py-4 hover:bg-hover/65 transition-colors">
+                                                    <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-12 gap-x-3 gap-y-1.5 md:gap-4 items-start md:items-center">
                                                         {/* Label + Optional Explanation Trigger */}
-                                                        <div className="md:col-span-4 flex items-center gap-2.5 min-w-0">
-                                                            <Icon size={15} className="text-secondary flex-shrink-0" aria-hidden="true" />
-                                                            <span className="text-sm font-semibold text-ink leading-normal break-words">
+                                                        <div className="col-start-1 row-start-1 md:col-start-auto md:row-start-auto md:col-span-4 flex items-start md:items-center gap-2 min-w-0">
+                                                            <Icon size={15} className="text-secondary flex-shrink-0 mt-0.5 md:mt-0" aria-hidden="true" />
+                                                            <span className="text-xs sm:text-sm font-semibold text-ink leading-snug break-words">
                                                                 {label}
                                                             </span>
                                                             {!isCapturing && (
@@ -1505,7 +1581,11 @@ export default function Home() {
                                                         </div>
 
                                                         {/* Detected Value */}
-                                                        <div className="md:col-span-6 min-w-0">
+                                                        <div
+                                                            className={`${
+                                                                row.isCode ? "pl-0" : "pl-6 md:pl-0"
+                                                            } col-span-2 row-start-2 md:col-span-6 md:row-start-auto min-w-0`}
+                                                        >
                                                             {row.isCode ? (
                                                                 <div className="font-mono text-xs text-ink bg-well/70 border border-line px-3 py-2 rounded-lg break-all leading-relaxed">
                                                                     {row.value}
@@ -1518,43 +1598,45 @@ export default function Home() {
                                                         </div>
 
                                                         {/* Right Status / Action */}
-                                                        <div className="md:col-span-2 flex items-center md:justify-end gap-2 flex-wrap">
-                                                            {row.statusLabel && (
-                                                                <span
-                                                                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-semibold border ${statusBadgeClass(
-                                                                        row.status
-                                                                    )}`}
-                                                                >
-                                                                    {row.statusLabel}
-                                                                </span>
-                                                            )}
-                                                            {row.action}
-                                                            {!isCapturing && row.copyText && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleCopySingleValue(row.id, row.copyText!)}
-                                                                    aria-label={`Copy ${label}`}
-                                                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-line text-2xs font-semibold text-muted hover:text-ink hover:border-line-strong transition-colors cursor-pointer"
-                                                                >
-                                                                    {copiedFieldId === row.id ? (
-                                                                        <>
-                                                                            <Check size={12} className="text-secondary" aria-hidden="true" />
-                                                                            <span>Copied</span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <Copy size={12} aria-hidden="true" />
-                                                                            <span>Copy</span>
-                                                                        </>
-                                                                    )}
-                                                                </button>
-                                                            )}
-                                                        </div>
+                                                        {(row.statusLabel || row.action || (!isCapturing && row.copyText)) && (
+                                                            <div className="col-start-2 row-start-1 justify-self-end md:col-start-auto md:row-start-auto md:col-span-2 md:justify-self-auto flex items-center justify-end gap-1.5 flex-wrap max-w-[148px] md:max-w-none flex-shrink-0">
+                                                                {row.statusLabel && (
+                                                                    <span
+                                                                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-semibold border whitespace-nowrap ${statusBadgeClass(
+                                                                            row.status
+                                                                        )}`}
+                                                                    >
+                                                                        {row.statusLabel}
+                                                                    </span>
+                                                                )}
+                                                                {row.action}
+                                                                {!isCapturing && row.copyText && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleCopySingleValue(row.id, row.copyText!)}
+                                                                        aria-label={`Copy ${label}`}
+                                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-line text-2xs font-semibold text-muted hover:text-ink hover:border-line-strong transition-colors cursor-pointer whitespace-nowrap"
+                                                                    >
+                                                                        {copiedFieldId === row.id ? (
+                                                                            <>
+                                                                                <Check size={12} className="text-secondary" aria-hidden="true" />
+                                                                                <span>Copied</span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <Copy size={12} aria-hidden="true" />
+                                                                                <span>Copy</span>
+                                                                            </>
+                                                                        )}
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     {/* Accessible Plain-English Expandable Explanation */}
                                                     {isExpanded && (
-                                                        <p className="mt-2.5 md:ml-6 text-xs text-muted bg-well/50 border border-line rounded-lg px-3.5 py-2.5 max-w-3xl leading-relaxed">
+                                                        <p className="mt-2.5 ml-6 md:ml-6 text-xs text-muted bg-well/50 border border-line rounded-lg px-3.5 py-2.5 max-w-3xl leading-relaxed">
                                                             {helpText}
                                                         </p>
                                                     )}
@@ -1737,6 +1819,7 @@ export default function Home() {
                     currentTime={currentTime}
                     downloading={downloading}
                     exportingFormat={exportingFormat}
+                    senderMasked={isSharedMasked}
                 />
 
                 <ShareModal

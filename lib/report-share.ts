@@ -28,9 +28,28 @@ export interface SharedReportData {
     connectionType?: string;
     connectionSpeed?: string;
     webrtcLeak?: string;
+    privacyMasked?: boolean;
     userAgent?: string;
     timezone: string;
     timestamp: number;
+}
+
+export const MASKED_PLACEHOLDER = "[Masked for Privacy]";
+export const MASKED_SHORT = "[Masked]";
+
+/**
+ * Returns true if a stored report field holds a privacy redaction placeholder.
+ */
+export function isMaskedValue(val?: string | null): boolean {
+    return val === MASKED_PLACEHOLDER || val === MASKED_SHORT;
+}
+
+/**
+ * Returns true when a decoded shared report was intentionally privacy-masked by the sender.
+ */
+export function isSharedReportMasked(data?: Partial<SharedReportData> | null): boolean {
+    if (!data) return false;
+    return Boolean(data.privacyMasked) || isMaskedValue(data.ip);
 }
 
 /**
@@ -76,6 +95,7 @@ export function encodeReport(
     const loc = [stats.city, stats.country].filter(Boolean).join(", ");
     const webrtcVal = stats.webrtcLeak || "Protected (Report)";
     const isWebRtcSafe = webrtcVal.startsWith("No Leak") || webrtcVal.startsWith("Local Candidate");
+    const isWebRtcNeutral = isWebRtcSafe || webrtcVal === "Unsupported" || webrtcVal.startsWith("Protected");
 
     const payload: SharedReportData = {
         browserName: stats.browserName || "Unknown Browser",
@@ -97,16 +117,17 @@ export function encodeReport(
         doNotTrack: stats.doNotTrack || "DISABLED",
         globalPrivacyControl: stats.globalPrivacyControl || "Not Set",
         adBlocker: stats.adBlocker || "Not Detected",
-        ip: maskSensitive ? "[Masked for Privacy]" : stats.ip || "Unavailable",
-        ipv6: maskSensitive ? "[Masked]" : stats.ipv6 || "Not Available",
-        ispName: maskSensitive ? "[Masked for Privacy]" : stats.ispName || "Unknown ISP",
-        location: maskSensitive ? "[Masked for Privacy]" : loc || "Unknown",
+        ip: maskSensitive ? MASKED_PLACEHOLDER : stats.ip || "Unavailable",
+        ipv6: maskSensitive ? MASKED_SHORT : stats.ipv6 || "Not Available",
+        ispName: maskSensitive ? MASKED_PLACEHOLDER : stats.ispName || "Unknown ISP",
+        location: maskSensitive ? MASKED_PLACEHOLDER : loc || "Unknown",
         countryCode: maskSensitive ? "" : stats.countryCode || "",
         vpnDetected: maskSensitive ? false : Boolean(stats.vpnDetected),
         latency: stats.latency || "N/A",
         connectionType: stats.connectionType || "N/A",
         connectionSpeed: stats.connectionSpeed || "N/A",
-        webrtcLeak: maskSensitive && !isWebRtcSafe ? "[Masked for Privacy]" : webrtcVal,
+        webrtcLeak: maskSensitive && !isWebRtcNeutral ? MASKED_PLACEHOLDER : webrtcVal,
+        privacyMasked: maskSensitive,
         userAgent: stats.userAgent || "Shared device snapshot",
         timezone: stats.timezone || "UTC",
         timestamp: Date.now(),

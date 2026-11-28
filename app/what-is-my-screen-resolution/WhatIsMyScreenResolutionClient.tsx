@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, ArrowRight } from "lucide-react";
 import DiagnosticFaqSection, { type DiagnosticFaqItem } from "@/components/ui/DiagnosticFaqSection";
+import ResponsiveReferenceTable from "@/components/ui/ResponsiveReferenceTable";
 import { formatDPR, getScreenOrientation } from "@/lib/device-detect";
 
 const RESPONSIVE_BREAKPOINTS = [
@@ -59,6 +60,16 @@ export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: Diagnos
         aspectLabel = `${aspectX}:${aspectY}`;
     }
 
+    const getBreakpointToken = (w: number) => {
+        if (w <= 0) return "";
+        if (w >= 1536) return "2XL (Ultrawide / QHD)";
+        if (w >= 1280) return "XL (Desktop)";
+        if (w >= 1024) return "LG (Laptop)";
+        if (w >= 768) return "MD (Tablet)";
+        if (w >= 640) return "SM (Large Mobile)";
+        return "XS (Mobile)";
+    };
+
     const getBreakpoint = (w: number) => {
         if (w <= 0) return "Detecting…";
         if (w >= 1536) return "2XL (Ultrawide)";
@@ -68,6 +79,8 @@ export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: Diagnos
         if (w >= 640) return "SM (Large Phone)";
         return "XS (Mobile)";
     };
+
+    const activeBreakpointToken = getBreakpointToken(viewport.width);
 
     const megapixelsLabel =
         screenRes.width > 0 && screenRes.height > 0
@@ -154,23 +167,23 @@ export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: Diagnos
                     </div>
 
                     {/* Secondary Technical Strip */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-line">
-                        <div className="p-4 sm:p-5 space-y-1">
+                    <div className="bg-line grid grid-cols-2 sm:grid-cols-4 gap-px">
+                        <div className="p-4 sm:p-5 space-y-1 bg-surface">
                             <span className="text-xs text-muted font-medium block">Pixel Ratio (DPR)</span>
                             <span className="font-mono font-bold text-base text-ink">{mounted && dprLabel ? dprLabel : "—"}</span>
                             <span className="text-2xs text-muted block">{mounted && dprNum && dprNum > 1 ? "HiDPI / Retina" : "Standard 1:1"}</span>
                         </div>
-                        <div className="p-4 sm:p-5 space-y-1">
+                        <div className="p-4 sm:p-5 space-y-1 bg-surface">
                             <span className="text-xs text-muted font-medium block">Color Depth</span>
                             <span className="font-mono font-bold text-base text-ink">{mounted && colorDepth !== null ? `${colorDepth}-bit` : "—"}</span>
                             <span className="text-2xs text-muted block">{mounted && colorDepth && colorDepth >= 24 ? "True Color" : "Standard"}</span>
                         </div>
-                        <div className="p-4 sm:p-5 space-y-1">
+                        <div className="p-4 sm:p-5 space-y-1 bg-surface">
                             <span className="text-xs text-muted font-medium block">Orientation</span>
                             <span className="font-bold text-base text-ink capitalize">{mounted && orientation ? orientation : "—"}</span>
                             <span className="text-2xs text-muted block">Screen orientation</span>
                         </div>
-                        <div className="p-4 sm:p-5 space-y-1">
+                        <div className="p-4 sm:p-5 space-y-1 bg-surface">
                             <span className="text-xs text-muted font-medium block">Scaled Area</span>
                             <span className="font-mono font-bold text-base text-ink">{megapixelsLabel}</span>
                             <span className="text-2xs text-muted block">Logical canvas</span>
@@ -192,26 +205,24 @@ export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: Diagnos
                 {/* Responsive Breakpoint Reference Table */}
                 <section className="space-y-4">
                     <h2 className="text-fluid-h2 font-bold text-ink">Responsive CSS Breakpoints Reference</h2>
-                    <div className="overflow-x-auto bg-surface border border-line rounded-2xl">
-                        <table className="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr className="bg-brand text-white">
-                                    <th className="p-3.5 font-semibold">Breakpoint</th>
-                                    <th className="p-3.5 font-semibold">CSS Viewport Width</th>
-                                    <th className="p-3.5 font-semibold">Typical Device</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-line">
-                                {RESPONSIVE_BREAKPOINTS.map((bp) => (
-                                    <tr key={bp.token} className="hover:bg-hover/65 transition-colors">
-                                        <td className="p-3.5 font-bold text-ink whitespace-nowrap">{bp.token}</td>
-                                        <td className="p-3.5 font-mono font-bold text-secondary whitespace-nowrap">{bp.widthRange}</td>
-                                        <td className="p-3.5 text-muted">{bp.typicalDevice}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <ResponsiveReferenceTable
+                        headers={["Breakpoint", "CSS Viewport Width", "Typical Device"]}
+                        mobileSummaryLabel="CSS Breakpoint Tiers"
+                        caption="Responsive CSS Breakpoints Reference"
+                        rows={RESPONSIVE_BREAKPOINTS.map((bp) => {
+                            const isCurrent = mounted && activeBreakpointToken === bp.token;
+                            return {
+                                id: bp.token,
+                                primary: bp.token,
+                                badge: bp.widthRange,
+                                badgeTone: isCurrent ? "emerald" : "neutral",
+                                badgeMono: true,
+                                description: bp.typicalDevice,
+                                highlighted: isCurrent,
+                                highlightLabel: "Your viewport",
+                            };
+                        })}
+                    />
                 </section>
 
                 <DiagnosticFaqSection items={faqs} />

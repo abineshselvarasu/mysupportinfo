@@ -4,15 +4,51 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { ShieldCheck, ShieldAlert, Copy, Check, ChevronRight, ArrowRight } from "lucide-react";
 import DiagnosticFaqSection, { type DiagnosticFaqItem } from "@/components/ui/DiagnosticFaqSection";
+import ResponsiveReferenceTable, { type ReferenceTableRow } from "@/components/ui/ResponsiveReferenceTable";
 import { fetchNetworkDiagnostics, scanWebRtcLeak, type NetworkDiagnostics } from "@/lib/network-detect";
 import { copyToClipboard } from "@/lib/clipboard";
 
-const IP_RANGE_REFERENCE = [
-    { cidr: "10.0.0.0/8", scope: "Private (RFC 1918)", usage: "Corporate LANs, cloud VPCs, enterprise VPN subnets" },
-    { cidr: "172.16.0.0/12", scope: "Private (RFC 1918)", usage: "Containers, campus networks, office VLANs" },
-    { cidr: "192.168.0.0/16", scope: "Private (RFC 1918)", usage: "Home Wi-Fi routers, printers, smart-home gear" },
-    { cidr: "100.64.0.0/10", scope: "Shared CGNAT (RFC 6598)", usage: "Carrier-Grade NAT & mobile data pools" },
-    { cidr: "127.0.0.0/8", scope: "Loopback (localhost)", usage: "Internal device self-routing only" },
+const IP_RANGE_ROWS: ReferenceTableRow[] = [
+    {
+        id: "rfc1918-10",
+        primary: "10.0.0.0/8",
+        primaryMono: true,
+        badge: "Private (RFC 1918)",
+        badgeTone: "emerald",
+        description: "Corporate LANs, cloud VPCs, and enterprise VPN subnets",
+    },
+    {
+        id: "rfc1918-172",
+        primary: "172.16.0.0/12",
+        primaryMono: true,
+        badge: "Private (RFC 1918)",
+        badgeTone: "emerald",
+        description: "Containers, campus networks, and office VLANs",
+    },
+    {
+        id: "rfc1918-192",
+        primary: "192.168.0.0/16",
+        primaryMono: true,
+        badge: "Private (RFC 1918)",
+        badgeTone: "emerald",
+        description: "Home Wi-Fi routers, printers, and smart-home gear",
+    },
+    {
+        id: "rfc6598-cgnat",
+        primary: "100.64.0.0/10",
+        primaryMono: true,
+        badge: "Shared CGNAT (RFC 6598)",
+        badgeTone: "amber",
+        description: "Carrier-Grade NAT and mobile data pools",
+    },
+    {
+        id: "loopback-127",
+        primary: "127.0.0.0/8",
+        primaryMono: true,
+        badge: "Loopback (localhost)",
+        badgeTone: "neutral",
+        description: "Internal device self-routing only",
+    },
 ];
 
 export default function WhatIsMyIpClient({ faqs }: { faqs: DiagnosticFaqItem[] }) {
@@ -75,7 +111,7 @@ export default function WhatIsMyIpClient({ faqs }: { faqs: DiagnosticFaqItem[] }
                         <div className="space-y-1.5">
                             <span className="text-xs font-semibold text-muted block">Your Public IPv4 Address</span>
                             <div className="flex items-center gap-3 flex-wrap">
-                                <span className="text-3xl sm:text-4xl font-mono font-extrabold text-ink tabular-nums">
+                                <span className="text-2xl sm:text-4xl font-mono font-extrabold text-ink tabular-nums break-all">
                                     {loading ? "Scanning…" : ipData?.ip}
                                 </span>
                                 {ipData?.countryCode && (
@@ -151,26 +187,12 @@ export default function WhatIsMyIpClient({ faqs }: { faqs: DiagnosticFaqItem[] }
                     <p className="text-sm text-muted leading-relaxed">
                         Command-line tools like <code className="px-1.5 py-0.5 rounded bg-well border border-line font-mono text-xs text-ink">ipconfig</code> or <code className="px-1.5 py-0.5 rounded bg-well border border-line font-mono text-xs text-ink">ifconfig</code> usually display your home router&apos;s private local address rather than your public internet IP above.
                     </p>
-                    <div className="overflow-x-auto bg-surface border border-line rounded-2xl">
-                        <table className="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr className="bg-brand text-white">
-                                    <th className="p-3.5 font-semibold">CIDR Prefix</th>
-                                    <th className="p-3.5 font-semibold">Scope</th>
-                                    <th className="p-3.5 font-semibold">Common Usage</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-line">
-                                {IP_RANGE_REFERENCE.map((row) => (
-                                    <tr key={row.cidr} className="hover:bg-hover/65 transition-colors">
-                                        <td className="p-3.5 font-mono font-bold text-ink whitespace-nowrap">{row.cidr}</td>
-                                        <td className="p-3.5 font-semibold text-secondary whitespace-nowrap">{row.scope}</td>
-                                        <td className="p-3.5 text-muted">{row.usage}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <ResponsiveReferenceTable
+                        headers={["CIDR Prefix", "Scope", "Common Usage"]}
+                        mobileSummaryLabel="Private & Shared IP Ranges"
+                        caption="Public IPv4 vs IPv6 and Private Router CIDR Ranges"
+                        rows={IP_RANGE_ROWS}
+                    />
                 </section>
 
                 {/* WebRTC Mitigation */}
@@ -180,7 +202,8 @@ export default function WhatIsMyIpClient({ faqs }: { faqs: DiagnosticFaqItem[] }
                         <div className="p-4 rounded-xl bg-well/40 border border-line space-y-1.5">
                             <h3 className="font-bold text-ink">Mozilla Firefox</h3>
                             <p className="text-muted leading-relaxed">
-                                In <code>about:config</code>, restrict STUN exposure via <code>media.peerconnection.ice.default_address_only</code>.
+                                In <code>about:config</code>, restrict STUN exposure via{" "}
+                                <code className="break-all">media.peerconnection.ice.default_address_only</code>.
                             </p>
                         </div>
                         <div className="p-4 rounded-xl bg-well/40 border border-line space-y-1.5">

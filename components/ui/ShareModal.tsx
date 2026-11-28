@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useId } from "react";
-import { Share2, X, Copy, Check, Shield } from "lucide-react";
-import { encodeReport } from "@/lib/report-share";
+import { Share2, X, Copy, Check, Shield, Globe } from "lucide-react";
+import { encodeReport, isMaskedValue } from "@/lib/report-share";
 import { copyToClipboard as writeClipboardText } from "@/lib/clipboard";
 
 export interface ShareModalProps {
@@ -45,16 +45,35 @@ export interface ShareModalProps {
 }
 
 export default function ShareModal({ isOpen, onClose, stats, webrtcLeak }: ShareModalProps) {
-    const [maskSensitive, setMaskSensitive] = useState(true);
+    const [maskSensitive, setMaskSensitive] = useState(false);
     const [copied, setCopied] = useState(false);
     const [shareUrl, setShareUrl] = useState("");
     const titleId = useId();
+    const sourceAlreadyMasked = isMaskedValue(stats?.ip);
+    const effectiveMask = sourceAlreadyMasked ? true : maskSensitive;
 
     useEffect(() => {
-        if (!isOpen || !stats || typeof window === "undefined") return;
-        const encoded = encodeReport({ ...stats, webrtcLeak }, maskSensitive);
+        if (!isOpen) {
+            setCopied(false);
+            return;
+        }
+        if (!stats || typeof window === "undefined") return;
+        const encoded = encodeReport({ ...stats, webrtcLeak }, effectiveMask);
         setShareUrl(`${window.location.origin}/?report=${encoded}`);
-    }, [isOpen, stats, webrtcLeak, maskSensitive]);
+    }, [isOpen, stats, webrtcLeak, effectiveMask]);
+
+    const selectShareMode = (nextMask: boolean) => {
+        if (sourceAlreadyMasked && !nextMask) return;
+        setMaskSensitive(nextMask);
+        setCopied(false);
+    };
+
+    const locationSummary = [stats?.city, stats?.country].filter(Boolean).join(", ");
+    const fullInfoPreview = sourceAlreadyMasked
+        ? "Unavailable — sender hid IP & location in this snapshot"
+        : [stats?.ip, stats?.ispName, locationSummary]
+              .filter((v) => v && v !== "Unavailable" && v !== "Unknown" && v !== "Unknown ISP")
+              .join(" · ") || "Detecting network details…";
 
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "";
@@ -91,17 +110,17 @@ export default function ShareModal({ isOpen, onClose, stats, webrtcLeak }: Share
             aria-modal="true"
             aria-labelledby={titleId}
         >
-            <div className="relative w-full max-w-lg bg-surface text-ink border border-line-strong shadow-elevated rounded-2xl overflow-hidden my-auto">
-                <div className="flex items-start justify-between p-5 sm:p-6 border-b border-line bg-well/40">
+            <div className="relative w-full max-w-lg bg-surface text-ink border border-line-strong shadow-elevated rounded-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto">
+                <div className="flex items-start justify-between p-4 sm:p-5 border-b border-line bg-well/40 flex-shrink-0">
                     <div className="flex items-start gap-3">
-                        <div className="size-10 rounded-xl bg-brand text-white flex items-center justify-center flex-shrink-0">
-                            <Share2 size={18} aria-hidden="true" />
+                        <div className="size-9 rounded-xl bg-brand text-white flex items-center justify-center flex-shrink-0">
+                            <Share2 size={17} aria-hidden="true" />
                         </div>
                         <div>
-                            <h3 id={titleId} className="text-lg font-bold text-ink">
+                            <h3 id={titleId} className="text-base sm:text-lg font-bold text-ink">
                                 Share Diagnostic Link
                             </h3>
-                            <p className="text-xs text-muted mt-1 leading-relaxed">
+                            <p className="text-xs text-muted mt-0.5 leading-relaxed">
                                 Send this URL to a technician or teammate so they see your exact browser and screen specs—zero database storage involved.
                             </p>
                         </div>
@@ -116,26 +135,97 @@ export default function ShareModal({ isOpen, onClose, stats, webrtcLeak }: Share
                     </button>
                 </div>
 
-                <div className="p-5 sm:p-6 space-y-5">
-                    <label className="flex items-start gap-3 p-4 rounded-xl bg-well/50 border border-line cursor-pointer select-none">
-                        <input
-                            type="checkbox"
-                            checked={maskSensitive}
-                            onChange={(e) => setMaskSensitive(e.target.checked)}
-                            className="mt-0.5 size-4 rounded accent-secondary"
-                        />
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-bold text-ink">Hide IP Address &amp; Location</span>
-                                <span className="text-3xs font-mono font-semibold text-secondary bg-secondary/10 border border-secondary/25 px-1.5 py-0.5 rounded">
-                                    Recommended
-                                </span>
-                            </div>
-                            <p className="text-xs text-muted leading-relaxed">
-                                Removes your IPv4, IPv6, ISP, and city so the link is safe to paste in public GitHub issues or Discord chats.
-                            </p>
+                <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
+                    <div className="space-y-2.5">
+                        <span className="block text-xs font-semibold text-ink">
+                            What Should This Link Include?
+                        </span>
+                        <div role="radiogroup" aria-label="Shared report privacy level" className="grid grid-cols-1 gap-2.5">
+                            <button
+                                type="button"
+                                role="radio"
+                                aria-checked={!effectiveMask}
+                                disabled={sourceAlreadyMasked}
+                                onClick={() => selectShareMode(false)}
+                                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-colors ${
+                                    sourceAlreadyMasked
+                                        ? "opacity-50 cursor-not-allowed bg-well/30 border-line"
+                                        : !effectiveMask
+                                        ? "bg-secondary/5 border-secondary cursor-pointer"
+                                        : "bg-well/40 border-line hover:border-line-strong cursor-pointer"
+                                }`}
+                            >
+                                <Globe
+                                    size={16}
+                                    className={!effectiveMask ? "text-secondary mt-0.5 flex-shrink-0" : "text-muted mt-0.5 flex-shrink-0"}
+                                    aria-hidden="true"
+                                />
+                                <div className="min-w-0 flex-1 space-y-1">
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-xs font-bold text-ink">Include IP, ISP &amp; Location</span>
+                                            <span className="text-3xs font-mono font-semibold text-secondary bg-secondary/10 border border-secondary/25 px-1.5 py-0.5 rounded">
+                                                Support Ready
+                                            </span>
+                                        </div>
+                                        <span
+                                            className={`size-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                                                !effectiveMask ? "border-secondary bg-secondary" : "border-line-strong bg-canvas"
+                                            }`}
+                                            aria-hidden="true"
+                                        >
+                                            {!effectiveMask && <span className="size-1.5 rounded-full bg-white" />}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-muted leading-relaxed">
+                                        Shows your IPv4, IPv6, ISP, approximate city, and WebRTC check along with browser &amp; screen specs.
+                                    </p>
+                                    <div className="font-mono text-2xs text-ink/85 bg-surface/80 border border-line px-2 py-1 rounded truncate">
+                                        {fullInfoPreview}
+                                    </div>
+                                </div>
+                            </button>
+
+                            <button
+                                type="button"
+                                role="radio"
+                                aria-checked={effectiveMask}
+                                onClick={() => selectShareMode(true)}
+                                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-colors cursor-pointer ${
+                                    effectiveMask
+                                        ? "bg-secondary/5 border-secondary"
+                                        : "bg-well/40 border-line hover:border-line-strong"
+                                }`}
+                            >
+                                <Shield
+                                    size={16}
+                                    className={effectiveMask ? "text-secondary mt-0.5 flex-shrink-0" : "text-muted mt-0.5 flex-shrink-0"}
+                                    aria-hidden="true"
+                                />
+                                <div className="min-w-0 flex-1 space-y-1">
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-xs font-bold text-ink">Hide IP &amp; Location</span>
+                                            <span className="text-3xs font-mono font-semibold text-muted bg-well border border-line px-1.5 py-0.5 rounded">
+                                                Public Safe
+                                            </span>
+                                        </div>
+                                        <span
+                                            className={`size-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                                                effectiveMask ? "border-secondary bg-secondary" : "border-line-strong bg-canvas"
+                                            }`}
+                                            aria-hidden="true"
+                                        >
+                                            {effectiveMask && <span className="size-1.5 rounded-full bg-white" />}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-muted leading-relaxed">
+                                        Redacts IPv4, IPv6, ISP, city, and exposed WebRTC IPs so the URL is safe for public forums or GitHub issues.
+                                    </p>
+                                </div>
+                            </button>
                         </div>
-                    </label>
+                    </div>
 
                     <div>
                         <label htmlFor="share-url-input" className="block text-xs font-semibold text-ink mb-1.5">
@@ -169,7 +259,7 @@ export default function ShareModal({ isOpen, onClose, stats, webrtcLeak }: Share
                     </div>
                 </div>
 
-                <div className="px-5 sm:px-6 py-4 border-t border-line bg-well/40 flex items-center justify-between">
+                <div className="px-4 sm:px-5 py-3.5 border-t border-line bg-well/40 flex items-center justify-between flex-shrink-0">
                     <button
                         type="button"
                         onClick={onClose}

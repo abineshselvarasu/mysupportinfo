@@ -72,7 +72,7 @@ export function generateDiagnosticCSV(
         ["latency", "Network", "Connection Type", data.connectionType || "Unknown"],
         ["latency", "Network", "Effective Speed", data.connectionSpeed || "Unknown"],
         ["webrtc", "Privacy & Security", "WebRTC Leak Status", data.webrtcLeak || "No Leak"],
-        ["privacy", "Privacy & Security", "VPN Detected", data.vpnDetected ? "Yes (Heuristic)" : "No"],
+        ["isp", "Privacy & Security", "VPN Detected", maskSensitive ? "[Masked for Privacy]" : (data.vpnDetected ? "Yes (Heuristic)" : "No")],
         ["privacy", "Privacy & Security", "Ad Blocker", data.adBlocker || "Not Detected"],
         ["privacy", "Privacy & Security", "Do Not Track", data.doNotTrack || "Unspecified"],
         ["privacy", "Privacy & Security", "Global Privacy Control (GPC)", data.globalPrivacyControl || "Not Set"],

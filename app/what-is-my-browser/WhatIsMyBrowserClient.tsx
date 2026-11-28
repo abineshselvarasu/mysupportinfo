@@ -111,20 +111,20 @@ export default function WhatIsMyBrowserClient({ faqs }: { faqs: DiagnosticFaqIte
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-line bg-well/30">
-                        <div className="p-4 sm:p-5 space-y-1">
+                    <div className="bg-line grid grid-cols-2 sm:grid-cols-4 gap-px">
+                        <div className="p-4 sm:p-5 space-y-1 bg-surface">
                             <span className="text-xs text-muted font-medium block">Engine</span>
                             <span className="font-bold text-sm text-ink">{details?.engine || "—"}</span>
                         </div>
-                        <div className="p-4 sm:p-5 space-y-1">
+                        <div className="p-4 sm:p-5 space-y-1 bg-surface">
                             <span className="text-xs text-muted font-medium block">Platform</span>
                             <span className="font-bold text-sm text-ink">{details?.osName || "—"}</span>
                         </div>
-                        <div className="p-4 sm:p-5 space-y-1">
+                        <div className="p-4 sm:p-5 space-y-1 bg-surface">
                             <span className="text-xs text-muted font-medium block">Locale</span>
                             <span className="font-mono font-bold text-sm text-ink">{details?.language || "en"}</span>
                         </div>
-                        <div className="p-4 sm:p-5 space-y-1">
+                        <div className="p-4 sm:p-5 space-y-1 bg-surface">
                             <span className="text-xs text-muted font-medium block">JS Status</span>
                             <span className="font-bold text-sm text-secondary">{details ? "Active" : "…"}</span>
                         </div>

@@ -8,6 +8,7 @@ import {
     FileText,
 } from "lucide-react";
 import { generateDiagnosticCSV, downloadCSV } from "@/lib/export-csv";
+import { isMaskedValue } from "@/lib/report-share";
 
 export type FieldId =
     | "browser"
@@ -107,7 +108,7 @@ export const SCREENSHOT_FIELDS: ScreenshotFieldDef[] = [
         category: "network",
         isSensitive: true,
         icon: Globe,
-        getPreview: (s) => s?.ip || "Scanning…",
+        getPreview: (s) => (isMaskedValue(s?.ip) ? "Hidden by sender" : s?.ip || "Scanning…"),
     },
     {
         id: "isp",
@@ -115,7 +116,7 @@ export const SCREENSHOT_FIELDS: ScreenshotFieldDef[] = [
         category: "network",
         isSensitive: true,
         icon: Wifi,
-        getPreview: (s) => s?.ispName || "Scanning…",
+        getPreview: (s) => (isMaskedValue(s?.ispName) ? "Hidden by sender" : s?.ispName || "Scanning…"),
     },
     {
         id: "location",
@@ -123,7 +124,10 @@ export const SCREENSHOT_FIELDS: ScreenshotFieldDef[] = [
         category: "network",
         isSensitive: true,
         icon: Globe,
-        getPreview: (s) => [s?.city, s?.country].filter(Boolean).join(", ") || "Location unknown",
+        getPreview: (s) =>
+            isMaskedValue(s?.city)
+                ? "Hidden by sender"
+                : [s?.city, s?.country].filter(Boolean).join(", ") || "Location unknown",
     },
     {
         id: "latency",
@@ -183,7 +187,7 @@ export const SCREENSHOT_FIELDS: ScreenshotFieldDef[] = [
         category: "privacy",
         isSensitive: true,
         icon: Shield,
-        getPreview: (_, leak) => leak || "Protected",
+        getPreview: (_, leak) => (isMaskedValue(leak) ? "Hidden by sender" : leak || "Protected"),
     },
     {
         id: "cookies",
@@ -213,6 +217,8 @@ export const ALL_FIELD_IDS: FieldId[] = SCREENSHOT_FIELDS.map((f) => f.id);
 export const SENSITIVE_FIELD_IDS: Set<FieldId> = new Set(
     SCREENSHOT_FIELDS.filter((f) => f.isSensitive).map((f) => f.id)
 );
+export const IP_PRIVACY_FIELD_IDS: FieldId[] = ["ip", "isp", "location"];
+export const NETWORK_PII_FIELD_IDS: Set<FieldId> = new Set<FieldId>(["ip", "isp", "location", "webrtc"]);
 export const DEFAULT_SELECTED_FIELDS = new Set<FieldId>(ALL_FIELD_IDS);
 
 export interface ScreenshotModalProps {
@@ -224,6 +230,7 @@ export interface ScreenshotModalProps {
     currentTime?: string;
     downloading: boolean;
     exportingFormat?: "png" | "pdf" | null;
+    senderMasked?: boolean;
 }
 
 export default function ScreenshotModal({
@@ -235,10 +242,21 @@ export default function ScreenshotModal({
     currentTime,
     downloading,
     exportingFormat = null,
+    senderMasked = false,
 }: ScreenshotModalProps) {
     const [selectedFields, setSelectedFields] = useState<Set<FieldId>>(new Set<FieldId>(ALL_FIELD_IDS));
     const [csvExported, setCsvExported] = useState(false);
     const titleId = useId();
+
+    useEffect(() => {
+        if (isOpen && senderMasked) {
+            setSelectedFields((prev) => {
+                const next = new Set(prev);
+                NETWORK_PII_FIELD_IDS.forEach((id) => next.delete(id));
+                return next.size > 0 ? next : new Set<FieldId>(["browser", "os"]);
+            });
+        }
+    }, [isOpen, senderMasked]);
 
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "";
@@ -258,6 +276,7 @@ export default function ScreenshotModal({
     if (!isOpen) return null;
 
     const toggleField = (id: FieldId) => {
+        if (senderMasked && NETWORK_PII_FIELD_IDS.has(id)) return;
         setSelectedFields((prev) => {
             const next = new Set(prev);
             if (next.has(id)) {
@@ -272,12 +291,17 @@ export default function ScreenshotModal({
     const applyMaskSensitive = () => {
         setSelectedFields(new Set<FieldId>(ALL_FIELD_IDS.filter((id) => !SENSITIVE_FIELD_IDS.has(id))));
     };
-    const applySelectAll = () => setSelectedFields(new Set<FieldId>(ALL_FIELD_IDS));
+    const applySelectAll = () => {
+        setSelectedFields(
+            new Set<FieldId>(senderMasked ? ALL_FIELD_IDS.filter((id) => !NETWORK_PII_FIELD_IDS.has(id)) : ALL_FIELD_IDS)
+        );
+    };
     const applyWebDevBasics = () => {
         setSelectedFields(new Set<FieldId>(["browser", "os", "screen", "viewport", "js", "cookies", "language"]));
     };
 
     const isSensitiveMasked = [...SENSITIVE_FIELD_IDS].every((id) => !selectedFields.has(id));
+    const isIpPrivacyMasked = Boolean(senderMasked) || IP_PRIVACY_FIELD_IDS.every((id) => !selectedFields.has(id));
 
     const handleExportCSV = () => {
         if (!stats) return;
@@ -287,7 +311,7 @@ export default function ScreenshotModal({
                 cookiesEnabled: stats.persistence === "ENABLED",
                 webrtcLeak: webrtcLeak || "No Leak",
             },
-            isSensitiveMasked,
+            isSensitiveMasked || isIpPrivacyMasked,
             selectedFields
         );
         downloadCSV(csv);
@@ -380,7 +404,7 @@ export default function ScreenshotModal({
                             <span>Select All</span>
                         </button>
                     </div>
-                    {isSensitiveMasked && (
+                    {isIpPrivacyMasked && (
                         <span className="text-xs font-semibold text-secondary">
                             &#10003; Personal IP &amp; location hidden
                         </span>
@@ -412,8 +436,11 @@ export default function ScreenshotModal({
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                                     {fieldsInCategory.map((field) => {
-                                        const isSelected = selectedFields.has(field.id);
-                                        const preview = field.getPreview(stats, webrtcLeak, currentTime);
+                                        const isSenderRedacted = Boolean(senderMasked && NETWORK_PII_FIELD_IDS.has(field.id));
+                                        const isSelected = !isSenderRedacted && selectedFields.has(field.id);
+                                        const preview = isSenderRedacted
+                                            ? "Redacted by sender"
+                                            : field.getPreview(stats, webrtcLeak, currentTime);
                                         const Icon = field.icon;
 
                                         return (
@@ -421,11 +448,13 @@ export default function ScreenshotModal({
                                                 key={field.id}
                                                 type="button"
                                                 onClick={() => toggleField(field.id)}
-                                                disabled={downloading}
-                                                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-colors cursor-pointer ${
-                                                    isSelected
-                                                        ? "bg-surface border-line-strong"
-                                                        : "bg-well/40 border-line opacity-65 hover:opacity-100"
+                                                disabled={downloading || isSenderRedacted}
+                                                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-colors ${
+                                                    isSenderRedacted
+                                                        ? "bg-well/30 border-line opacity-55 cursor-not-allowed"
+                                                        : isSelected
+                                                        ? "bg-surface border-line-strong cursor-pointer"
+                                                        : "bg-well/40 border-line opacity-65 hover:opacity-100 cursor-pointer"
                                                 }`}
                                             >
                                                 <div className="flex items-start justify-between gap-2 mb-2 w-full">
@@ -451,7 +480,7 @@ export default function ScreenshotModal({
                                                     </div>
                                                 </div>
                                                 <div className="font-mono text-2xs text-muted truncate w-full bg-well/60 px-2 py-1 rounded">
-                                                    {isSelected ? preview : "Hidden"}
+                                                    {isSelected ? preview : isSenderRedacted ? "Redacted by sender" : "Hidden"}
                                                 </div>
                                             </button>
                                         );
@@ -465,7 +494,7 @@ export default function ScreenshotModal({
                 {/* Footer */}
                 <div className="px-5 sm:px-6 py-4 border-t border-line bg-well/40 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <p className="text-xs text-muted text-center lg:text-left">
-                        {isSensitiveMasked
+                        {isIpPrivacyMasked
                             ? "IP address, location, and ISP will be omitted from all exports."
                             : "Full diagnostics including IP will be captured cleanly inside your browser."}
                     </p>
