@@ -48,12 +48,14 @@ html {
 }
 
 /* High-Visibility Focus Rings */
-:focus-visible {
-  outline: 2px solid #009E52;
-  outline-offset: 2px;
-}
+@layer base {
+  :focus-visible {
+    outline: 2px solid #009E52;
+    outline-offset: 2px;
+  }
 
-html.dark :focus-visible {
-  outline: 2px solid #FF8E60;
-  outline-offset: 2px;
+  html.dark :focus-visible {
+    outline: 2px solid #FF8E60;
+    outline-offset: 2px;
+  }
 }

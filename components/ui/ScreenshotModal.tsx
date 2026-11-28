@@ -220,7 +220,12 @@ export const SENSITIVE_FIELD_IDS: Set<FieldId> = new Set(
 export const IP_PRIVACY_FIELD_IDS: FieldId[] = ["ip", "isp", "location"];
 export const NETWORK_PII_FIELD_IDS: Set<FieldId> = new Set<FieldId>(["ip", "isp", "location", "webrtc"]);
 export const BROWSER_SCREEN_FIELD_IDS: FieldId[] = ["browser", "os", "screen", "viewport", "js", "cookies", "language"];
+const BROWSER_SCREEN_SET = new Set<FieldId>(BROWSER_SCREEN_FIELD_IDS);
 export const DEFAULT_SELECTED_FIELDS = new Set<FieldId>(ALL_FIELD_IDS);
+
+function setsMatch(a: Set<FieldId>, b: FieldId[]): boolean {
+    return a.size === b.length && b.every((id) => a.has(id));
+}
 
 export interface ScreenshotModalProps {
     isOpen: boolean;
@@ -245,24 +250,9 @@ export default function ScreenshotModal({
     exportingFormat = null,
     senderMasked = false,
 }: ScreenshotModalProps) {
-    const [selectedFields, setSelectedFields] = useState<Set<FieldId>>(new Set<FieldId>(ALL_FIELD_IDS));
-    const [preMaskSelection, setPreMaskSelection] = useState<Set<FieldId> | null>(null);
+    const [customFields, setCustomFields] = useState<Set<FieldId>>(new Set<FieldId>(ALL_FIELD_IDS));
     const [csvExported, setCsvExported] = useState(false);
     const titleId = useId();
-
-    useEffect(() => {
-        if (!isOpen) {
-            setPreMaskSelection(null);
-            return;
-        }
-        if (senderMasked) {
-            setSelectedFields((prev) => {
-                const next = new Set(prev);
-                NETWORK_PII_FIELD_IDS.forEach((id) => next.delete(id));
-                return next.size > 0 ? next : new Set<FieldId>(["browser", "os"]);
-            });
-        }
-    }, [isOpen, senderMasked]);
 
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "";
@@ -284,62 +274,48 @@ export default function ScreenshotModal({
     const availableAllIds = senderMasked
         ? ALL_FIELD_IDS.filter((id) => !NETWORK_PII_FIELD_IDS.has(id))
         : ALL_FIELD_IDS;
+    const safePublicIds = availableAllIds.filter((id) => !SENSITIVE_FIELD_IDS.has(id));
+    const browserScreenIds = availableAllIds.filter((id) => BROWSER_SCREEN_SET.has(id));
+
+    const selectedFields = senderMasked
+        ? new Set<FieldId>(availableAllIds.filter((id) => customFields.has(id)))
+        : customFields;
+    if (selectedFields.size === 0) {
+        selectedFields.add("browser");
+    }
+
+    const activePreset: "all" | "hideIp" | "browserOnly" | "custom" = setsMatch(selectedFields, availableAllIds)
+        ? "all"
+        : setsMatch(selectedFields, safePublicIds)
+        ? "hideIp"
+        : setsMatch(selectedFields, browserScreenIds)
+        ? "browserOnly"
+        : "custom";
+
     const isSensitiveMasked = [...SENSITIVE_FIELD_IDS].every((id) => !selectedFields.has(id));
-    const isWebDevBasics =
-        selectedFields.size === BROWSER_SCREEN_FIELD_IDS.length &&
-        BROWSER_SCREEN_FIELD_IDS.every((id) => selectedFields.has(id));
-    const isAllSelected = selectedFields.size === availableAllIds.length;
     const isIpPrivacyMasked = Boolean(senderMasked) || IP_PRIVACY_FIELD_IDS.every((id) => !selectedFields.has(id));
 
     const toggleField = (id: FieldId) => {
         if (senderMasked && NETWORK_PII_FIELD_IDS.has(id)) return;
-        setPreMaskSelection(null);
-        setSelectedFields((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) {
-                if (next.size > 1) next.delete(id);
-            } else {
-                next.add(id);
-            }
-            return next;
-        });
+        if (selectedFields.has(id) && selectedFields.size <= 1) return;
+        const next = new Set<FieldId>(selectedFields);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setCustomFields(next);
     };
 
-    const toggleMaskSensitive = () => {
-        if (isSensitiveMasked) {
-            if (preMaskSelection) {
-                const restored = new Set<FieldId>(preMaskSelection);
-                if (senderMasked) NETWORK_PII_FIELD_IDS.forEach((id) => restored.delete(id));
-                setSelectedFields(restored);
-            } else {
-                setSelectedFields((prev) => {
-                    const next = new Set(prev);
-                    SENSITIVE_FIELD_IDS.forEach((id) => {
-                        if (!senderMasked || !NETWORK_PII_FIELD_IDS.has(id)) next.add(id);
-                    });
-                    return next;
-                });
-            }
-            setPreMaskSelection(null);
+    const selectPreset = (preset: "all" | "hideIp" | "browserOnly") => {
+        if (preset !== "all" && activePreset === preset) {
+            setCustomFields(new Set<FieldId>(availableAllIds));
             return;
         }
-
-        setPreMaskSelection(new Set(selectedFields));
-        setSelectedFields((prev) => {
-            const next = new Set(prev);
-            SENSITIVE_FIELD_IDS.forEach((id) => next.delete(id));
-            return next.size > 0
-                ? next
-                : new Set<FieldId>(ALL_FIELD_IDS.filter((id) => !SENSITIVE_FIELD_IDS.has(id)));
-        });
-    };
-    const applySelectAll = () => {
-        setPreMaskSelection(null);
-        setSelectedFields(new Set<FieldId>(availableAllIds));
-    };
-    const applyWebDevBasics = () => {
-        setPreMaskSelection(null);
-        setSelectedFields(new Set<FieldId>(BROWSER_SCREEN_FIELD_IDS));
+        const targetIds =
+            preset === "all"
+                ? availableAllIds
+                : preset === "hideIp"
+                ? safePublicIds
+                : browserScreenIds;
+        setCustomFields(new Set<FieldId>(targetIds));
     };
 
     const handleExportCSV = () => {
@@ -410,49 +386,60 @@ export default function ScreenshotModal({
                 {/* Presets */}
                 <div className="px-5 sm:px-6 py-3 bg-well/60 border-b border-line flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-semibold text-muted mr-1 hidden sm:inline">Presets:</span>
-                        <button
-                            type="button"
-                            onClick={toggleMaskSensitive}
-                            aria-pressed={isSensitiveMasked}
-                            disabled={downloading}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                                isSensitiveMasked
-                                    ? "bg-secondary text-white border-secondary"
-                                    : "bg-surface text-ink border-line hover:border-line-strong"
-                            }`}
+                        <span className="text-xs font-semibold text-muted hidden sm:inline">Presets:</span>
+                        <div
+                            role="group"
+                            aria-label="Diagnostic field presets"
+                            className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl bg-canvas border border-line"
                         >
-                            <Shield size={13} aria-hidden="true" />
-                            <span>Hide IP &amp; Location</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={applyWebDevBasics}
-                            aria-pressed={isWebDevBasics}
-                            disabled={downloading}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                                isWebDevBasics
-                                    ? "bg-brand text-white border-brand"
-                                    : "bg-surface text-ink border-line hover:border-line-strong"
-                            }`}
-                        >
-                            <Monitor size={13} className="text-primary" aria-hidden="true" />
-                            <span>Browser &amp; Screen Only</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={applySelectAll}
-                            aria-pressed={isAllSelected}
-                            disabled={downloading}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                                isAllSelected
-                                    ? "bg-brand text-white border-brand"
-                                    : "bg-surface text-ink border-line hover:border-line-strong"
-                            }`}
-                        >
-                            <CheckSquare size={13} className={isAllSelected ? "text-accent" : "text-muted"} aria-hidden="true" />
-                            <span>Select All</span>
-                        </button>
+                            <button
+                                type="button"
+                                onClick={() => selectPreset("all")}
+                                aria-pressed={activePreset === "all"}
+                                disabled={downloading}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 ${
+                                    activePreset === "all"
+                                        ? "bg-brand text-white shadow-sm"
+                                        : "text-muted hover:text-ink hover:bg-well/60"
+                                }`}
+                            >
+                                <CheckSquare size={13} aria-hidden="true" />
+                                <span>All Fields ({availableAllIds.length})</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => selectPreset("hideIp")}
+                                aria-pressed={activePreset === "hideIp"}
+                                disabled={downloading}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 ${
+                                    activePreset === "hideIp"
+                                        ? "bg-brand text-white shadow-sm"
+                                        : "text-muted hover:text-ink hover:bg-well/60"
+                                }`}
+                            >
+                                <Shield size={13} aria-hidden="true" />
+                                <span>Hide IP &amp; Location ({safePublicIds.length})</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => selectPreset("browserOnly")}
+                                aria-pressed={activePreset === "browserOnly"}
+                                disabled={downloading}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 ${
+                                    activePreset === "browserOnly"
+                                        ? "bg-brand text-white shadow-sm"
+                                        : "text-muted hover:text-ink hover:bg-well/60"
+                                }`}
+                            >
+                                <Monitor size={13} aria-hidden="true" />
+                                <span>Browser &amp; Screen Only ({browserScreenIds.length})</span>
+                            </button>
+                        </div>
+                        {activePreset === "custom" && (
+                            <span className="text-2xs font-mono font-semibold text-muted bg-surface border border-line px-2 py-0.5 rounded-md">
+                                Custom ({selectedFields.size})
+                            </span>
+                        )}
                     </div>
                     {isIpPrivacyMasked && (
                         <span className="text-xs font-semibold text-secondary">
@@ -473,10 +460,17 @@ export default function ScreenshotModal({
                                             {category.name}
                                         </h4>
                                         {category.badge && (
-                                            <span className="inline-flex items-center gap-1 text-2xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-md">
-                                                <AlertTriangle size={10} aria-hidden="true" />
-                                                {category.badge}
-                                            </span>
+                                            isIpPrivacyMasked ? (
+                                                <span className="inline-flex items-center gap-1 text-2xs font-semibold text-secondary bg-secondary/10 border border-secondary/25 px-2 py-0.5 rounded-md">
+                                                    <Check size={10} aria-hidden="true" />
+                                                    IP / Location Hidden
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 text-2xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-md">
+                                                    <AlertTriangle size={10} aria-hidden="true" />
+                                                    {category.badge}
+                                                </span>
+                                            )
                                         )}
                                     </div>
                                     <span className="text-xs text-muted font-mono">
