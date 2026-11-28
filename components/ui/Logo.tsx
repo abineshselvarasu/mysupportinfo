@@ -16,57 +16,35 @@ export default function Logo({
     size = "md",
     onClick,
 }: LogoProps) {
-    const isDark = theme === "dark";
+    const isDarkSurface = theme === "dark";
 
     const dimensions = {
-        sm: { size: 30, text: "text-lg", sub: "text-4xs" },
-        md: { size: 36, text: "text-xl", sub: "text-3xs" },
-        lg: { size: 44, text: "text-2xl", sub: "text-2xs" },
+        sm: { icon: 28, text: "text-base" },
+        md: { icon: 32, text: "text-lg" },
+        lg: { icon: 40, text: "text-2xl" },
     }[size];
 
     const iconNode = (
         <svg
-            width={dimensions.size}
-            height={dimensions.size}
+            width={dimensions.icon}
+            height={dimensions.icon}
             viewBox="0 0 100 100"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="flex-shrink-0 transition-transform duration-300 group-hover:scale-105"
+            className="flex-shrink-0 transition-transform duration-200 group-hover:scale-[1.03]"
             aria-hidden="true"
         >
-            <defs>
-                <linearGradient id="logo-bg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#00473E" />
-                    <stop offset="100%" stopColor="#00241F" />
-                </linearGradient>
-                <linearGradient id="logo-pulse" x1="10" y1="50" x2="90" y2="50" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#FFC470" />
-                    <stop offset="40%" stopColor="#FF8E60" />
-                    <stop offset="80%" stopColor="#FF5C35" />
-                    <stop offset="100%" stopColor="#00C48C" />
-                </linearGradient>
-                <filter id="logo-glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="2" result="blur" />
-                    <feMerge>
-                        <feMergeNode in="blur" />
-                        <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                </filter>
-            </defs>
-            <rect width="100" height="100" rx="24" fill="url(#logo-bg)" stroke="#00C48C" strokeWidth="2" strokeOpacity="0.6" />
-            <circle cx="50" cy="50" r="36" stroke="#00C48C" strokeWidth="1.2" strokeOpacity="0.25" strokeDasharray="3 3" />
-            
-            {/* Shield Body */}
-            <path d="M50 16 L76 27 C76 54 50 76 50 76 C50 76 24 54 24 27 Z" fill="#0A5C50" stroke="#00C48C" strokeWidth="2.5" strokeLinejoin="round" />
-            <path d="M50 18 L74 28 C74 52 50 73 50 73 Z" fill="#ffffff" fillOpacity="0.1" />
-
-            {/* Diagnostic Pulse Wave */}
-            <path d="M18 52 L34 52 L42 36 L50 66 L58 32 L66 58 L72 52 L82 52" fill="none" stroke="url(#logo-pulse)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" filter="url(#logo-glow)" />
-            <path d="M18 52 L34 52 L42 36 L50 66 L58 32 L66 58 L72 52 L82 52" fill="none" stroke="#FAF6F0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-
-            {/* Diagnostic Spark Node */}
-            <circle cx="50" cy="28" r="3.5" fill="#FF8E60" filter="url(#logo-glow)" />
-            <circle cx="50" cy="28" r="2" fill="#FAF6F0" />
+            <rect width="100" height="100" rx="22" fill="#00473E" stroke="#009E52" strokeWidth="3" />
+            <circle cx="50" cy="50" r="34" stroke="#FFC4B7" strokeWidth="1.5" strokeOpacity="0.3" strokeDasharray="4 4" />
+            <path
+                d="M20 52 L35 52 L43 34 L50 68 L58 30 L66 58 L72 52 L80 52"
+                fill="none"
+                stroke="#FF8E60"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+            <circle cx="50" cy="22" r="4.5" fill="#009E52" />
         </svg>
     );
 
@@ -81,11 +59,9 @@ export default function Logo({
     return (
         <Link href="/" onClick={onClick} aria-label="MySupportInfo Home" className={`group inline-flex items-center gap-2.5 ${className}`}>
             {iconNode}
-            <div className="flex flex-col">
-                <span className={`${dimensions.text} font-black tracking-tight leading-none ${isDark ? "text-background" : "text-background-dark dark:text-white"}`}>
-                    MySupport<span className="text-primary font-black italic font-serif ml-0.5">Info</span>
-                </span>
-            </div>
+            <span className={`${dimensions.text} font-extrabold tracking-tight leading-none ${isDarkSurface ? "text-white" : "text-ink"}`}>
+                MySupport<span className="text-primary">Info</span>
+            </span>
         </Link>
     );
 }

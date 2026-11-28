@@ -1,179 +1,93 @@
-"use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import AskAI from "@/components/ui/AskAI";
 import Logo from "@/components/ui/Logo";
 import CookieManager, { CookiePreferencesButton } from "@/components/ui/CookieManager";
-import ThemeToggle from "@/components/ui/ThemeToggle";
 
 export default function Footer() {
-    const [clientInfo, setClientInfo] = useState({ os: "Detecting...", browser: "Detecting..." });
-
-    useEffect(() => {
-        const ua = navigator.userAgent;
-        let browser = "Unknown Browser";
-        let os = "Unknown OS";
-
-        if (ua.indexOf("Edg/") > -1 || ua.indexOf("Edge/") > -1 || ua.indexOf("EdgA/") > -1 || ua.indexOf("EdgiOS/") > -1) {
-            browser = "Edge";
-        } else if (ua.indexOf("SamsungBrowser/") > -1) {
-            browser = "Samsung Internet";
-        } else if (ua.indexOf("YaBrowser/") > -1) {
-            browser = "Yandex Browser";
-        } else if (ua.indexOf("UCBrowser/") > -1) {
-            browser = "UC Browser";
-        } else if (ua.indexOf("DuckDuckGo/") > -1) {
-            browser = "DuckDuckGo";
-        } else if (ua.indexOf("Vivaldi/") > -1) {
-            browser = "Vivaldi";
-        } else if (ua.indexOf("OPR/") > -1 || ua.indexOf("OPT/") > -1) {
-            browser = "Opera";
-        } else if (ua.indexOf("Opera Mini") > -1 || ua.indexOf("OPiOS/") > -1) {
-            browser = "Opera Mini";
-        } else if (ua.indexOf("CriOS/") > -1) {
-            browser = "Chrome";
-        } else if (ua.indexOf("FxiOS/") > -1) {
-            browser = "Firefox";
-        } else if (ua.indexOf("Firefox/") > -1) {
-            browser = "Firefox";
-        } else if (ua.indexOf("Silk/") > -1) {
-            browser = "Amazon Silk";
-        } else if (ua.indexOf("Chrome/") > -1) {
-            browser = "Chrome";
-        } else if (ua.indexOf("Safari/") > -1) {
-            browser = "Safari";
-        }
-
-        if (/Android/i.test(ua)) os = "Android";
-        else if (/iPad/i.test(ua)) os = "iPadOS";
-        else if (/iPhone|iPod/i.test(ua)) os = "iOS";
-        else if (/Win/i.test(ua)) os = "Windows";
-        else if (/CrOS/i.test(ua)) os = "ChromeOS";
-        else if (/Mac/i.test(ua)) os = navigator.maxTouchPoints > 1 ? "iPadOS" : "macOS";
-        else if (/Linux/i.test(ua)) os = navigator.maxTouchPoints > 0 ? "Android/Linux Tablet" : "Linux";
-
-        setClientInfo({ os, browser });
-    }, []);
-
     return (
-        <footer role="contentinfo" className="relative w-full border-t-2 border-background-dark bg-background-dark text-white overflow-hidden">
-            {/* Subtle Top Ambient Radial Highlight */}
-            <div
-                className="pointer-events-none absolute inset-x-0 top-0 h-32 opacity-25"
-                style={{
-                    background: "radial-gradient(ellipse 60% 80% at 50% 0%, #00C48C 0%, transparent 75%)",
-                }}
-            />
-
-            <div className="relative max-w-site mx-auto px-6 py-8 md:py-10">
-                {/* Main Content Grid: Balanced 3 Columns */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10 pb-8 border-b border-white/10 items-start">
-                    
-                    {/* Col 1: Brand & Core Mission (5 cols) */}
-                    <div className="md:col-span-5 flex flex-col gap-3">
+        <footer role="contentinfo" className="w-full bg-brand text-white border-t border-white/10">
+            <div className="max-w-site mx-auto px-5 sm:px-6 py-10 md:py-12">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-white/15 items-start">
+                    {/* Col 1: Brand & Mission */}
+                    <div className="md:col-span-6 space-y-3">
                         <Logo theme="dark" size="sm" />
-                        <p className="text-accent/85 text-xs sm:text-sm leading-relaxed max-w-sm font-medium">
-                            One link to diagnose any device. Private, client-side browser intelligence and bufferbloat latency testing built for IT support, remote teams, and sysadmins.
+                        <p className="text-white/85 text-sm leading-relaxed max-w-md">
+                            One link to diagnose any device. Plain-English browser, IP, hardware, and latency checks built to run safely inside your browser with zero stored personal logs.
                         </p>
-                        <p className="text-3xs text-accent/80 font-medium tracking-wide">
-                            100% in-browser processing &middot; Zero database logs &middot; Encrypted TLS
+                        <p className="text-xs font-mono text-accent/90">
+                            In-browser execution &middot; No account needed &middot; HTTPS/TLS
                         </p>
                     </div>
 
-                    {/* Col 2: Navigation Links (3 cols) */}
-                    <div className="md:col-span-3 flex flex-col gap-2">
-                        <span className="text-3xs font-black uppercase text-primary tracking-widest mb-0.5">
-                            Diagnostics &amp; Tools
-                        </span>
-                        <nav aria-label="Footer diagnostics navigation" className="flex flex-col gap-1 text-xs font-semibold text-accent/85">
-                            <Link className="hover:text-primary transition-colors flex items-center w-fit gap-2 min-h-[24px] py-0.5" href="/what-is-my-browser">
-                                <span>What Is My Browser</span>
+                    {/* Col 2: Diagnostic Tools */}
+                    <div className="md:col-span-3 space-y-2.5">
+                        <h2 className="text-xs font-bold uppercase tracking-wider text-primary">
+                            Diagnostic Tools
+                        </h2>
+                        <nav aria-label="Footer diagnostics navigation" className="flex flex-col gap-1.5 text-sm text-white/85">
+                            <Link className="hover:text-primary transition-colors w-fit py-0.5" href="/">
+                                Device Overview
                             </Link>
-                            <Link className="hover:text-primary transition-colors flex items-center w-fit gap-2 min-h-[24px] py-0.5" href="/what-is-my-ip">
-                                <span>What Is My IP Address</span>
+                            <Link className="hover:text-primary transition-colors w-fit py-0.5" href="/what-is-my-browser">
+                                What Is My Browser
                             </Link>
-                            <Link className="hover:text-primary transition-colors flex items-center w-fit gap-2 min-h-[24px] py-0.5" href="/what-is-my-screen-resolution">
-                                <span>What Is My Screen Size</span>
+                            <Link className="hover:text-primary transition-colors w-fit py-0.5" href="/what-is-my-ip">
+                                What Is My IP Address
                             </Link>
-                            <Link className="hover:text-primary transition-colors flex items-center gap-2 w-fit min-h-[24px] py-0.5" href="/bufferbloat">
-                                <span>Bufferbloat Test</span>
-                                <span className="text-4xs px-1.5 py-0.5 rounded bg-primary text-background-dark font-extrabold uppercase leading-none">
-                                    Latency
+                            <Link className="hover:text-primary transition-colors w-fit py-0.5" href="/what-is-my-screen-resolution">
+                                What Is My Screen Size
+                            </Link>
+                            <Link className="hover:text-primary transition-colors inline-flex items-center gap-2 w-fit py-0.5" href="/bufferbloat">
+                                <span>Bufferbloat Latency Test</span>
+                                <span className="text-3xs px-1.5 py-0.5 rounded bg-primary text-foreground font-bold uppercase leading-none">
+                                    Lag
                                 </span>
                             </Link>
-                            <Link className="hover:text-primary transition-colors flex items-center w-fit min-h-[24px] py-0.5" href="/faq">
-                                Knowledge Base (FAQ)
-                            </Link>
-                            <a
-                                href="mailto:report@mysupportinfo.com?subject=Detection%20Error%20Report%20-%20MySupportInfo"
-                                className="hover:text-primary text-accent transition-colors flex items-center gap-1.5 w-fit font-bold min-h-[24px] py-0.5"
-                            >
-                                <span>&#9888;</span>
-                                <span>Report Detection Error</span>
-                            </a>
-                            <div className="flex items-center gap-2.5 pt-1 text-accent/80 text-3xs flex-wrap">
-                                <Link className="hover:text-accent transition-colors underline-offset-2 hover:underline" href="/privacy">
-                                    Privacy
-                                </Link>
-                                <span>&middot;</span>
-                                <Link className="hover:text-accent transition-colors underline-offset-2 hover:underline" href="/terms">
-                                    Terms
-                                </Link>
-                                <span>&middot;</span>
-                                <CookiePreferencesButton />
-                            </div>
                         </nav>
                     </div>
 
-                    {/* Col 3: Live Active Telemetry Pill (4 cols) */}
-                    <div className="md:col-span-4 flex flex-col gap-2.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-3xs font-black uppercase text-primary tracking-widest">
-                                Active Environment
-                            </span>
-                            <span className="text-4xs font-bold text-accent/80 uppercase tracking-widest font-mono">
-                                In-Memory
-                            </span>
-                        </div>
-                        
-                        {/* Compact Glass Telemetry Card */}
-                        <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-2 text-2xs font-mono backdrop-blur-sm shadow-sm">
-                            <div className="flex items-center justify-between">
-                                <span className="text-accent/80 font-sans font-medium text-3xs">Host OS</span>
-                                <span className="text-white font-bold truncate max-w-[180px]">{clientInfo.os}</span>
+                    {/* Col 3: Documentation & Legal */}
+                    <div className="md:col-span-3 space-y-2.5">
+                        <h2 className="text-xs font-bold uppercase tracking-wider text-primary">
+                            Resources &amp; Legal
+                        </h2>
+                        <nav aria-label="Footer legal and support navigation" className="flex flex-col gap-1.5 text-sm text-white/85">
+                            <Link className="hover:text-primary transition-colors w-fit py-0.5" href="/faq">
+                                Help &amp; FAQ
+                            </Link>
+                            <Link className="hover:text-primary transition-colors w-fit py-0.5" href="/privacy">
+                                Privacy Policy
+                            </Link>
+                            <Link className="hover:text-primary transition-colors w-fit py-0.5" href="/terms">
+                                Terms of Use
+                            </Link>
+                            <div className="py-0.5">
+                                <CookiePreferencesButton className="hover:text-primary transition-colors cursor-pointer text-left text-white/85" />
                             </div>
-                            <div className="flex items-center justify-between border-t border-white/5 pt-1.5">
-                                <span className="text-accent/80 font-sans font-medium text-3xs">Browser</span>
-                                <span className="text-white font-bold truncate max-w-[180px]">{clientInfo.browser}</span>
-                            </div>
-                        </div>
-                        <p className="text-4xs text-accent/75 leading-normal">
-                            Telemetry evaluated in browser memory. Disappears when tab closes.
-                        </p>
+                            <a
+                                href="mailto:report@mysupportinfo.com?subject=Detection%20Error%20Report%20-%20MySupportInfo"
+                                className="hover:text-primary text-accent transition-colors w-fit py-0.5 font-medium"
+                            >
+                                Report a Detection Issue
+                            </a>
+                        </nav>
                     </div>
-
                 </div>
 
-                {/* Bottom Row: Compact AI Prompt Strip, Theme Selector & Copyright */}
-                <div className="pt-5 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="text-3xs font-bold text-accent/80 uppercase tracking-wider">
-                            Ask AI:
+                {/* Bottom Bar */}
+                <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+                    <div className="flex items-center gap-2.5 flex-wrap justify-center">
+                        <span className="text-xs font-medium text-white/75">
+                            Ask AI about MySupportInfo
                         </span>
-                        <AskAI variant="dark" compact={true} />
+                        <AskAI variant="dark" compact />
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <ThemeToggle compact variant="dark" />
-                        <div className="flex items-center gap-2 text-3xs font-bold text-accent/80 uppercase tracking-wider">
-                            <span>&copy; {new Date().getFullYear()} MySupportInfo.com</span>
-                            <span>&middot;</span>
-                            <span className="normal-case font-medium text-accent/80">Private System Diagnostics</span>
-                        </div>
+                    <div className="text-white/75 font-medium text-center md:text-right">
+                        &copy; {new Date().getFullYear()} MySupportInfo.com &middot; Client-Side Device Diagnostics
                     </div>
                 </div>
             </div>
-            {/* Global Cookie Preferences & Consent Manager */}
             <CookieManager />
         </footer>
     );

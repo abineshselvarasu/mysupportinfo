@@ -91,7 +91,7 @@ export default function FAQLayout({ children }: { children: React.ReactNode }) {
                 name: "How do I share my technical diagnostic results with an IT support technician?",
                 acceptedAnswer: {
                   "@type": "Answer",
-                  text: "You have two quick options: (1) Click 'Copy All Info' at the top of the homepage to copy a cleanly formatted plain-text diagnostic summary into your clipboard—perfect for pasting into Zendesk, Jira, Freshdesk, email, or GitHub issues. (2) Click 'Download Screenshot Report' to generate a high-resolution PNG summary card directly on your device.",
+                  text: "You have three quick options: (1) Click 'Copy All Info' at the top of the homepage to copy a cleanly formatted plain-text diagnostic summary into your clipboard—perfect for pasting into Zendesk, Jira, Freshdesk, email, or GitHub issues. (2) Click 'Share Link' to generate a private URL snapshot with optional IP masking. (3) Open 'Screenshot Report' to customize fields and export as a high-resolution PNG image, PDF document, or CSV spreadsheet directly inside your browser.",
                 },
               },
               {
@@ -115,7 +115,7 @@ export default function FAQLayout({ children }: { children: React.ReactNode }) {
                 name: "How does MySupportInfo compare to MySupportDetails and other diagnostic tools?",
                 acceptedAnswer: {
                   "@type": "Answer",
-                  text: "While older legacy tools like MySupportDetails provide basic system text, MySupportInfo offers a modern, interactive Neobrutalist design with zero server-side data logging, an integrated real-time Bufferbloat Latency Diagnostic with live SVG charting, WebRTC VPN privacy leak audits, and instant client-side PNG report card exports.",
+                  text: "While older legacy tools like MySupportDetails provide basic system text, MySupportInfo offers a modern privacy-first interface with zero server-side data logging, an integrated real-time Bufferbloat Latency Diagnostic with live SVG charting, WebRTC VPN privacy leak audits, and instant client-side PNG image, PDF, CSV, and link exports.",
                 },
               },
               {

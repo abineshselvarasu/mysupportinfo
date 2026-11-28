@@ -2,18 +2,16 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-    RefreshCw, Globe, Wifi
-} from "lucide-react";
+import { ChevronRight, ArrowRight } from "lucide-react";
 import DiagnosticFaqSection, { type DiagnosticFaqItem } from "@/components/ui/DiagnosticFaqSection";
 
 const RESPONSIVE_BREAKPOINTS = [
     { token: "XS (Mobile)", widthRange: "< 640 px", typicalDevice: "Portrait smartphones (360–430 CSS px)" },
-    { token: "SM (Large Mobile)", widthRange: ">= 640 px", typicalDevice: "Landscape phones and small phablets" },
-    { token: "MD (Tablet)", widthRange: ">= 768 px", typicalDevice: "iPad / Android tablets in portrait mode" },
-    { token: "LG (Laptop)", widthRange: ">= 1024 px", typicalDevice: "13\"–14\" laptops and landscape tablets" },
-    { token: "XL (Desktop)", widthRange: ">= 1280 px", typicalDevice: "1080p Full HD & scaled MacBook Retina screens" },
-    { token: "2XL (Ultrawide / QHD)", widthRange: ">= 1536 px", typicalDevice: "2560×1440 QHD and 4K desktop displays" },
+    { token: "SM (Large Mobile)", widthRange: ">= 640 px", typicalDevice: "Landscape phones & compact windows" },
+    { token: "MD (Tablet)", widthRange: ">= 768 px", typicalDevice: "Tablets in portrait mode" },
+    { token: "LG (Laptop)", widthRange: ">= 1024 px", typicalDevice: "13\"–14\" laptops & landscape tablets" },
+    { token: "XL (Desktop)", widthRange: ">= 1280 px", typicalDevice: "Full HD & scaled HiDPI screens" },
+    { token: "2XL (Ultrawide / QHD)", widthRange: ">= 1536 px", typicalDevice: "QHD and 4K desktop displays" },
 ];
 
 export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: DiagnosticFaqItem[] }) {
@@ -27,14 +25,8 @@ export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: Diagnos
     useEffect(() => {
         const updateMetrics = () => {
             if (typeof window === "undefined") return;
-            setScreenRes({
-                width: window.screen.width,
-                height: window.screen.height,
-            });
-            setViewport({
-                width: window.innerWidth,
-                height: window.innerHeight,
-            });
+            setScreenRes({ width: window.screen.width, height: window.screen.height });
+            setViewport({ width: window.innerWidth, height: window.innerHeight });
             setDpr(window.devicePixelRatio || 1);
             setColorDepth(window.screen.colorDepth || 24);
             setOrientation(
@@ -48,7 +40,6 @@ export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: Diagnos
         return () => window.removeEventListener("resize", updateMetrics);
     }, []);
 
-    // Calculate aspect ratio string safely only after measurement
     const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
     let aspectLabel = "Detecting…";
     if (screenRes.width > 0 && screenRes.height > 0) {
@@ -62,15 +53,14 @@ export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: Diagnos
         aspectLabel = `${aspectX}:${aspectY}`;
     }
 
-    // CSS Breakpoint indicator
     const getBreakpoint = (w: number) => {
         if (w <= 0) return "Detecting…";
-        if (w >= 1536) return "2XL (Desktop Extra Large)";
-        if (w >= 1280) return "XL (Standard Desktop)";
-        if (w >= 1024) return "LG (Laptop / Tablet Landscape)";
-        if (w >= 768)  return "MD (Tablet Portrait)";
-        if (w >= 640)  return "SM (Large Smartphone)";
-        return "XS (Compact Mobile)";
+        if (w >= 1536) return "2XL (Ultrawide)";
+        if (w >= 1280) return "XL (Desktop)";
+        if (w >= 1024) return "LG (Laptop)";
+        if (w >= 768) return "MD (Tablet)";
+        if (w >= 640) return "SM (Large Phone)";
+        return "XS (Mobile)";
     };
 
     const megapixelsLabel =
@@ -78,205 +68,139 @@ export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: Diagnos
             ? `${((screenRes.width * screenRes.height) / 1000000).toFixed(1)} MP`
             : "—";
 
+    const widthRatioPct =
+        screenRes.width > 0 ? Math.min(100, Math.max(20, Math.round((viewport.width / screenRes.width) * 100))) : 75;
+    const heightRatioPct =
+        screenRes.height > 0 ? Math.min(100, Math.max(20, Math.round((viewport.height / screenRes.height) * 100))) : 70;
+
     return (
-        <div className="min-h-screen bg-background text-foreground font-sans pb-24">
-            {/* Breadcrumb Navigation */}
-            <div className="max-w-site mx-auto px-6 pt-6">
-                <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-3xs font-extrabold uppercase tracking-widest text-background-dark/50">
-                    <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-                    <span>/</span>
-                    <span className="text-primary font-bold" aria-current="page">What Is My Screen Resolution</span>
+        <div className="bg-canvas text-ink pb-20">
+            <div className="max-w-site mx-auto px-5 sm:px-6 pt-8 space-y-10">
+                <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-medium text-muted">
+                    <Link href="/" className="hover:text-ink transition-colors">Overview</Link>
+                    <ChevronRight size={14} aria-hidden="true" />
+                    <span className="text-ink font-semibold" aria-current="page">What Is My Screen Resolution</span>
                 </nav>
-            </div>
 
-            {/* Hero Header */}
-            <div className="text-center px-6 pt-8 pb-10 max-w-3xl mx-auto">
-                <p className="text-xs font-black uppercase tracking-widest text-primary mb-3">
-                    Live Display, Viewport &amp; DPR Diagnostics
-                </p>
-                <h1 className="font-serif text-fluid-h1 font-bold text-background-dark leading-tight mb-4">
-                    What Is My Screen Resolution?
-                </h1>
-                <p className="text-fluid-lead text-background-dark/70 font-medium leading-relaxed">
-                    Instantly measure your display screen resolution, active CSS browser viewport size, device pixel ratio (DPR), responsive breakpoint, and aspect ratio live as you resize or zoom.
-                </p>
-            </div>
+                <div className="space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                        Live Display, Viewport &amp; DPR Inspector
+                    </p>
+                    <h1 className="text-fluid-hero font-extrabold text-ink tracking-tight leading-tight">
+                        What Is My Screen Resolution?
+                    </h1>
+                    <p className="text-fluid-lead text-muted leading-relaxed max-w-2xl">
+                        See your full monitor size alongside your live browser window dimensions—resize or zoom your browser to watch how websites adapt.
+                    </p>
+                </div>
 
-            {/* Main Interactive Diagnostic Display Card */}
-            <div className="max-w-4xl mx-auto px-6 mb-16">
-                <div className="bg-white border-2 border-background-dark rounded-3xl p-6 sm:p-10 shadow-block">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-8 border-b-2 border-background-dark/10">
-                        {/* Hardware Resolution */}
-                        <div className="p-6 rounded-3xl bg-background-dark text-white border-2 border-background-dark flex flex-col justify-between">
-                            <div>
-                                <span className="text-4xs font-bold uppercase tracking-ui-widest text-accent/70 block mb-2">
-                                    Logical Screen Resolution
-                                </span>
-                                <div className="text-3xl sm:text-5xl font-mono font-bold text-white mb-2">
+                {/* Interactive Proportional Screen vs Browser Frame Visualizer */}
+                <section className="bg-surface border border-line rounded-2xl shadow-subtle overflow-hidden">
+                    <div className="grid grid-cols-1 md:grid-cols-12 border-b border-line">
+                        {/* Numbers Side */}
+                        <div className="md:col-span-7 divide-y divide-line">
+                            <div className="p-6 space-y-1.5">
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="font-semibold text-muted">Full Monitor Area (Screen Resolution)</span>
+                                    <span className="font-mono font-semibold text-ink">{aspectLabel}</span>
+                                </div>
+                                <div className="text-3xl sm:text-4xl font-mono font-extrabold text-ink tabular-nums">
                                     {screenRes.width > 0 ? `${screenRes.width} × ${screenRes.height}` : "Measuring…"}
                                 </div>
-                                <p className="text-xs text-accent/80 leading-relaxed font-medium">
-                                    Monitor dimensions exposed via <code>window.screen</code> (multiply by DPR for raw physical hardware pixels).
+                                <p className="text-xs text-muted">
+                                    Logical display area reported by your operating system.
                                 </p>
                             </div>
-                            <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-2xs font-mono">
-                                <span className="text-accent/60">Aspect Ratio</span>
-                                <span className="font-bold text-primary">{aspectLabel}</span>
-                            </div>
-                        </div>
 
-                        {/* Viewport Size */}
-                        <div className="p-6 rounded-3xl bg-primary/15 border-2 border-background-dark flex flex-col justify-between">
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-4xs font-bold uppercase tracking-ui-widest text-background-dark/70">
-                                        Browser Viewport (CSS Pixels)
-                                    </span>
-                                    <span className="text-5xs font-black uppercase tracking-wider bg-secondary text-white px-2 py-0.5 rounded-full">
-                                        Live On Zoom
+                            <div className="p-6 space-y-1.5 bg-well/25">
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="font-semibold text-muted">Active Browser Window (CSS Viewport)</span>
+                                    <span className="px-2 py-0.5 rounded bg-secondary/10 border border-secondary/25 text-secondary font-mono font-semibold">
+                                        {getBreakpoint(viewport.width)}
                                     </span>
                                 </div>
-                                <div className="text-3xl sm:text-5xl font-mono font-bold text-background-dark mb-2" aria-live="polite">
+                                <div className="text-3xl sm:text-4xl font-mono font-extrabold text-ink tabular-nums" aria-live="polite">
                                     {viewport.width > 0 ? `${viewport.width} × ${viewport.height}` : "Measuring…"}
                                 </div>
-                                <p className="text-xs text-background-dark/75 leading-relaxed font-medium">
-                                    Actual web page rendering canvas. Resize your browser window or press Ctrl +/- to observe live scaling.
+                                <p className="text-xs text-muted">
+                                    Actual page canvas inside your browser chrome. Press Ctrl +/- to watch zoom scaling update live.
                                 </p>
                             </div>
-                            <div className="mt-6 pt-4 border-t border-background-dark/10 flex items-center justify-between text-2xs font-mono">
-                                <span className="text-background-dark/60">CSS Breakpoint</span>
-                                <span className="font-bold text-background-dark">{getBreakpoint(viewport.width)}</span>
+                        </div>
+
+                        {/* Live Visual Frame Preview */}
+                        <div className="md:col-span-5 p-6 bg-well/40 border-t md:border-t-0 md:border-l border-line flex flex-col justify-between gap-3">
+                            <span className="text-xs font-bold text-ink">Screen vs. Window Ratio</span>
+                            <div className="relative w-full aspect-[16/10] bg-brand rounded-xl border border-white/15 p-2 flex items-start justify-start">
+                                <div
+                                    className="bg-primary/25 border-2 border-primary rounded-md flex items-center justify-center p-2 transition-all duration-150"
+                                    style={{ width: `${widthRatioPct}%`, height: `${heightRatioPct}%` }}
+                                >
+                                    <span className="text-2xs font-mono font-bold text-white text-center leading-tight">
+                                        Browser<br />{widthRatioPct}% × {heightRatioPct}%
+                                    </span>
+                                </div>
                             </div>
+                            <p className="text-2xs text-muted">
+                                Dark teal frame = whole monitor &middot; Coral box = active browser viewport
+                            </p>
                         </div>
                     </div>
 
-                    {/* Secondary Metrics Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6">
-                        <div className="p-4 rounded-2xl bg-background-dark/5 border border-background-dark/10">
-                            <span className="text-4xs uppercase tracking-wider font-bold text-background-dark/60 block mb-1">
-                                Device Pixel Ratio (DPR)
-                            </span>
-                            <span className="font-bold text-base text-background-dark font-mono">
-                                {mounted && dpr !== null ? `${dpr}x` : "—"}
-                            </span>
-                            <span className="text-5xs text-background-dark/50 block mt-0.5">
-                                {mounted && dpr !== null ? (dpr > 1 ? "HiDPI / Retina Scaling" : "Standard 1:1 Scale") : "Display Density"}
-                            </span>
+                    {/* Secondary Technical Strip */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-line">
+                        <div className="p-4 sm:p-5 space-y-1">
+                            <span className="text-xs text-muted font-medium block">Pixel Ratio (DPR)</span>
+                            <span className="font-mono font-bold text-base text-ink">{mounted && dpr !== null ? `${dpr}x` : "—"}</span>
+                            <span className="text-2xs text-muted block">{mounted && dpr && dpr > 1 ? "HiDPI / Retina" : "Standard 1:1"}</span>
                         </div>
-
-                        <div className="p-4 rounded-2xl bg-background-dark/5 border border-background-dark/10">
-                            <span className="text-4xs uppercase tracking-wider font-bold text-background-dark/60 block mb-1">
-                                Color Depth
-                            </span>
-                            <span className="font-bold text-base text-background-dark font-mono">
-                                {mounted && colorDepth !== null ? `${colorDepth}-bit` : "—"}
-                            </span>
-                            <span className="text-5xs text-background-dark/50 block mt-0.5">
-                                {mounted && colorDepth !== null ? (colorDepth >= 24 ? "True Color (16.7M+ colors)" : "Standard Color") : "Screen Color Range"}
-                            </span>
+                        <div className="p-4 sm:p-5 space-y-1">
+                            <span className="text-xs text-muted font-medium block">Color Depth</span>
+                            <span className="font-mono font-bold text-base text-ink">{mounted && colorDepth !== null ? `${colorDepth}-bit` : "—"}</span>
+                            <span className="text-2xs text-muted block">{mounted && colorDepth && colorDepth >= 24 ? "True Color" : "Standard"}</span>
                         </div>
-
-                        <div className="p-4 rounded-2xl bg-background-dark/5 border border-background-dark/10">
-                            <span className="text-4xs uppercase tracking-wider font-bold text-background-dark/60 block mb-1">
-                                Screen Orientation
-                            </span>
-                            <span className="font-bold text-base text-background-dark capitalize">
-                                {mounted && orientation ? orientation : "—"}
-                            </span>
-                            <span className="text-5xs text-background-dark/50 block mt-0.5">Screen Orientation API</span>
+                        <div className="p-4 sm:p-5 space-y-1">
+                            <span className="text-xs text-muted font-medium block">Orientation</span>
+                            <span className="font-bold text-base text-ink capitalize">{mounted && orientation ? orientation : "—"}</span>
+                            <span className="text-2xs text-muted block">Screen orientation</span>
                         </div>
-
-                        <div className="p-4 rounded-2xl bg-background-dark/5 border border-background-dark/10">
-                            <span className="text-4xs uppercase tracking-wider font-bold text-background-dark/60 block mb-1">
-                                Logical Pixel Area
-                            </span>
-                            <span className="font-bold text-base text-background-dark font-mono">
-                                {megapixelsLabel}
-                            </span>
-                            <span className="text-5xs text-background-dark/50 block mt-0.5">Scaled Canvas Size</span>
+                        <div className="p-4 sm:p-5 space-y-1">
+                            <span className="text-xs text-muted font-medium block">Scaled Area</span>
+                            <span className="font-mono font-bold text-base text-ink">{megapixelsLabel}</span>
+                            <span className="text-2xs text-muted block">Logical canvas</span>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            {/* Editorial Content Section */}
-            <div className="max-w-4xl mx-auto px-6 space-y-12">
-                {/* Hardware vs CSS pixels */}
-                <section className="bg-white border-2 border-background-dark rounded-3xl p-8 shadow-block-sm space-y-4">
-                    <h2 className="font-serif text-fluid-h2 font-bold text-background-dark">
-                        Hardware Screen Resolution vs. CSS Viewport &amp; DPR Formula
-                    </h2>
-                    <p className="text-fluid-body text-background-dark/80 leading-relaxed font-medium">
-                        Developers and support engineers frequently ask why a 4K display (3840×2160) or modern flagship phone reports a smaller width like 1920px or 390px in browsers. The reason is OS display scaling via <strong>Device Pixel Ratio (DPR)</strong>:
-                    </p>
-                    <div className="p-4 rounded-2xl bg-background-dark text-accent font-mono text-xs sm:text-sm border-2 border-background-dark">
-                        Logical CSS Pixels = Physical Panel Pixels &divide; Device Pixel Ratio (DPR)
-                    </div>
-                    <p className="text-fluid-body text-background-dark/80 leading-relaxed font-medium">
-                        For example, a 3840×2160 monitor set to 200% Windows scaling or macOS HiDPI mode reports a <code>1920×1080</code> logical CSS viewport at <code>DPR = 2x</code>. This ensures typography, icons, and web interfaces remain comfortable to read while using 4 physical hardware sub-pixels to render every crisp edge.
-                    </p>
                 </section>
 
-                {/* Common Resolutions Guide */}
-                <section className="space-y-6">
-                    <h2 className="font-serif text-fluid-h2 font-bold text-background-dark">
-                        Standard Display Resolutions in 2026
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="p-5 rounded-2xl bg-white border-2 border-background-dark shadow-block-sm">
-                            <div className="text-lg font-mono font-bold text-background-dark">1920 × 1080</div>
-                            <span className="text-3xs font-extrabold text-primary uppercase">Full HD (1080p)</span>
-                            <p className="text-3xs text-background-dark/70 mt-1.5 font-medium leading-relaxed">
-                                Most widely adopted desktop monitor resolution worldwide (16:9 ratio).
-                            </p>
-                        </div>
-                        <div className="p-5 rounded-2xl bg-white border-2 border-background-dark shadow-block-sm">
-                            <div className="text-lg font-mono font-bold text-background-dark">2560 × 1440</div>
-                            <span className="text-3xs font-extrabold text-secondary uppercase">2K QHD (1440p)</span>
-                            <p className="text-3xs text-background-dark/70 mt-1.5 font-medium leading-relaxed">
-                                Standard high-sharpness tier for productivity, CAD, and PC gaming monitors.
-                            </p>
-                        </div>
-                        <div className="p-5 rounded-2xl bg-white border-2 border-background-dark shadow-block-sm">
-                            <div className="text-lg font-mono font-bold text-background-dark">3840 × 2160</div>
-                            <span className="text-3xs font-extrabold text-background-dark uppercase">4K Ultra HD</span>
-                            <p className="text-3xs text-background-dark/70 mt-1.5 font-medium leading-relaxed">
-                                Ultra-dense 8.3 Megapixel display, typically viewed at 150% or 200% OS scaling.
-                            </p>
-                        </div>
-                        <div className="p-5 rounded-2xl bg-white border-2 border-background-dark shadow-block-sm">
-                            <div className="text-lg font-mono font-bold text-background-dark">390 × 844</div>
-                            <span className="text-3xs font-extrabold text-primary uppercase">Mobile Viewport</span>
-                            <p className="text-3xs text-background-dark/70 mt-1.5 font-medium leading-relaxed">
-                                Benchmark CSS viewport width for modern smartphones at 3x DPR scaling.
-                            </p>
-                        </div>
+                {/* Formula Explainer */}
+                <section className="bg-surface border border-line rounded-2xl p-6 sm:p-8 space-y-4">
+                    <h2 className="text-fluid-h2 font-bold text-ink">Why 4K Monitors Often Report 1920 × 1080 in Browsers</h2>
+                    <p className="text-sm text-muted leading-relaxed">
+                        High-resolution laptops and phones scale interfaces so text stays easy to read. Browsers divide raw hardware pixels by your OS scale factor (Device Pixel Ratio):
+                    </p>
+                    <div className="p-4 rounded-xl bg-brand text-accent font-mono text-xs sm:text-sm">
+                        Browser CSS Pixels = Physical Monitor Pixels &divide; Device Pixel Ratio (DPR)
                     </div>
                 </section>
 
                 {/* Responsive Breakpoint Reference Table */}
-                <section className="bg-white border-2 border-background-dark rounded-3xl p-8 shadow-block-sm space-y-4">
-                    <h2 className="font-serif text-fluid-h2 font-bold text-background-dark">
-                        Responsive CSS Breakpoints Reference for UI &amp; QA Teams
-                    </h2>
-                    <p className="text-sm text-background-dark/75 leading-relaxed font-medium">
-                        When filing a layout bug report with your development team, knowing the exact CSS viewport width matters more than your monitor model. Most modern frameworks (Tailwind CSS, Bootstrap, Material) trigger layout shifts at these exact CSS pixel thresholds:
-                    </p>
-                    <div className="overflow-x-auto border-2 border-background-dark rounded-2xl">
+                <section className="space-y-4">
+                    <h2 className="text-fluid-h2 font-bold text-ink">Responsive CSS Breakpoints Reference</h2>
+                    <div className="overflow-x-auto bg-surface border border-line rounded-2xl">
                         <table className="w-full text-left border-collapse text-xs">
                             <thead>
-                                <tr className="bg-background-dark text-white uppercase tracking-wider text-4xs">
-                                    <th className="p-3.5 font-extrabold">Breakpoint</th>
-                                    <th className="p-3.5 font-extrabold">CSS Viewport Width</th>
-                                    <th className="p-3.5 font-extrabold">Common Device Class</th>
+                                <tr className="bg-brand text-white">
+                                    <th className="p-3.5 font-semibold">Breakpoint</th>
+                                    <th className="p-3.5 font-semibold">CSS Viewport Width</th>
+                                    <th className="p-3.5 font-semibold">Typical Device</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-background-dark/10">
+                            <tbody className="divide-y divide-line">
                                 {RESPONSIVE_BREAKPOINTS.map((bp) => (
-                                    <tr key={bp.token} className="hover:bg-background/30">
-                                        <td className="p-3.5 font-bold text-background-dark whitespace-nowrap">{bp.token}</td>
+                                    <tr key={bp.token} className="hover:bg-hover/65 transition-colors">
+                                        <td className="p-3.5 font-bold text-ink whitespace-nowrap">{bp.token}</td>
                                         <td className="p-3.5 font-mono font-bold text-secondary whitespace-nowrap">{bp.widthRange}</td>
-                                        <td className="p-3.5 text-background-dark/75 font-medium">{bp.typicalDevice}</td>
+                                        <td className="p-3.5 text-muted">{bp.typicalDevice}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -284,28 +208,24 @@ export default function WhatIsMyScreenResolutionClient({ faqs }: { faqs: Diagnos
                     </div>
                 </section>
 
-                {/* SSR-Complete Accessible FAQ Accordion */}
                 <DiagnosticFaqSection items={faqs} />
 
-                {/* Related Diagnostics Hub */}
-                <section className="pt-8 border-t-2 border-background-dark/10">
-                    <h3 className="text-3xs font-extrabold uppercase tracking-widest text-primary mb-4">Explore More Diagnostics</h3>
+                <section className="pt-6 border-t border-line">
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-muted mb-4">Related Diagnostic Tools</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <Link href="/what-is-my-browser" className="p-5 rounded-2xl bg-white border-2 border-background-dark shadow-block-sm hover:translate-x-px hover:translate-y-px transition-all">
-                            <Globe size={18} className="text-primary mb-2" aria-hidden="true" />
-                            <div className="font-bold text-sm text-background-dark">What Is My Browser</div>
-                            <p className="text-3xs text-background-dark/60 mt-1">Check browser engine &amp; UA</p>
-                        </Link>
-                        <Link href="/what-is-my-ip" className="p-5 rounded-2xl bg-white border-2 border-background-dark shadow-block-sm hover:translate-x-px hover:translate-y-px transition-all">
-                            <Wifi size={18} className="text-secondary mb-2" aria-hidden="true" />
-                            <div className="font-bold text-sm text-background-dark">What Is My IP</div>
-                            <p className="text-3xs text-background-dark/60 mt-1">Check public IPv4, IPv6 &amp; ISP</p>
-                        </Link>
-                        <Link href="/bufferbloat" className="p-5 rounded-2xl bg-white border-2 border-background-dark shadow-block-sm hover:translate-x-px hover:translate-y-px transition-all">
-                            <RefreshCw size={18} className="text-background-dark mb-2" aria-hidden="true" />
-                            <div className="font-bold text-sm text-background-dark">Bufferbloat Test</div>
-                            <p className="text-3xs text-background-dark/60 mt-1">Test network latency under load</p>
-                        </Link>
+                        {[
+                            { href: "/what-is-my-browser", title: "What Is My Browser", desc: "Inspect engine version & UA" },
+                            { href: "/what-is-my-ip", title: "What Is My IP", desc: "Check IPv4, IPv6 & WebRTC" },
+                            { href: "/bufferbloat", title: "Bufferbloat Test", desc: "Measure loaded latency" },
+                        ].map((item) => (
+                            <Link key={item.href} href={item.href} className="group p-4 rounded-xl bg-surface border border-line hover:border-line-strong transition-colors flex items-center justify-between gap-2">
+                                <div>
+                                    <div className="font-bold text-sm text-ink group-hover:text-primary transition-colors">{item.title}</div>
+                                    <p className="text-xs text-muted mt-0.5">{item.desc}</p>
+                                </div>
+                                <ArrowRight size={15} className="text-muted group-hover:text-primary transition-colors flex-shrink-0" aria-hidden="true" />
+                            </Link>
+                        ))}
                     </div>
                 </section>
             </div>

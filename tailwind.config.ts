@@ -10,105 +10,61 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        "primary": "#FF8E60",
-        "primary-dark": "#FF7D54",
-        "secondary": "#009E52",
-        "accent": "#FFC4B7",
-        "background": "#FAF6F0",
+        // Core semantic theme surface & ink tokens (CSS vars in globals.css)
+        canvas: "rgb(var(--canvas) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        well: "rgb(var(--well) / <alpha-value>)",
+        hover: "rgb(var(--hover) / <alpha-value>)",
+        brand: "rgb(var(--brand) / <alpha-value>)",
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        muted: "rgb(var(--ink-muted) / <alpha-value>)",
+        line: "var(--line)",
+        "line-strong": "var(--line-strong)",
+
+        // Preserved MySupportInfo signature brand palette
+        primary: "#FF8E60",
+        "primary-dark": "#E87143",
+        secondary: "#009E52",
+        accent: "#FFC4B7",
+        background: "#FAF6F0",
         "background-dark": "#00473E",
-        "foreground": "#002924",
+        foreground: "#002924",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "sans-serif"],
-        display: ["var(--font-inter)", "sans-serif"],
-        serif: ["var(--font-cormorant)", "Georgia", "serif"],
-        mono: ["monospace"],
+        sans: ["var(--font-sans)", "system-ui", "-apple-system", "sans-serif"],
+        display: ["var(--font-sans)", "system-ui", "-apple-system", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       fontSize: {
-        "2xs":        ["11px", { lineHeight: "1.4" }],
-        "3xs":        ["10px", { lineHeight: "1.4" }],
-        "4xs":        ["9px",  { lineHeight: "1.4" }],
-        "5xs":        ["8px",  { lineHeight: "1.4" }],
-        "display":    ["5.5rem", { lineHeight: "1" }],
-        "display-lg": ["7rem",   { lineHeight: "1" }],
-        // Loopio-inspired exact fluid clamp typography scale
-        "fluid-hero": ["clamp(2rem, 0.25rem + 4.667vw, 3.75rem)",   { lineHeight: "1.12", letterSpacing: "-0.025em" }],
-        "fluid-h1":   ["clamp(1.75rem, 0.875rem + 2.333vw, 2.625rem)", { lineHeight: "1.15", letterSpacing: "-0.02em" }],
-        "fluid-h2":   ["clamp(1.375rem, 1.125rem + 0.667vw, 1.625rem)", { lineHeight: "1.25", letterSpacing: "-0.015em" }],
-        "fluid-h3":   ["clamp(1.2rem, 1rem + 0.5vw, 1.375rem)",      { lineHeight: "1.3",  letterSpacing: "-0.01em" }],
-        "fluid-lead": ["clamp(1.125rem, 1rem + 0.333vw, 1.25rem)",    { lineHeight: "1.55" }],
-        "fluid-body": ["clamp(1rem, 0.875rem + 0.333vw, 1.125rem)",    { lineHeight: "1.6" }],
-        "fluid-caption": ["0.875rem",                                 { lineHeight: "1.5" }],
-      },
-      spacing: {
-        // Loopio-inspired exact fluid spacing scale
-        "fluid-micro":    "clamp(0.938rem, 0.586rem + 1.563vw, 1.563rem)", // 15px -> 25px
-        "fluid-standard": "clamp(1.25rem, 0.195rem + 4.688vw, 3.125rem)",  // 20px -> 50px
-        "fluid-section":  "clamp(3.125rem, 0rem + 8.333vw, 6.25rem)",      // 50px -> 100px
-        "fluid-hero-pad": "clamp(4.688rem, 0rem + 12.5vw, 9.375rem)",      // 75px -> 150px
-        "fluid-xs": "clamp(0.75rem, 0.5rem + 0.8vw, 1.25rem)",
-        "fluid-sm": "clamp(1rem, 0.65rem + 1.2vw, 1.75rem)",
-        "fluid":    "clamp(2.5rem, 1.5rem + 2.5vw, 4rem)",
-        "fluid-lg": "clamp(3.5rem, 2rem + 4.5vw, 6.25rem)",
-        "fluid-xl": "clamp(4.5rem, 2.5rem + 6vw, 8.5rem)",
-      },
-      letterSpacing: {
-        "micro":      "0.18em",
-        "ui":         "0.2em",
-        "ui-wide":    "0.25em",
-        "ui-wider":   "0.3em",
-        "ui-widest":  "0.35em",
+        "2xs": ["0.6875rem", { lineHeight: "1.4" }],
+        "3xs": ["0.625rem", { lineHeight: "1.4" }],
+        "4xs": ["0.5625rem", { lineHeight: "1.4" }],
+        "fluid-hero": ["clamp(2rem, 1.25rem + 2.5vw, 3.35rem)", { lineHeight: "1.08", letterSpacing: "-0.03em" }],
+        "fluid-h1": ["clamp(1.75rem, 1.15rem + 2vw, 2.75rem)", { lineHeight: "1.12", letterSpacing: "-0.025em" }],
+        "fluid-h2": ["clamp(1.375rem, 1.05rem + 1vw, 1.875rem)", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
+        "fluid-h3": ["clamp(1.125rem, 1rem + 0.4vw, 1.375rem)", { lineHeight: "1.3", letterSpacing: "-0.01em" }],
+        "fluid-lead": ["clamp(1rem, 0.94rem + 0.3vw, 1.125rem)", { lineHeight: "1.6" }],
+        "fluid-body": ["clamp(0.9375rem, 0.9rem + 0.2vw, 1rem)", { lineHeight: "1.65" }],
       },
       maxWidth: {
-        "orb":  "560px",
-        "site": "1200px",
-      },
-      minHeight: {
-        "card": "260px",
-      },
-      scale: {
-        "101": "1.01",
-        "102": "1.02",
+        orb: "440px",
+        site: "1200px",
       },
       borderRadius: {
-        "DEFAULT": "0.5rem",
-        "none": "0",
-        "sm": "0.125rem",
-        "md": "0.375rem",
-        "lg": "0.5rem",
-        "xl": "1rem",
-        "2xl": "1.5rem",
-        "3xl": "1.75rem", // 28px Loopio container radius
-        "4xl": "2rem",    // 32px
+        DEFAULT: "0.5rem",
+        lg: "0.625rem",
+        xl: "0.875rem",
+        "2xl": "1.125rem",
+        "3xl": "1.5rem",
       },
       boxShadow: {
-        "block":          "4px 4px 0px 0px #00473E",
-        "block-sm":       "2px 2px 0px 0px #00473E",
-        "block-lg":       "8px 8px 0px 0px #00473E",
-        // Loopio-inspired soft diffuse elevation shadows
-        "soft":           "0px 4px 40px rgba(0, 0, 0, 0.08)",
-        "soft-sm":        "0px 2px 16px rgba(0, 0, 0, 0.06)",
-        "soft-lg":        "0px 8px 50px rgba(0, 0, 0, 0.12)",
-        "soft-card":      "0px 4px 24px rgba(0, 71, 62, 0.08)",
-        "glow-green":     "0 0 30px rgba(0,158,82,0.4)",
-        "glow-green-md":  "0 0 30px rgba(0,158,82,0.3)",
-        "glow-green-sm":  "0 0 20px rgba(0,158,82,0.4)",
-        "glow-orange":    "0 0 30px rgba(255,142,96,0.4)",
-        "glow-orange-md": "0 0 30px rgba(255,142,96,0.3)",
-        "glow-orange-sm": "0 0 20px rgba(255,142,96,0.4)",
-        "glow-red":       "0 0 30px rgba(239,68,68,0.4)",
-        "glow-red-sm":    "0 0 20px rgba(239,68,68,0.4)",
-      },
-      dropShadow: {
-        "orange": "0 2px 4px rgba(255,142,96,0.3)",
-      },
-      transitionProperty: {
-        "max-height": "max-height",
+        subtle: "0 1px 2px rgba(0, 41, 36, 0.05), 0 8px 24px -12px rgba(0, 41, 36, 0.10)",
+        elevated: "0 2px 6px rgba(0, 41, 36, 0.06), 0 18px 40px -18px rgba(0, 41, 36, 0.18)",
+        "brand-ring": "0 0 0 1px rgba(0, 71, 62, 0.12), 0 24px 48px -24px rgba(0, 41, 36, 0.35)",
       },
     },
   },
-  plugins: [
-    require('@tailwindcss/typography'),
-  ],
+  plugins: [require("@tailwindcss/typography")],
 };
+
 export default config;

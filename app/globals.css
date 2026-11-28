@@ -3,11 +3,39 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light;
   interpolate-size: allow-keywords;
+
+  /* Light Mode — MySupportInfo Signature Warm Paper + Deep Teal */
+  --canvas: 250 246 240;      /* #FAF6F0 */
+  --surface: 255 255 255;     /* #FFFFFF */
+  --well: 239 233 221;        /* #EFE9DD */
+  --hover: 222 232 228;       /* #DEE8E4 (visible soft teal wash) */
+  --brand: 0 71 62;           /* #00473E */
+  --ink: 0 41 36;             /* #002924 */
+  --ink-muted: 61 90 85;      /* #3D5A55 (~6.7:1 on white/cream) */
+  --line: rgba(0, 41, 36, 0.13);
+  --line-strong: rgba(0, 41, 36, 0.28);
+}
+
+html.dark {
+  color-scheme: dark;
+
+  /* Dark Mode — Precision Deep Evergreen Workbench */
+  --canvas: 3 25 21;          /* #031915 */
+  --surface: 7 36 30;         /* #07241E */
+  --well: 12 52 43;           /* #0C342B */
+  --hover: 19 72 60;          /* #13483C (visible lifted evergreen surface) */
+  --brand: 0 71 62;           /* #00473E */
+  --ink: 250 246 240;         /* #FAF6F0 */
+  --ink-muted: 183 206 201;   /* #B7CEC9 (>9:1 on dark canvas) */
+  --line: rgba(183, 206, 201, 0.16);
+  --line-strong: rgba(0, 158, 82, 0.44);
 }
 
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -19,51 +47,28 @@ html {
   }
 }
 
-/* Material Symbols icon font */
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  line-height: 1;
-  overflow: hidden;
-  vertical-align: middle;
-  white-space: nowrap;
-  word-wrap: normal;
-}
-.material-symbols-outlined.fill-1 {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-}
-
-/* ── Accessibility: High-Visibility Focus Rings ──────────────────── */
+/* High-Visibility Focus Rings */
 :focus-visible {
   outline: 2px solid #009E52;
   outline-offset: 2px;
 }
+
 html.dark :focus-visible {
   outline: 2px solid #FF8E60;
   outline-offset: 2px;
 }
 
-@layer components {
-  .glass-morphism {
-    @apply backdrop-blur-md;
-  }
-  .block-btn-primary {
-    @apply bg-primary text-foreground font-bold px-6 py-3 rounded-xl border-2 border-background-dark shadow-block-sm active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer;
-  }
-}
-
+/* Subtle section entrance without flashy bounce */
 @layer utilities {
   .fade-in {
     opacity: 0;
-    animation: fade-in 0.55s ease-out var(--fade-delay, 0s) both;
+    animation: fade-in 0.35s ease-out var(--fade-delay, 0s) both;
   }
 
-  .fade-in-up { transform: translateY(12px); }
-  .fade-in-down { transform: translateY(-12px); }
-  .fade-in-left { transform: translateX(12px); }
-  .fade-in-right { transform: translateX(-12px); }
+  .fade-in-up { transform: translateY(8px); }
+  .fade-in-down { transform: translateY(-8px); }
+  .fade-in-left { transform: translateX(8px); }
+  .fade-in-right { transform: translateX(-8px); }
 
   @keyframes fade-in {
     to {
@@ -71,118 +76,4 @@ html.dark :focus-visible {
       transform: translate(0, 0);
     }
   }
-}
-
-/* ── Light, Dark & System Theme System ── */
-html.dark {
-  color-scheme: dark;
-}
-
-html.dark body {
-  background-color: #011f1a;
-  color: #FAF6F0;
-}
-
-html.dark header {
-  background-color: rgba(1, 31, 26, 0.92);
-  border-bottom-color: rgba(0, 158, 82, 0.25);
-}
-
-html.dark .bg-background {
-  background-color: #011f1a !important;
-}
-
-html.dark .text-background-dark {
-  color: #FAF6F0 !important;
-}
-
-html.dark .text-foreground,
-html.dark [class*="text-foreground"] {
-  color: #FAF6F0 !important;
-}
-
-html.dark .text-background-dark\/90,
-html.dark .text-background-dark\/85,
-html.dark .text-background-dark\/80,
-html.dark .text-background-dark\/75,
-html.dark .text-background-dark\/70,
-html.dark .text-background-dark\/65,
-html.dark .text-background-dark\/60 {
-  color: rgba(250, 246, 240, 0.85) !important;
-}
-
-html.dark .text-background-dark\/50,
-html.dark .text-background-dark\/40,
-html.dark .text-background-dark\/35,
-html.dark .text-background-dark\/30 {
-  color: rgba(250, 246, 240, 0.65) !important;
-}
-
-html.dark .text-foreground\/90,
-html.dark .text-foreground\/85,
-html.dark .text-foreground\/80,
-html.dark .text-foreground\/75,
-html.dark .text-foreground\/70,
-html.dark .text-foreground\/65,
-html.dark .text-foreground\/60 {
-  color: rgba(250, 246, 240, 0.85) !important;
-}
-
-html.dark .text-foreground\/50,
-html.dark .text-foreground\/40,
-html.dark .text-foreground\/30 {
-  color: rgba(250, 246, 240, 0.65) !important;
-}
-
-/* Text on primary buttons and badges MUST always be dark for readable contrast */
-button.bg-primary,
-a.bg-primary,
-button.bg-primary *,
-a.bg-primary * {
-  color: #002924 !important;
-}
-
-html.dark .bg-accent\/25,
-html.dark .bg-accent\/15,
-html.dark .bg-accent\/10 {
-  background-color: rgba(255, 196, 183, 0.08) !important;
-}
-
-html.dark code {
-  color: #FF8E60 !important;
-  background-color: rgba(0, 158, 82, 0.15) !important;
-}
-
-html.dark .bg-white {
-  background-color: #062b24 !important;
-  color: #FAF6F0 !important;
-}
-
-html.dark .bg-white\/70,
-html.dark .bg-white\/80 {
-  background-color: rgba(6, 43, 36, 0.85) !important;
-}
-
-html.dark .border-background-dark {
-  border-color: #009E52 !important;
-}
-
-html.dark .border-background-dark\/10,
-html.dark .border-background-dark\/15,
-html.dark .border-background-dark\/20,
-html.dark .border-background-dark\/30 {
-  border-color: rgba(0, 158, 82, 0.22) !important;
-}
-
-html.dark .shadow-block {
-  box-shadow: 4px 4px 0px 0px #009E52 !important;
-}
-
-html.dark .shadow-block-sm {
-  box-shadow: 2px 2px 0px 0px #009E52 !important;
-}
-
-html.dark .bg-background-dark\/5,
-html.dark .bg-background-dark\/10 {
-  background-color: rgba(0, 158, 82, 0.12) !important;
 }

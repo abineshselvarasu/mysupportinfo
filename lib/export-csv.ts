@@ -8,6 +8,7 @@ export interface DiagnosticExportData {
     windowSize?: string;
     pixelRatio?: string;
     colorDepth?: string;
+    orientation?: string;
     touchSupport?: string;
     cpuCores?: number | string;
     ram?: string;
@@ -19,6 +20,7 @@ export interface DiagnosticExportData {
     ispName?: string;
     city?: string;
     country?: string;
+    countryCode?: string;
     timezone?: string;
     latency?: string;
     connectionType?: string;
@@ -52,7 +54,8 @@ export function generateDiagnosticCSV(
         ["screen", "Display", "Screen Resolution", data.resolution || "Unknown"],
         ["viewport", "Display", "Viewport Size", data.windowSize || "Unknown"],
         ["screen", "Display", "Device Pixel Ratio (DPR)", data.pixelRatio || "1x"],
-        ["screen", "Display", "Color Depth", data.colorDepth ? `${data.colorDepth}-bit` : "Unknown"],
+        ["screen", "Display", "Color Depth", data.colorDepth ? `${data.colorDepth}` : "Unknown"],
+        ["screen", "Display", "Screen Orientation", data.orientation || "Unknown"],
         ["hardware", "Display", "Touch Support", data.touchSupport || "None"],
         ["hardware", "Hardware", "CPU Logical Cores", String(data.cpuCores ?? "Unknown")],
         ["hardware", "Hardware", "RAM Estimate", data.ram || "Unknown"],
@@ -63,6 +66,7 @@ export function generateDiagnosticCSV(
         ["ip", "Network", "Public IPv6", maskSensitive ? "[Masked for Privacy]" : (data.ipv6 || "Not Detected / Unsupported")],
         ["isp", "Network", "ISP Name", maskSensitive ? "[Masked for Privacy]" : (data.ispName || "Unknown")],
         ["location", "Network", "Approximate Location", maskSensitive ? "[Masked for Privacy]" : ([data.city, data.country].filter(Boolean).join(", ") || "Unknown")],
+        ["location", "Network", "Country Code", maskSensitive ? "[Masked for Privacy]" : (data.countryCode || "Unknown")],
         ["latency", "Network", "Latency (Idle)", data.latency || "Unknown"],
         ["latency", "Network", "Connection Type", data.connectionType || "Unknown"],
         ["latency", "Network", "Effective Speed", data.connectionSpeed || "Unknown"],

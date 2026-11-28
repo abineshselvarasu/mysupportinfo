@@ -4,19 +4,20 @@ import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import {
     Monitor, Signal, HardDrive, Cpu, Clock, EyeOff, Terminal,
-    MapPin, Wifi, Copy, Share2, Download, Palette, Globe,
-    Battery, ShieldCheck, ShieldAlert, Languages, Smartphone,
-    Activity, Zap, Layout, Lock, Info, ArrowRight, HelpCircle,
-    FileSpreadsheet,
+    Wifi, Copy, Check, Share2, Download, Palette, Globe,
+    ShieldCheck, ShieldAlert, Languages, Smartphone,
+    Activity, Zap, Layout, Lock, HelpCircle, ArrowRight,
+    Wrench, User,
 } from "lucide-react";
-import FadeIn from "@/components/ui/FadeIn";
+import DiagnosticFaqSection, { type DiagnosticFaqItem } from "@/components/ui/DiagnosticFaqSection";
 import ScreenshotModal, { FieldId, DEFAULT_SELECTED_FIELDS, SENSITIVE_FIELD_IDS } from "@/components/ui/ScreenshotModal";
 import ShareModal from "@/components/ui/ShareModal";
 import ReportErrorModal from "@/components/ui/ReportErrorModal";
 import { decodeReport, SharedReportData } from "@/lib/report-share";
-import { generateDiagnosticCSV, downloadCSV } from "@/lib/export-csv";
+import { downloadDiagnosticPDF, type DiagnosticPdfGroup } from "@/lib/export-pdf";
 
-type TabType = "network" | "browser" | "hardware" | "privacy";
+type TabType = "overview" | "network" | "browser" | "hardware" | "privacy";
+type AudienceMode = "simple" | "technical";
 
 interface SystemStats {
     browserName: string;
@@ -51,30 +52,24 @@ interface SystemStats {
     timezone: string;
 }
 
-const getLatencyStatus = (val: string): "good" | "warn" | "bad" | "info" => {
-    const ms = parseInt(val);
-    if (isNaN(ms)) return "info";
-    if (ms < 50) return "good";
-    if (ms < 150) return "warn";
-    return "bad";
-};
-
-const getSpeedStatus = (val: string): "good" | "warn" | "bad" | "info" => {
-    const mbps = parseFloat(val);
-    if (isNaN(mbps)) return "info";
-    if (mbps > 50) return "good";
-    if (mbps > 10) return "warn";
-    return "bad";
-};
-
-const getBatteryStatus = (level: string): "good" | "warn" | "bad" | "info" => {
-    if (level === "N/A") return "info";
-    const pct = parseInt(level);
-    if (isNaN(pct)) return "info";
-    if (pct > 50) return "good";
-    if (pct > 20) return "warn";
-    return "bad";
-};
+interface MetricRowDef {
+    id: string;
+    fieldId?: FieldId;
+    category: Exclude<TabType, "overview">;
+    featuredOnOverview?: boolean;
+    icon: React.ComponentType<{ className?: string; size?: number }>;
+    simpleLabel: string;
+    technicalLabel: string;
+    value: string | React.ReactNode;
+    plainValue?: string;
+    copyText?: string;
+    simpleHelp: string;
+    technicalHelp: string;
+    status?: "good" | "warn" | "bad" | "neutral";
+    statusLabel?: string;
+    isCode?: boolean;
+    action?: React.ReactNode;
+}
 
 type NavigatorWithUserAgentData = Navigator & {
     userAgentData?: {
@@ -99,13 +94,11 @@ const platformToOS = (platform: string, ua: string): string | null => {
         if (hasTouch) return "Android/Linux Tablet";
         return "Linux";
     }
-
     return null;
 };
 
 const detectOSName = async (ua: string): Promise<string> => {
     const nav = navigator as NavigatorWithUserAgentData;
-
     try {
         const hints = await nav.userAgentData?.getHighEntropyValues?.(["platform"]);
         const osFromHints = platformToOS(hints?.platform || nav.userAgentData?.platform || "", ua);
@@ -122,12 +115,69 @@ const detectOSName = async (ua: string): Promise<string> => {
     if (/CrOS/i.test(ua)) return "ChromeOS";
     if (/Macintosh|Mac OS X/i.test(ua)) return navigator.maxTouchPoints > 1 ? "iPadOS" : "macOS";
     if (/Linux/i.test(ua)) return navigator.maxTouchPoints > 0 ? "Android/Linux Tablet" : "Linux";
-
     return platform || "Unknown OS";
 };
 
-const IP_CACHE_KEY = "msi_ip_v2";
+const getLatencyStatus = (val: string): "good" | "warn" | "bad" | "neutral" => {
+    const ms = parseInt(val);
+    if (isNaN(ms)) return "neutral";
+    if (ms < 50) return "good";
+    if (ms < 150) return "warn";
+    return "bad";
+};
+
+const IP_CACHE_KEY = "msi_ip_v3";
 const IP_CACHE_TTL = 5 * 60 * 1000;
+
+const HOME_FAQS: DiagnosticFaqItem[] = [
+    {
+        q: "Why do support technicians need my browser version and operating system?",
+        a: "Web browsers render HTML, CSS, and JavaScript differently across operating systems. A bug affecting Safari on macOS might look completely fine in Google Chrome on Windows. Knowing your exact browser version and OS allows developers to reproduce the issue in an identical environment.",
+    },
+    {
+        q: "How does MySupportInfo detect my graphics card (GPU) and hardware specs?",
+        a: "MySupportInfo utilizes standard browser APIs: the WebGL debug renderer info extension queries your graphics hardware string, the Device Memory API provides memory estimations, and navigator.hardwareConcurrency detects available CPU thread cores.",
+    },
+    {
+        q: "What is a WebRTC leak and how does it compromise my VPN?",
+        a: "WebRTC allows video calls and peer-to-peer data in browsers. Even when using a VPN, WebRTC can communicate with STUN servers and expose your real public or local network IP address. MySupportInfo scans your browser's active ICE candidates to ensure no leaks exist.",
+    },
+    {
+        q: "Is my personal data stored or logged when using this tool?",
+        a: "Never. All detection occurs client-side in your local browser sandbox. We do not store IP addresses in databases, use no tracking cookies, and never build user profiles. All data disappears the moment you close your browser tab.",
+    },
+    {
+        q: "How can I test my network for gaming and video call lag?",
+        a: "Head to our Bufferbloat Test tool (/bufferbloat). It simulates real download and upload loads to measure whether your router buffers packets and spikes latency, assigning you an official Quality of Experience grade from A to F.",
+    },
+];
+
+const STANDALONE_TOOLS = [
+    {
+        href: "/bufferbloat",
+        title: "Bufferbloat Latency Test",
+        desc: "Measure ping spikes while downloading or uploading to find out why games or video calls stutter.",
+        cta: "Run latency test",
+    },
+    {
+        href: "/what-is-my-ip",
+        title: "What Is My IP Address",
+        desc: "Inspect your public IPv4 & IPv6 addresses, ISP provider, approximate region, and VPN WebRTC leaks.",
+        cta: "Audit IP & WebRTC",
+    },
+    {
+        href: "/what-is-my-browser",
+        title: "What Is My Browser",
+        desc: "Verify your exact browser build, Blink/Gecko/WebKit rendering engine, cookies, and User-Agent.",
+        cta: "Inspect browser",
+    },
+    {
+        href: "/what-is-my-screen-resolution",
+        title: "Screen Resolution & Viewport",
+        desc: "Compare physical display dimensions against live CSS viewport pixels on zoom and DPR scaling.",
+        cta: "Measure display",
+    },
+];
 
 export default function Home() {
     const [stats, setStats] = useState<SystemStats | null>(null);
@@ -135,12 +185,21 @@ export default function Home() {
     const [ipLoading, setIpLoading] = useState(true);
     const [webrtcLeak, setWebrtcLeak] = useState<string>("Scanning…");
     const [webrtcLoading, setWebrtcLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<TabType>("network");
+
+    const [activeTab, setActiveTab] = useState<TabType>("overview");
+    const [audienceMode, setAudienceMode] = useState<AudienceMode>("simple");
+    const [expandedHelpId, setExpandedHelpId] = useState<string | null>(null);
+    const [copiedFieldId, setCopiedFieldId] = useState<string | null>(null);
+
     const [isCapturing, setIsCapturing] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [exportingFormat, setExportingFormat] = useState<"png" | "pdf" | null>(null);
     const [downloading, setDownloading] = useState(false);
     const [currentTime, setCurrentTime] = useState<string>("");
-    const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+    const [maskTicketIp, setMaskTicketIp] = useState(true);
+    const [ticketCopied, setTicketCopied] = useState(false);
+
     const [isScreenshotModalOpen, setIsScreenshotModalOpen] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [isReportErrorOpen, setIsReportErrorOpen] = useState(false);
@@ -155,7 +214,7 @@ export default function Home() {
         return () => clearInterval(i);
     }, []);
 
-    // Check for shared report parameter (?report=...) on load
+    // Shared report URL param decoding
     useEffect(() => {
         if (typeof window === "undefined") return;
         const params = new URLSearchParams(window.location.search);
@@ -217,9 +276,7 @@ export default function Home() {
         const fetchStats = async () => {
             if (typeof window !== "undefined" && window.location.search.includes("report=")) {
                 const p = new URLSearchParams(window.location.search);
-                if (p.get("report") && decodeReport(p.get("report")!)) {
-                    return; // Retain shared report snapshot
-                }
+                if (p.get("report") && decodeReport(p.get("report")!)) return;
             }
             const ua = navigator.userAgent;
             let browserName = "Unknown";
@@ -269,7 +326,6 @@ export default function Home() {
                 browserVersion = ua.match(/Version\/(\d+)/)?.[1] || "";
             }
 
-            // Brave browser detection (which masks as Chrome in UA)
             // @ts-expect-error - Brave specific API
             if (typeof navigator !== "undefined" && navigator.brave?.isBrave) {
                 try {
@@ -280,19 +336,16 @@ export default function Home() {
             }
 
             const osName = await detectOSName(ua);
-
-            // @ts-expect-error - Experimental API
+            // @ts-expect-error - Experimental Network Info API
             const conn = navigator.connection;
-            // Network Information API is only available on mobile Chrome/Android
             const connType = conn?.effectiveType?.toUpperCase() || "N/A";
             const connSpeed = conn?.downlink ? `${conn.downlink} Mbps` : "N/A";
             const persistence = navigator.cookieEnabled ? "ENABLED" : "DISABLED";
-            // @ts-expect-error - Experimental API
+            // @ts-expect-error - Experimental Device Memory API
             const ram = navigator.deviceMemory ? `~${navigator.deviceMemory} GB` : "Unknown";
             const cpu = navigator.hardwareConcurrency || "Unknown";
             let latency = conn?.rtt ? `${conn.rtt} ms` : "N/A";
 
-            // If Network Information API is unavailable (e.g. desktop browsers), measure live HTTP round-trip
             if (latency === "N/A" && typeof window !== "undefined") {
                 try {
                     const pStart = performance.now();
@@ -313,15 +366,17 @@ export default function Home() {
             const pixelRatioVal = `${window.devicePixelRatio}x`;
             const colorDepthVal = `${window.screen.colorDepth} bit`;
 
-            // Ad blocker detection (DOM bait + script network check)
             let adBlocker = "Not Detected";
             try {
                 const testEl = document.createElement("div");
                 testEl.className = "ad ads advert banner adsbox ad-banner ad-placement";
                 testEl.style.cssText = "position:absolute;left:-9999px;height:1px;width:1px;opacity:0;";
                 document.body.appendChild(testEl);
-                await new Promise(r => setTimeout(r, 120));
-                const isDomHidden = testEl.offsetHeight === 0 || testEl.clientHeight === 0 || window.getComputedStyle(testEl).display === "none";
+                await new Promise((r) => setTimeout(r, 120));
+                const isDomHidden =
+                    testEl.offsetHeight === 0 ||
+                    testEl.clientHeight === 0 ||
+                    window.getComputedStyle(testEl).display === "none";
                 document.body.removeChild(testEl);
 
                 if (isDomHidden) {
@@ -339,11 +394,10 @@ export default function Home() {
                 }
             } catch { /* ignore */ }
 
-            // Battery
             let batteryLevel = "N/A";
             let batteryCharging = "N/A";
             try {
-                // @ts-expect-error - experimental
+                // @ts-expect-error - experimental Battery API
                 const bat = await navigator.getBattery?.();
                 if (bat) {
                     batteryLevel = `${Math.round(bat.level * 100)}%`;
@@ -351,7 +405,6 @@ export default function Home() {
                 }
             } catch { /* ignore */ }
 
-            // WebGL
             let webgl = "Unknown";
             try {
                 const canvas = document.createElement("canvas");
@@ -362,7 +415,6 @@ export default function Home() {
                 }
             } catch { /* ignore */ }
 
-            // IP data (with sessionStorage cache and multi-provider fallback)
             let ip = "Unavailable";
             let ipv6 = "Not Available";
             let ispName = "Unknown ISP";
@@ -398,7 +450,6 @@ export default function Home() {
                     country = data.country_name || "";
                     countryCode = data.country_code || "";
                 } catch {
-                    // Fallback to ipwho.is (free, high limit, full geolocation + ISP)
                     try {
                         const ctrl = new AbortController();
                         const tid = setTimeout(() => ctrl.abort(), 5000);
@@ -418,12 +469,18 @@ export default function Home() {
                         try {
                             const res = await fetch("https://api.ipify.org?format=json");
                             ip = (await res.json()).ip || "Unavailable";
-                        } catch { ip = "Unavailable"; }
+                        } catch {
+                            ip = "Unavailable";
+                        }
                     }
                 }
 
-                const vpnKeywords = ["vpn", "mullvad", "nordvpn", "expressvpn", "surfshark", "cyberghost", "protonvpn", "torguard", "ipvanish", "windscribe", "ovh", "digitalocean", "linode", "hetzner", "cloudflare"];
-                vpnDetected = vpnKeywords.some(k => ispName.toLowerCase().includes(k));
+                const vpnKeywords = [
+                    "vpn", "mullvad", "nordvpn", "expressvpn", "surfshark", "cyberghost",
+                    "protonvpn", "torguard", "ipvanish", "windscribe", "ovh", "digitalocean",
+                    "linode", "hetzner", "cloudflare",
+                ];
+                vpnDetected = vpnKeywords.some((k) => ispName.toLowerCase().includes(k));
 
                 try {
                     const res = await fetch("https://api64.ipify.org?format=json");
@@ -431,38 +488,70 @@ export default function Home() {
                     if (data.ip?.includes(":")) ipv6 = data.ip;
                 } catch { /* ignore */ }
 
+                // If primary geo lookup connected over IPv6 on dual-stack networks, preserve IPv6 and fetch true IPv4
+                if (ip.includes(":")) {
+                    if (ipv6 === "Not Available") ipv6 = ip;
+                    try {
+                        const res4 = await fetch("https://api.ipify.org?format=json");
+                        const d4 = await res4.json();
+                        ip = d4.ip && !d4.ip.includes(":") ? d4.ip : "Not Available (IPv6-only)";
+                    } catch {
+                        ip = "Not Available (IPv6-only)";
+                    }
+                }
+
                 try {
-                    sessionStorage.setItem(IP_CACHE_KEY, JSON.stringify({
-                        ts: Date.now(), ip, ipv6, ispName, city, country, countryCode, vpnDetected,
-                    }));
+                    sessionStorage.setItem(
+                        IP_CACHE_KEY,
+                        JSON.stringify({ ts: Date.now(), ip, ipv6, ispName, city, country, countryCode, vpnDetected })
+                    );
                 } catch { /* ignore */ }
             }
 
             setIpLoading(false);
             setStats({
-                browserName, browserVersion, osName, language,
-                connectionType: connType, connectionSpeed: connSpeed, latency,
-                ip, ipv6, ispName, city, country, countryCode, vpnDetected,
-                resolution: screenRes, windowSize: windowSizeVal, pixelRatio: pixelRatioVal,
-                colorDepth: colorDepthVal, orientation, touchSupport,
-                cpuCores: cpu, ram, webglVendor: webgl,
-                batteryLevel, batteryCharging,
-                persistence, doNotTrack: dnt, adBlocker,
-                userAgent: ua, timezone: tz,
+                browserName,
+                browserVersion,
+                osName,
+                language,
+                connectionType: connType,
+                connectionSpeed: connSpeed,
+                latency,
+                ip,
+                ipv6,
+                ispName,
+                city,
+                country,
+                countryCode,
+                vpnDetected,
+                resolution: screenRes,
+                windowSize: windowSizeVal,
+                pixelRatio: pixelRatioVal,
+                colorDepth: colorDepthVal,
+                orientation,
+                touchSupport,
+                cpuCores: cpu,
+                ram,
+                webglVendor: webgl,
+                batteryLevel,
+                batteryCharging,
+                persistence,
+                doNotTrack: dnt,
+                adBlocker,
+                userAgent: ua,
+                timezone: tz,
             });
             setLoading(false);
         };
         fetchStats();
     }, []);
 
-    // WebRTC leak detection (IPv4 + IPv6 + private/public classification)
+    // WebRTC leak scan
     useEffect(() => {
         const detect = async () => {
             if (typeof window !== "undefined" && window.location.search.includes("report=")) {
                 const p = new URLSearchParams(window.location.search);
-                if (p.get("report") && decodeReport(p.get("report")!)) {
-                    return;
-                }
+                if (p.get("report") && decodeReport(p.get("report")!)) return;
             }
             try {
                 const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
@@ -470,16 +559,17 @@ export default function Home() {
                 const ips = new Set<string>();
                 await new Promise<void>((resolve) => {
                     pc.onicecandidate = (e) => {
-                        if (!e.candidate) { resolve(); return; }
+                        if (!e.candidate) {
+                            resolve();
+                            return;
+                        }
                         const cand = e.candidate.candidate;
                         const m4 = cand.match(/\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/);
-                        if (m4 && !m4[0].startsWith("0.") && !m4[0].startsWith("127.")) {
-                            ips.add(m4[0]);
-                        }
+                        if (m4 && !m4[0].startsWith("0.") && !m4[0].startsWith("127.")) ips.add(m4[0]);
                         const m6 = cand.match(/([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}/);
                         if (m6) ips.add(m6[0]);
                     };
-                    pc.createOffer().then(o => pc.setLocalDescription(o)).catch(() => resolve());
+                    pc.createOffer().then((o) => pc.setLocalDescription(o)).catch(() => resolve());
                     setTimeout(resolve, 3000);
                 });
                 pc.close();
@@ -487,16 +577,15 @@ export default function Home() {
                 if (ips.size === 0) {
                     setWebrtcLeak("No Leak (Protected)");
                 } else {
-                    const isPublic = [...ips].some(candIp =>
-                        !candIp.startsWith("192.168.") &&
-                        !candIp.startsWith("10.") &&
-                        !/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(candIp)
+                    const isPublic = [...ips].some(
+                        (candIp) =>
+                            !candIp.startsWith("192.168.") &&
+                            !candIp.startsWith("10.") &&
+                            !/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(candIp)
                     );
-                    if (isPublic) {
-                        setWebrtcLeak(`Public IP Exposed: ${[...ips].join(", ")}`);
-                    } else {
-                        setWebrtcLeak(`Local Candidate: ${[...ips].join(", ")}`);
-                    }
+                    setWebrtcLeak(
+                        isPublic ? `Public IP Exposed: ${[...ips].join(", ")}` : `Local Candidate: ${[...ips].join(", ")}`
+                    );
                 }
             } catch {
                 setWebrtcLeak("Unsupported");
@@ -506,104 +595,205 @@ export default function Home() {
         detect();
     }, []);
 
-    // Live viewport updates on resize/zoom
+    // Live viewport resize tracking
     useEffect(() => {
-        const onResize = () => setStats(prev => prev ? {
-            ...prev,
-            windowSize: `${window.innerWidth} × ${window.innerHeight}`,
-            pixelRatio: `${window.devicePixelRatio}x`,
-            resolution: `${window.screen.width} × ${window.screen.height}`,
-        } : prev);
+        const onResize = () =>
+            setStats((prev) =>
+                prev
+                    ? {
+                          ...prev,
+                          windowSize: `${window.innerWidth} × ${window.innerHeight}`,
+                          pixelRatio: `${window.devicePixelRatio}x`,
+                          resolution: `${window.screen.width} × ${window.screen.height}`,
+                      }
+                    : prev
+            );
         window.addEventListener("resize", onResize);
         return () => window.removeEventListener("resize", onResize);
     }, []);
 
-    const checkCookies = () => setStats(prev => prev
-        ? { ...prev, persistence: navigator.cookieEnabled ? "ENABLED" : "DISABLED" }
-        : prev
-    );
+    const checkCookies = () =>
+        setStats((prev) => (prev ? { ...prev, persistence: navigator.cookieEnabled ? "ENABLED" : "DISABLED" } : prev));
+
+    const buildSupportSummaryText = (maskIp: boolean) => {
+        if (!stats) return "Scanning system details…";
+        const locBase = [stats.city, stats.country].filter(Boolean).join(", ");
+        const locStr = locBase
+            ? `${locBase}${stats.countryCode ? ` (${stats.countryCode})` : ""}`
+            : stats.countryCode || "Unavailable";
+        const connStr =
+            stats.connectionType === "N/A"
+                ? "Desktop / Wi-Fi"
+                : `${stats.connectionType} · ${stats.connectionSpeed}`;
+        const batteryStr =
+            stats.batteryLevel && stats.batteryLevel !== "N/A"
+                ? ` · ${stats.batteryLevel} (${stats.batteryCharging})`
+                : "";
+        const line = (label: string, value: string) => `${label.padEnd(17, " ")}${value}`;
+
+        return [
+            "MySupportInfo — Device Diagnostic Report (22 Metrics)",
+            "",
+            "[Browser & System]",
+            line("Web Browser:", `${stats.browserName} ${stats.browserVersion}`.trim()),
+            line("Operating Sys:", stats.osName),
+            line("Login Cookies:", stats.persistence),
+            line("Language:", stats.language),
+            line("JavaScript:", "ENABLED"),
+            line("User-Agent:", stats.userAgent),
+            "",
+            "[Network & Connection]",
+            line("Public IPv4:", maskIp ? "[Masked for Privacy]" : stats.ip),
+            line("Modern IPv6:", maskIp ? "[Masked for Privacy]" : stats.ipv6),
+            line("ISP / Carrier:", maskIp ? "[Masked for Privacy]" : stats.ispName),
+            line("Location:", maskIp ? "[Masked for Privacy]" : locStr),
+            line(
+                "WebRTC Leak:",
+                webrtcLoading
+                    ? "Scanning…"
+                    : maskIp && !webrtcSafe && webrtcLeak !== "Unsupported"
+                    ? "[Masked for Privacy]"
+                    : webrtcLeak
+            ),
+            line("Response Ping:", stats.latency),
+            line("Connection:", connStr),
+            "",
+            "[Hardware & Display]",
+            line("Display / Color:", `${stats.resolution} · ${stats.colorDepth} · ${stats.pixelRatio} DPR`),
+            line("Window / Orient:", `${stats.windowSize} · ${stats.orientation || "Unknown"}`),
+            line("CPU & Memory:", `${stats.cpuCores} CPU threads · ${stats.ram} RAM`),
+            line("GPU Renderer:", stats.webglVendor),
+            line("Touch / Battery:", `${stats.touchSupport}${batteryStr}`),
+            line("Timezone/Clock:", `${stats.timezone} · ${currentTime || "—"}`),
+            "",
+            "[Privacy & Security]",
+            line("Do Not Track:", stats.doNotTrack),
+            line("Ad Blocker:", stats.adBlocker),
+            line(
+                "VPN / Proxy:",
+                maskIp
+                    ? "[Masked for Privacy]"
+                    : stats.vpnDetected
+                    ? "VPN / Datacenter Range"
+                    : "Standard Home / Mobile ISP"
+            ),
+            "",
+            line("Source:", "https://mysupportinfo.com"),
+        ].join("\n");
+    };
 
     const copyAllInfo = async () => {
         if (!stats) return;
-        const text = [
-            "MySupportInfo — Device Diagnostic Report",
-            `Generated: ${new Date().toLocaleString()}`,
-            "",
-            "─── BROWSER ───────────────────────────────",
-            `Browser:       ${stats.browserName} ${stats.browserVersion}`,
-            `OS:            ${stats.osName}`,
-            `Language:      ${stats.language}`,
-            `User Agent:    ${stats.userAgent}`,
-            "",
-            "─── NETWORK ───────────────────────────────",
-            `IP (IPv4):     ${stats.ip}`,
-            `IP (IPv6):     ${stats.ipv6}`,
-            `Location:      ${[stats.city, stats.country].filter(Boolean).join(", ") || "Unknown"}`,
-            `ISP:           ${stats.ispName}`,
-            `VPN Detected:  ${stats.vpnDetected ? "Yes" : "No"}`,
-            `WebRTC Leak:   ${webrtcLoading ? "Scanning…" : webrtcLeak}`,
-            `Connection:    ${stats.connectionType === "N/A" ? "N/A (desktop — mobile API only)" : `${stats.connectionType} — ${stats.connectionSpeed}`}`,
-            `Latency RTT:   ${stats.latency}`,
-            "",
-            "─── HARDWARE ──────────────────────────────",
-            `Screen:        ${stats.resolution} (${stats.colorDepth})`,
-            `Viewport:      ${stats.windowSize} (DPR: ${stats.pixelRatio})`,
-            `CPU Cores:     ${stats.cpuCores}`,
-            `RAM:           ${stats.ram}`,
-            `GPU:           ${stats.webglVendor}`,
-            `Battery:       ${stats.batteryLevel} — ${stats.batteryCharging}`,
-            `Touch:         ${stats.touchSupport}`,
-            `Orientation:   ${stats.orientation}`,
-            "",
-            "─── PRIVACY ───────────────────────────────",
-            `Cookies:       ${stats.persistence}`,
-            `Do Not Track:  ${stats.doNotTrack}`,
-            `Ad Blocker:    ${stats.adBlocker}`,
-            `Timezone:      ${stats.timezone}`,
-            `Time:          ${currentTime}`,
-        ].join("\n");
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(buildSupportSummaryText(false));
         setCopied(true);
         setTimeout(() => setCopied(false), 2500);
     };
 
-    const [csvExported, setCsvExported] = useState(false);
-
-    const handleExportCSV = () => {
+    const handleCopyTicketSnippet = async () => {
         if (!stats) return;
-        const csvData = {
-            ...stats,
-            webrtcLeak,
-            cookiesEnabled: stats.persistence === "ENABLED",
-        };
-        const csv = generateDiagnosticCSV(csvData, false);
-        downloadCSV(csv);
-        setCsvExported(true);
-        setTimeout(() => setCsvExported(false), 2500);
+        await navigator.clipboard.writeText(buildSupportSummaryText(maskTicketIp));
+        setTicketCopied(true);
+        setTimeout(() => setTicketCopied(false), 2500);
     };
 
-    const shareLink = () => {
-        setIsShareModalOpen(true);
+    const handleCopySingleValue = async (id: string, value: string) => {
+        try {
+            await navigator.clipboard.writeText(value);
+            setCopiedFieldId(id);
+            setTimeout(() => setCopiedFieldId(null), 1800);
+        } catch { /* ignore */ }
     };
 
-    const handleCaptureFromModal = async (selected: Set<FieldId>) => {
-        setIsScreenshotModalOpen(false);
-        await performCapture(selected);
-    };
+    const performCapture = async (fieldsToRender: Set<FieldId>, format: "png" | "pdf" = "png") => {
+        const dateSlug = new Date().toISOString().slice(0, 10);
 
-    const performCapture = async (fieldsToRender: Set<FieldId>) => {
+        if (format === "pdf") {
+            setDownloading(true);
+            setExportingFormat("pdf");
+            try {
+                const isMaskedPii = [...SENSITIVE_FIELD_IDS].every((f) => !fieldsToRender.has(f));
+                const resolveRowText = (row: MetricRowDef): string => {
+                    if (row.id === "ip4") {
+                        return ipLoading
+                            ? "Scanning..."
+                            : `${stats?.ip || "—"}${stats?.countryCode && fieldsToRender.has("location") ? ` (${stats.countryCode})` : ""}`;
+                    }
+                    if (typeof row.value === "string") return row.value;
+                    return row.plainValue || row.copyText || "—";
+                };
+                const categoryDefs: { category: Exclude<TabType, "overview">; title: string }[] = [
+                    { category: "browser", title: "Browser & System" },
+                    { category: "network", title: "Network & Connection" },
+                    { category: "hardware", title: "Hardware & Display" },
+                    { category: "privacy", title: "Privacy & Security" },
+                ];
+                const pdfGroups: DiagnosticPdfGroup[] = categoryDefs
+                    .map(({ category, title }) => ({
+                        title,
+                        items: metricRows
+                            .filter((r) => r.category === category && (!r.fieldId || fieldsToRender.has(r.fieldId)))
+                            .map((r) => ({
+                                label: audienceMode === "simple" ? r.simpleLabel : r.technicalLabel,
+                                value: resolveRowText(r),
+                                isCode: r.isCode,
+                            })),
+                    }))
+                    .filter((g) => g.items.length > 0);
+
+                await downloadDiagnosticPDF(
+                    {
+                        generatedAt: new Date().toUTCString(),
+                        isMaskedPii,
+                        kpis: [
+                            {
+                                label: "Browser",
+                                value: fieldsToRender.has("browser")
+                                    ? `${stats?.browserName || "—"} ${stats?.browserVersion || ""}`.trim()
+                                    : "Masked",
+                            },
+                            {
+                                label: "Platform / OS",
+                                value: fieldsToRender.has("os") ? stats?.osName || "—" : "Masked",
+                            },
+                            {
+                                label: "Display / Viewport",
+                                value:
+                                    fieldsToRender.has("screen") || fieldsToRender.has("viewport")
+                                        ? `${stats?.resolution || "—"} · ${stats?.pixelRatio || "1x"}`
+                                        : "Masked",
+                            },
+                            {
+                                label: "Public IP / Ping",
+                                value: fieldsToRender.has("ip")
+                                    ? `${stats?.ip || "—"} (${stats?.latency || "—"})`
+                                    : `Ping: ${stats?.latency || "—"}`,
+                            },
+                        ],
+                        groups: pdfGroups,
+                    },
+                    `mysupportinfo-diagnostic-report-${dateSlug}.pdf`
+                );
+            } catch (err) {
+                console.error("PDF export failed:", err);
+            } finally {
+                setExportingFormat(null);
+                setDownloading(false);
+            }
+            return;
+        }
+
         const element = reportRef.current;
         if (!element) return;
         setDownloading(true);
+        setExportingFormat("png");
         setIsCapturing(true);
         setVisibleFields(fieldsToRender);
-        await new Promise(r => setTimeout(r, 350)); // wait for DOM to repaint with custom fields
+        await new Promise((r) => setTimeout(r, 350));
         try {
             const html2canvas = (await import("html2canvas")).default;
             const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
-            const captureBg = isDark ? "#011f1a" : "#FAF6F0";
             const canvas = await html2canvas(element, {
-                backgroundColor: captureBg,
+                backgroundColor: isDark ? "#031915" : "#FAF6F0",
                 scale: 2,
                 logging: false,
                 useCORS: true,
@@ -613,489 +803,427 @@ export default function Home() {
                 windowHeight: element.scrollHeight,
                 x: 0,
                 y: 0,
+                onclone: (clonedDoc) => {
+                    clonedDoc.documentElement.classList.toggle("dark", isDark);
+                    const style = clonedDoc.createElement("style");
+                    style.textContent = `
+                        *, *::before, *::after {
+                            font-variant-numeric: normal !important;
+                            letter-spacing: normal !important;
+                        }
+                        code, pre, .font-mono {
+                            font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace !important;
+                        }
+                    `;
+                    clonedDoc.head.appendChild(style);
+                },
             });
             const link = document.createElement("a");
-            const dateStr = new Date().toISOString().slice(0, 10);
-            link.download = `mysupportinfo-diagnostic-report-${dateStr}.png`;
+            link.download = `mysupportinfo-diagnostic-report-${dateSlug}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
         } catch (err) {
-            console.error("Screenshot capture failed:", err);
+            console.error("PNG export failed:", err);
         } finally {
             setIsCapturing(false);
+            setExportingFormat(null);
             setDownloading(false);
         }
     };
 
-    // ─── Card component ───────────────────────────────────────────────
-    const iconBgClass = (s: "good" | "warn" | "bad" | "info") => ({
-        good: "bg-secondary/10 text-secondary",
-        warn: "bg-yellow-50 text-yellow-600",
-        bad:  "bg-red-50 text-red-400",
-        info: "bg-secondary/10 text-secondary",
-    }[s]);
-
-    const Card = ({
-        icon: Icon, title, value, subtext, tooltip,
-        status = "info", fullWidth = false, isCode = false,
-        fieldId,
-    }: {
-        icon: React.ComponentType<{ className?: string; size?: number }>;
-        title: string;
-        value?: string | React.ReactNode;
-        subtext: string;
-        tooltip?: string;
-        status?: "good" | "warn" | "bad" | "info";
-        fullWidth?: boolean;
-        isCode?: boolean;
-        fieldId?: FieldId;
-    }) => {
-        // Exclude field in screenshot if unselected
-        if (isCapturing && fieldId && !visibleFields.has(fieldId)) {
-            return null;
-        }
-
-        return (
-            <div className={`bg-white border-2 border-background-dark shadow-block-sm p-5 rounded-2xl flex flex-col justify-between hover:bg-background/20 transition-all duration-300 ${fullWidth ? "col-span-1 md:col-span-2" : ""}`}>
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2.5">
-                        <div className={`p-1.5 ${iconBgClass(status)} rounded-lg`}>
-                            <Icon size={16} />
-                        </div>
-                        <span className="text-background-dark/70 font-semibold text-3xs uppercase tracking-micro">{title}</span>
-                    </div>
-                    {tooltip && (
-                        <div className="relative group/tip">
-                            <Info size={14} className="text-background-dark/25 cursor-help select-none group-hover/tip:text-background-dark/60 transition-colors" />
-                            <div className="absolute right-0 bottom-7 w-56 bg-background-dark text-accent text-3xs rounded-xl p-3 z-50 shadow-xl leading-relaxed border border-accent/10 opacity-0 group-hover/tip:opacity-100 pointer-events-none transition-opacity duration-200">
-                                {tooltip}
-                            </div>
-                        </div>
-                    )}
-                </div>
-                <div>
-                    {isCode ? (
-                        <div className="font-mono text-2xs text-accent bg-background-dark p-3 rounded-lg break-all leading-relaxed">
-                            {value}
-                        </div>
-                    ) : (
-                        <div className="text-xl font-bold text-background-dark mb-1 leading-tight break-all">{value}</div>
-                    )}
-                    <div className="text-3xs text-background-dark/60 mt-2 leading-tight font-medium">{subtext}</div>
-                </div>
-            </div>
-        );
-    };
-
-    // ─── Shared status values ─────────────────────────────────────────
-    const webrtcStatus: "good" | "warn" | "bad" | "info" =
-        webrtcLoading ? "info"
-        : webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate") ? "good"
-        : webrtcLeak === "Unsupported" ? "info"
+    const webrtcSafe = webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate");
+    const webrtcStatus: "good" | "warn" | "bad" | "neutral" = webrtcLoading
+        ? "neutral"
+        : webrtcSafe
+        ? "good"
+        : webrtcLeak === "Unsupported"
+        ? "neutral"
         : "bad";
 
-    const privacyItems = !loading && !webrtcLoading
-        ? [
-            {
-                ok: webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate"),
-                label: webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate") ? "No WebRTC leak" : "WebRTC leak",
-            },
-            {
-                ok: stats?.doNotTrack === "ENABLED",
-                label: stats?.doNotTrack === "ENABLED" ? "DNT on" : "DNT off",
-            },
-            {
-                ok: stats?.adBlocker === "Detected",
-                label: stats?.adBlocker === "Detected" ? "Ad blocker" : "No ad blocker",
-            },
-            {
-                ok: !!stats?.vpnDetected,
-                label: stats?.vpnDetected ? "VPN detected" : "No VPN",
-            },
-          ]
-        : null;
+    const latencyStatus = loading ? "neutral" : getLatencyStatus(stats?.latency || "");
 
-    // ─── Tab card grids (shared between tab view and capture view) ────
-    const networkCards = (
-        <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Card
-                    fieldId="ip"
-                    icon={Globe}
-                    title="IP Address (IPv4)"
-                    value={ipLoading ? "Scanning…" : (
-                        <span className="flex items-center gap-2 flex-wrap">
-                            {stats?.countryCode && (!isCapturing || visibleFields.has("location")) && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-2xs font-black uppercase tracking-wider bg-background-dark/10 text-background-dark border border-background-dark/20 font-mono">
-                                    {stats.countryCode}
-                                </span>
-                            )}
-                            <span className="font-mono break-all">{stats?.ip}</span>
-                            {stats?.vpnDetected && (
-                                <span className="text-4xs font-black uppercase tracking-wider bg-yellow-100 text-yellow-700 border border-yellow-300 px-2 py-0.5 rounded-full">VPN</span>
-                            )}
+    const metricRows: MetricRowDef[] = [
+        // Network & IP
+        {
+            id: "ip4",
+            fieldId: "ip",
+            category: "network",
+            featuredOnOverview: true,
+            icon: Globe,
+            simpleLabel: "Public Internet Address (IPv4)",
+            technicalLabel: "Public IPv4 Address",
+            value: ipLoading ? "Scanning…" : isCapturing ? (
+                <span className="font-mono">
+                    {stats?.ip}
+                    {stats?.countryCode && visibleFields.has("location") ? ` (${stats.countryCode})` : ""}
+                </span>
+            ) : (
+                <span className="inline-flex items-center gap-2 flex-wrap">
+                    <span className="font-mono">{stats?.ip}</span>
+                    {stats?.countryCode && (
+                        <span className="px-1.5 py-0.5 rounded bg-well border border-line text-2xs font-mono font-bold text-ink">
+                            {stats.countryCode}
                         </span>
                     )}
-                    subtext={
-                        ipLoading
-                            ? "Resolving your public address…"
-                            : isCapturing && !visibleFields.has("location")
-                            ? "Location hidden for privacy"
-                            : [stats?.city, stats?.country].filter(Boolean).join(", ") || "Location unknown"
-                    }
-                    tooltip="Your public IPv4 address as seen by the internet. Assigned by your ISP or router NAT."
-                />
-                <Card
-                    fieldId="ip"
-                    icon={Globe}
-                    title="IPv6 Address"
-                    value={ipLoading ? "Scanning…" : (stats?.ipv6 || "Not Available")}
-                    subtext="IPv6 is available when your ISP and router support dual-stack networking."
-                    tooltip="Next-gen IP addressing with a vastly larger address space. Only shown when your connection supports it."
-                    status={!ipLoading && stats?.ipv6 !== "Not Available" ? "good" : "info"}
-                />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Card
-                    fieldId="isp"
-                    icon={Wifi}
-                    title="ISP / Network"
-                    value={ipLoading ? "Scanning…" : stats?.ispName}
-                    subtext="Your Internet Service Provider or mobile carrier organisation."
-                    tooltip="Derived from your IP's ASN (Autonomous System Number) registration data."
-                />
-                <Card
-                    fieldId="webrtc"
-                    icon={ShieldCheck}
-                    title="WebRTC Leak"
-                    value={webrtcLoading ? "Scanning…" : (
-                        <span className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate") ? "bg-secondary" : webrtcLeak === "Unsupported" ? "bg-background-dark/30" : "bg-red-400"}`} />
-                            {webrtcLeak}
-                        </span>
-                    )}
-                    subtext="Detects if your real IP is exposed via WebRTC even when using a VPN."
-                    tooltip="WebRTC can bypass VPN tunnels. 'No Leak' means your real IP is not being exposed to websites."
-                    status={webrtcStatus}
-                />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Card
-                    fieldId="latency"
-                    icon={Signal}
-                    title="Connection Type"
-                    value={loading ? "…" : stats?.connectionType}
-                    subtext={stats?.connectionType === "N/A" ? "Not available — Network Information API requires mobile Chrome." : "Effective network generation from the Network Information API."}
-                    tooltip="Reports 4G/3G/2G on mobile Chrome. Unavailable on desktop browsers (Chrome, Firefox, Safari for desktop do not expose this API)."
-                    status={loading ? "info" : (stats?.connectionType === "4G" ? "good" : stats?.connectionType === "N/A" ? "info" : "warn")}
-                />
-                <Card
-                    fieldId="latency"
-                    icon={Zap}
-                    title="Estimated Speed"
-                    value={loading ? "…" : stats?.connectionSpeed}
-                    subtext={stats?.connectionSpeed === "N/A" ? "Not available — Network Information API requires mobile Chrome." : "Rough downlink estimate — run Bufferbloat Test for accurate results."}
-                    tooltip="Downlink estimate from the Network Information API. Only available on mobile Chrome. For accurate speed measurements on any device, use the Bufferbloat Test."
-                    status={loading ? "info" : getSpeedStatus(stats?.connectionSpeed || "")}
-                />
-                <Card
-                    fieldId="latency"
-                    icon={Activity}
-                    title="Latency (RTT)"
-                    value={loading ? "…" : stats?.latency}
-                    subtext={stats?.latency === "N/A" ? "Not available on current network connection." : "Round-trip time to nearest server. Under 50ms = excellent, 50–150ms = good."}
-                    tooltip="Round-trip time (RTT) to the nearest edge server. Lower latency provides faster response times and smoother real-time interactions."
-                    status={loading ? "info" : getLatencyStatus(stats?.latency || "")}
-                />
-            </div>
-        </div>
-    );
+                </span>
+            ),
+            copyText: ipLoading ? undefined : stats?.ip,
+            simpleHelp: "This is the public street address websites see when your router connects online.",
+            technicalHelp: `External IPv4 endpoint assigned by ${stats?.ispName || "your ISP"}. Approximate region: ${[stats?.city, stats?.country].filter(Boolean).join(", ") || "Unknown"}.`,
+        },
+        {
+            id: "isp",
+            fieldId: "isp",
+            category: "network",
+            featuredOnOverview: true,
+            icon: Wifi,
+            simpleLabel: "Internet Provider",
+            technicalLabel: "ISP / ASN Organization",
+            value: ipLoading ? "Scanning…" : stats?.ispName,
+            copyText: ipLoading ? undefined : stats?.ispName,
+            simpleHelp: "The internet company or mobile carrier currently routing your traffic.",
+            technicalHelp: `Derived from IP WHOIS / ASN registration records.${stats?.vpnDetected ? " Matches a known VPN or datacenter range." : ""}`,
+            status: stats?.vpnDetected ? "warn" : "neutral",
+            statusLabel: stats?.vpnDetected ? "VPN / Datacenter" : undefined,
+        },
+        {
+            id: "location",
+            fieldId: "location",
+            category: "network",
+            icon: Globe,
+            simpleLabel: "Approximate Location",
+            technicalLabel: "IP Geolocation (City / Country)",
+            value: ipLoading
+                ? "Scanning…"
+                : [stats?.city, stats?.country].filter(Boolean).join(", ") || "Unavailable",
+            copyText: ipLoading
+                ? undefined
+                : [stats?.city, stats?.country].filter(Boolean).join(", ") || undefined,
+            simpleHelp: "General city or region inferred from your public IP address—never exact street GPS.",
+            technicalHelp: `Derived from IP geolocation lookup (${stats?.countryCode || "Unknown"}).`,
+        },
+        {
+            id: "webrtc",
+            fieldId: "webrtc",
+            category: "network",
+            featuredOnOverview: true,
+            icon: ShieldCheck,
+            simpleLabel: "VPN / WebRTC Leak Check",
+            technicalLabel: "WebRTC ICE Leak Scan",
+            value: webrtcLoading
+                ? "Scanning…"
+                : audienceMode === "simple"
+                ? webrtcSafe
+                    ? "Safe — No IP leak found"
+                    : webrtcLeak === "Unsupported"
+                    ? "Browser blocked scan"
+                    : "Public IP visible via WebRTC"
+                : webrtcLeak,
+            simpleHelp: "Checks if video-call features accidentally reveal your real home IP behind a VPN.",
+            technicalHelp: "Runs local RTCPeerConnection ICE candidate discovery against stun.l.google.com:19302.",
+            status: webrtcStatus,
+            statusLabel: webrtcLoading ? "Checking" : webrtcSafe ? "Protected" : webrtcLeak === "Unsupported" ? "N/A" : "Exposed",
+        },
+        {
+            id: "latency",
+            fieldId: "latency",
+            category: "network",
+            featuredOnOverview: true,
+            icon: Activity,
+            simpleLabel: "Response Speed (Ping)",
+            technicalLabel: "Idle Round-Trip Latency (RTT)",
+            value: loading
+                ? "Measuring…"
+                : audienceMode === "simple"
+                ? stats?.latency === "N/A"
+                    ? "Unavailable"
+                    : `${stats?.latency} (${latencyStatus === "good" ? "Fast" : latencyStatus === "warn" ? "Moderate" : "Slow"})`
+                : stats?.latency,
+            simpleHelp: "How quickly data travels to a server and back. Under 50 ms feels snappy; test under load with Bufferbloat.",
+            technicalHelp: "HTTP HEAD round-trip benchmark or navigator.connection.rtt estimate.",
+            status: latencyStatus,
+            statusLabel: latencyStatus === "good" ? "Snappy" : latencyStatus === "warn" ? "Moderate" : undefined,
+        },
+        {
+            id: "ipv6",
+            fieldId: "ip",
+            category: "network",
+            icon: Globe,
+            simpleLabel: "Modern IPv6 Address",
+            technicalLabel: "Dual-Stack IPv6 Endpoint",
+            value: ipLoading ? "Scanning…" : (stats?.ipv6 || "Not Available"),
+            copyText: !ipLoading && stats?.ipv6 !== "Not Available" ? stats?.ipv6 : undefined,
+            simpleHelp: "Newer IP address format. Many home routers still only use IPv4, which is completely normal.",
+            technicalHelp: "Queried from api64.ipify.org to determine active IPv6 external routing.",
+            status: !ipLoading && stats?.ipv6 !== "Not Available" ? "good" : "neutral",
+        },
+        {
+            id: "conntype",
+            fieldId: "latency",
+            category: "network",
+            icon: Signal,
+            simpleLabel: "Connection Estimate",
+            technicalLabel: "Network Information API",
+            value: loading
+                ? "…"
+                : stats?.connectionType === "N/A"
+                ? audienceMode === "simple"
+                    ? "Desktop / Wi-Fi (Mobile API only)"
+                    : "N/A (Desktop browser)"
+                : `${stats?.connectionType} · ${stats?.connectionSpeed}`,
+            simpleHelp: "Only mobile Chrome reports cellular speeds here. Use the Bufferbloat Test for real desktop speed.",
+            technicalHelp: "navigator.connection effectiveType & downlink estimates; omitted on desktop Chromium/Firefox/Safari.",
+        },
 
-    const browserCards = (
-        <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                <Card
-                    fieldId="browser"
-                    icon={Monitor}
-                    title="Browser"
-                    value={loading ? "…" : `${stats?.browserName} ${stats?.browserVersion}`}
-                    subtext="Detected browser engine and major version number."
-                    tooltip="Detected from the User Agent string. Useful for debugging browser-specific rendering issues."
-                    status="good"
-                />
-                <Card
-                    fieldId="os"
-                    icon={HardDrive}
-                    title="Operating System"
-                    value={loading ? "…" : stats?.osName}
-                    subtext="Host OS detected from browser client hints and user agent."
-                    tooltip="Identifies the OS platform your browser runs on. Helps support teams reproduce your environment."
-                />
-                <Card
-                    fieldId="language"
-                    icon={Languages}
-                    title="Language / Locale"
-                    value={loading ? "…" : stats?.language}
-                    subtext="Primary browser language and locale setting."
-                    tooltip="Affects date formatting, number separators, and which language websites display by default."
-                />
-                <Card
-                    fieldId="js"
-                    icon={ShieldCheck}
-                    title="JavaScript"
-                    value={<span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-secondary flex-shrink-0" />ENABLED</span>}
-                    subtext="JS is active — this page cannot load without it."
-                    tooltip="If you can see this card, JavaScript is enabled and functioning correctly."
-                    status="good"
-                />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                <Card
-                    fieldId="userAgent"
-                    icon={Terminal}
-                    title="Full User Agent"
-                    value={loading ? "Loading…" : stats?.userAgent}
-                    subtext="Complete browser identification string sent with every HTTP request."
-                    tooltip="Servers use this to identify your browser, OS, and rendering engine for compatibility checks."
-                    fullWidth
-                    isCode
-                />
-                <Card
-                    fieldId="privacy"
-                    icon={EyeOff}
-                    title="Do Not Track"
-                    value={loading ? "…" : (
-                        <span className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${stats?.doNotTrack === "ENABLED" ? "bg-secondary" : "bg-background-dark/30"}`} />
-                            {stats?.doNotTrack}
-                        </span>
-                    )}
-                    subtext="Browser tracking opt-out preference signal sent to websites."
-                    tooltip="When enabled, your browser requests websites not track you. Most sites do not honour it."
-                    status={loading ? "info" : stats?.doNotTrack === "ENABLED" ? "good" : "info"}
-                />
-                <Card
-                    fieldId="cookies"
-                    icon={Lock}
-                    title="Cookies"
-                    value={loading ? "…" : (
-                        <span className="flex items-center justify-between w-full">
-                            <span className="flex items-center gap-2">
-                                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${stats?.persistence === "ENABLED" ? "bg-secondary" : "bg-red-400"}`} />
-                                {stats?.persistence}
-                            </span>
-                            {!isCapturing && (
-                                <button
-                                    onClick={checkCookies}
-                                    aria-label="Re-test cookie status"
-                                    className="text-4xs text-primary font-black uppercase tracking-wider bg-background-dark px-2 py-0.5 rounded border border-background-dark hover:bg-primary hover:text-background-dark transition-colors"
-                                >
-                                    Re-test
-                                </button>
-                            )}
-                        </span>
-                    )}
-                    subtext="Required for session management and user preference storage."
-                    tooltip="Cookies store session data. If disabled, most login systems and preferences will not work."
-                />
-            </div>
-        </div>
-    );
+        // Browser & OS
+        {
+            id: "browser",
+            fieldId: "browser",
+            category: "browser",
+            featuredOnOverview: true,
+            icon: Monitor,
+            simpleLabel: "Web Browser",
+            technicalLabel: "Browser & Major Build",
+            value: loading ? "…" : `${stats?.browserName} ${stats?.browserVersion}`,
+            copyText: loading ? undefined : `${stats?.browserName} ${stats?.browserVersion}`,
+            simpleHelp: "Keeping your browser updated fixes crashes, playback glitches, and login problems.",
+            technicalHelp: "Parsed from User-Agent headers and Brave runtime checks where exposed.",
+            status: "good",
+            statusLabel: "Active",
+        },
+        {
+            id: "os",
+            fieldId: "os",
+            category: "browser",
+            featuredOnOverview: true,
+            icon: HardDrive,
+            simpleLabel: "Operating System",
+            technicalLabel: "Host OS / Client Hints",
+            value: loading ? "…" : stats?.osName,
+            simpleHelp: "The operating system running on your computer or phone (Windows, macOS, Linux, iOS, or Android).",
+            technicalHelp: "Detected via navigator.userAgentData.getHighEntropyValues(['platform']) and navigator.platform.",
+        },
+        {
+            id: "cookies",
+            fieldId: "cookies",
+            category: "browser",
+            featuredOnOverview: true,
+            icon: Lock,
+            simpleLabel: "Login Cookies",
+            technicalLabel: "HTTP Cookies Persistence",
+            value: loading
+                ? "…"
+                : audienceMode === "simple"
+                ? stats?.persistence === "ENABLED"
+                    ? "Turned On (Logins work)"
+                    : "Turned Off (Logins may fail)"
+                : stats?.persistence,
+            simpleHelp: "Websites need cookies enabled to keep you signed in after loading a page.",
+            technicalHelp: "Evaluates navigator.cookieEnabled state locally in browser memory.",
+            status: loading ? "neutral" : stats?.persistence === "ENABLED" ? "good" : "bad",
+            statusLabel: stats?.persistence === "ENABLED" ? "Enabled" : "Blocked",
+            action: !isCapturing ? (
+                <button
+                    type="button"
+                    onClick={checkCookies}
+                    className="px-2.5 py-1 rounded-md border border-line text-2xs font-semibold text-ink hover:bg-hover transition-colors cursor-pointer"
+                >
+                    Re-check
+                </button>
+            ) : undefined,
+        },
+        {
+            id: "language",
+            fieldId: "language",
+            category: "browser",
+            icon: Languages,
+            simpleLabel: "Browser Language",
+            technicalLabel: "navigator.language Locale",
+            value: loading ? "…" : stats?.language,
+            simpleHelp: "Controls default page language, date style, and number formatting.",
+            technicalHelp: "Read directly from navigator.language BCP 47 locale tag.",
+        },
+        {
+            id: "js",
+            fieldId: "js",
+            category: "browser",
+            icon: Zap,
+            simpleLabel: "JavaScript",
+            technicalLabel: "JavaScript Runtime",
+            value: "Turned On (Active)",
+            simpleHelp: "Interactive web apps require JavaScript to load buttons, menus, and dashboards.",
+            technicalHelp: "Client-side ES execution verified active.",
+            status: "good",
+            statusLabel: "Running",
+        },
+        {
+            id: "ua",
+            fieldId: "userAgent",
+            category: "browser",
+            icon: Terminal,
+            simpleLabel: "Technical Browser ID (User-Agent)",
+            technicalLabel: "Full User-Agent String",
+            value: loading ? "Loading…" : stats?.userAgent,
+            copyText: loading ? undefined : stats?.userAgent,
+            simpleHelp: "A hidden text badge your browser sends to websites to identify its engine and OS.",
+            technicalHelp: "Raw navigator.userAgent header string for engineering bug reports.",
+            isCode: true,
+        },
 
-    const hardwareCards = (
-        <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                <Card
-                    fieldId="viewport"
-                    icon={Monitor}
-                    title="Viewport Size"
-                    value={loading ? "…" : stats?.windowSize}
-                    subtext={`Screen: ${stats?.resolution} · DPR: ${stats?.pixelRatio} · live on zoom`}
-                    tooltip="The pixel area your browser content occupies. Updates live when you resize or zoom."
-                />
-                <Card
-                    fieldId="screen"
-                    icon={Palette}
-                    title="Color Depth"
-                    value={loading ? "…" : stats?.colorDepth}
-                    subtext="Bits used per pixel for the display's color range."
-                    tooltip="24-bit = ~16.7 million colors (standard). 30-bit = HDR. Higher means richer images."
-                />
-                <Card
-                    fieldId="hardware"
-                    icon={Cpu}
-                    title="CPU Cores"
-                    value={loading ? "…" : stats?.cpuCores}
-                    subtext="Logical processor threads available to the browser."
-                    tooltip="More cores allow browsers and WebAssembly to run parallel tasks faster."
-                />
-                <Card
-                    fieldId="hardware"
-                    icon={HardDrive}
-                    title="RAM Estimate"
-                    value={loading ? "…" : stats?.ram}
-                    subtext="Rounded memory bucket from the Device Memory API."
-                    tooltip="Browsers report memory in buckets (0.5, 1, 2, 4, 8 GB) to resist fingerprinting."
-                />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                <Card
-                    fieldId="gpu"
-                    icon={Terminal}
-                    title="WebGL / GPU"
-                    value={<span className="text-xs sm:text-sm font-bold text-background-dark leading-snug break-words block">{loading ? "…" : stats?.webglVendor}</span>}
-                    subtext="GPU renderer string from the WebGL debug extension."
-                    tooltip="Identifies your graphics card. Useful for diagnosing rendering and performance issues."
-                    fullWidth
-                />
-                <Card
-                    fieldId="battery"
-                    icon={Battery}
-                    title="Battery"
-                    value={loading ? "…" : (stats?.batteryLevel === "N/A" ? "Desktop / N/A" : `${stats?.batteryLevel} — ${stats?.batteryCharging}`)}
-                    subtext="Charge level and status from the Battery Status API."
-                    tooltip="Available on laptops and mobile. Desktop PCs report N/A. Helps diagnose performance issues."
-                    status={loading ? "info" : getBatteryStatus(stats?.batteryLevel || "N/A")}
-                />
-                <Card
-                    fieldId="battery"
-                    icon={Smartphone}
-                    title="Touch Support"
-                    value={loading ? "…" : stats?.touchSupport}
-                    subtext="Touchscreen capability from maxTouchPoints API."
-                    tooltip="Affects how events fire. Touch devices support gestures; mice use click/hover events."
-                />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Card
-                    fieldId="screen"
-                    icon={Layout}
-                    title="Screen Orientation"
-                    value={loading ? "…" : stats?.orientation}
-                    subtext="Current orientation from the Screen Orientation API."
-                    tooltip="Landscape for desktops. Portrait for phones held upright. Affects responsive layout breakpoints."
-                />
-                <Card
-                    fieldId="clock"
-                    icon={MapPin}
-                    title="Timezone"
-                    value={loading ? "…" : stats?.timezone}
-                    subtext="Local timezone via Intl.DateTimeFormat API."
-                    tooltip="Used by web apps to show times in your local zone. Can differ from your IP geolocation."
-                />
-                <Card
-                    fieldId="clock"
-                    icon={Clock}
-                    title="System Clock"
-                    value={currentTime || "…"}
-                    subtext="Live clock synchronized with your device's system time."
-                    tooltip="Clock drift affects SSL certificate validation and TOTP 2FA codes — keep system time accurate."
-                />
-            </div>
-        </div>
-    );
+        // Hardware & Display
+        {
+            id: "screen",
+            fieldId: "screen",
+            category: "hardware",
+            featuredOnOverview: true,
+            icon: Monitor,
+            simpleLabel: "Monitor Size & Colors",
+            technicalLabel: "Screen Resolution, Color Depth & DPR",
+            value: loading
+                ? "…"
+                : `${stats?.resolution} · ${stats?.colorDepth} · ${stats?.pixelRatio} DPR`,
+            copyText: loading
+                ? undefined
+                : `${stats?.resolution} (${stats?.colorDepth}, DPR ${stats?.pixelRatio})`,
+            simpleHelp: "Physical display resolution, color bit depth, and display scaling factor (DPR).",
+            technicalHelp: `window.screen (${stats?.resolution}), colorDepth (${stats?.colorDepth}), devicePixelRatio (${stats?.pixelRatio}).`,
+        },
+        {
+            id: "viewport",
+            fieldId: "viewport",
+            category: "hardware",
+            icon: Layout,
+            simpleLabel: "Browser Window & Orientation",
+            technicalLabel: "CSS Viewport & Screen Orientation",
+            value: loading
+                ? "…"
+                : `${stats?.windowSize} viewport · ${stats?.orientation || "Unknown"}`,
+            copyText: loading ? undefined : `${stats?.windowSize} (${stats?.orientation})`,
+            simpleHelp: "The active usable pixel area inside your browser window right now—updates live on resize or zoom.",
+            technicalHelp: `window.innerWidth × window.innerHeight (${stats?.windowSize}), ScreenOrientation (${stats?.orientation}).`,
+        },
+        {
+            id: "cpu_ram",
+            fieldId: "hardware",
+            category: "hardware",
+            featuredOnOverview: true,
+            icon: Cpu,
+            simpleLabel: "Processor & Memory",
+            technicalLabel: "CPU Threads & Device Memory",
+            value: loading ? "…" : `${stats?.cpuCores} CPU threads · ${stats?.ram} RAM`,
+            simpleHelp: "Browsers round memory numbers intentionally (often capping at ~8 GB) to protect against tracking.",
+            technicalHelp: "navigator.hardwareConcurrency (logical threads) & navigator.deviceMemory privacy-bucket estimate.",
+        },
+        {
+            id: "gpu",
+            fieldId: "gpu",
+            category: "hardware",
+            icon: Palette,
+            simpleLabel: "Graphics Card (GPU)",
+            technicalLabel: "WebGL Unmasked Renderer",
+            value: loading ? "…" : stats?.webglVendor,
+            copyText: loading ? undefined : stats?.webglVendor,
+            simpleHelp: "Identifies the graphics hardware accelerating smooth animations and video playback.",
+            technicalHelp: "Queried via WebGL WEBGL_debug_renderer_info extension.",
+            isCode: true,
+        },
+        {
+            id: "touch_battery",
+            fieldId: "battery",
+            category: "hardware",
+            icon: Smartphone,
+            simpleLabel: "Touchscreen & Battery",
+            technicalLabel: "Touch Points & Battery API",
+            value: loading
+                ? "…"
+                : `${stats?.touchSupport}${stats?.batteryLevel && stats.batteryLevel !== "N/A" ? ` · ${stats.batteryLevel} (${stats.batteryCharging})` : ""}`,
+            simpleHelp: "Shows touchscreen support and laptop/phone charge status when exposed by your browser.",
+            technicalHelp: "navigator.maxTouchPoints + optional Battery Status API.",
+        },
+        {
+            id: "clock",
+            fieldId: "clock",
+            category: "hardware",
+            icon: Clock,
+            simpleLabel: "Timezone & Device Clock",
+            technicalLabel: "Intl Timezone & Local Clock",
+            value: loading ? "…" : `${stats?.timezone} · ${currentTime || "…"}`,
+            simpleHelp: "Wrong system time can cause security warnings and broken 2FA login codes.",
+            technicalHelp: "Intl.DateTimeFormat().resolvedOptions().timeZone synced with local system clock.",
+        },
 
-    const privacyCards = (
-        <div className="space-y-3">
-            {(!isCapturing || visibleFields.has("privacy")) && (
-                <div className="bg-background-dark border-2 border-background-dark rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                        <p className="text-4xs text-accent/50 uppercase tracking-ui-wider font-bold mb-1">Privacy Snapshot</p>
-                        {privacyItems ? (
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-accent/90">
-                                {privacyItems.map((item, i) => (
-                                    <span key={i} className="inline-flex items-center gap-1.5">
-                                        <span className={item.ok ? "text-secondary font-bold" : "text-primary font-bold"} aria-hidden="true">
-                                            {item.ok ? <>&#10003;</> : <>&#9888;</>}
-                                        </span>
-                                        <span>{item.label}</span>
-                                        {i < privacyItems.length - 1 && <span className="text-accent/30 ml-1.5" aria-hidden="true">&#183;</span>}
-                                    </span>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-sm font-medium text-accent/90 leading-relaxed">Analysing privacy posture&#8230;</p>
-                        )}
-                    </div>
-                </div>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Card
-                    fieldId="webrtc"
-                    icon={ShieldCheck}
-                    title="WebRTC Leak"
-                    value={webrtcLoading ? "Scanning…" : (
-                        <span className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${webrtcLeak.startsWith("No Leak") || webrtcLeak.startsWith("Local Candidate") ? "bg-secondary" : webrtcLeak === "Unsupported" ? "bg-background-dark/30" : "bg-red-400"}`} />
-                            {webrtcLeak}
-                        </span>
-                    )}
-                    subtext="Checks if your real IP is exposed through WebRTC even behind a VPN."
-                    tooltip="A WebRTC leak can reveal your real IP to sites even when using a VPN. 'No Leak' means you're safe."
-                    status={webrtcStatus}
-                />
-                <Card
-                    fieldId="ip"
-                    icon={stats?.vpnDetected ? ShieldAlert : ShieldCheck}
-                    title="VPN Detection"
-                    value={ipLoading ? "Scanning…" : (
-                        <span className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${stats?.vpnDetected ? "bg-yellow-400" : "bg-background-dark/30"}`} />
-                            {stats?.vpnDetected ? "VPN Detected" : "No VPN Detected"}
-                        </span>
-                    )}
-                    subtext="Heuristic check against known VPN provider organisation names."
-                    tooltip="Checks if your ISP name matches known VPN providers. Heuristic only — not 100% conclusive."
-                    status={stats?.vpnDetected ? "warn" : "info"}
-                />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Card
-                    fieldId="privacy"
-                    icon={EyeOff}
-                    title="Do Not Track"
-                    value={loading ? "…" : (
-                        <span className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${stats?.doNotTrack === "ENABLED" ? "bg-secondary" : "bg-background-dark/30"}`} />
-                            {stats?.doNotTrack}
-                        </span>
-                    )}
-                    subtext="Browser tracking opt-out preference signal."
-                    tooltip="A request to websites not to track you. Most sites do not honour this header."
-                    status={loading ? "info" : stats?.doNotTrack === "ENABLED" ? "good" : "info"}
-                />
-                <Card
-                    fieldId="privacy"
-                    icon={ShieldAlert}
-                    title="Ad Blocker"
-                    value={loading ? "Detecting…" : (
-                        <span className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${stats?.adBlocker === "Detected" ? "bg-secondary" : "bg-background-dark/30"}`} />
-                            {stats?.adBlocker}
-                        </span>
-                    )}
-                    subtext="Checks if an ad-filtering browser extension is active."
-                    tooltip="Detected by injecting a hidden element with ad-class names and checking if it was removed."
-                    status={loading ? "info" : stats?.adBlocker === "Detected" ? "good" : "info"}
-                />
-            </div>
-        </div>
-    );
-
-    // ─── Tab config ───────────────────────────────────────────────────
-    const tabConfig: { id: TabType; label: string; icon: React.ComponentType<{ className?: string; size?: number }> }[] = [
-        { id: "network",  label: "Network",  icon: Wifi         },
-        { id: "browser",  label: "Browser",  icon: Globe        },
-        { id: "hardware", label: "Hardware", icon: Cpu          },
-        { id: "privacy",  label: "Privacy",  icon: ShieldCheck  },
+        // Privacy
+        {
+            id: "dnt",
+            fieldId: "privacy",
+            category: "privacy",
+            icon: EyeOff,
+            simpleLabel: "Do Not Track Signal",
+            technicalLabel: "DNT Header (navigator.doNotTrack)",
+            value: loading ? "…" : stats?.doNotTrack === "ENABLED" ? "Turned On" : "Off (Default)",
+            simpleHelp: "Tells websites you prefer not to be tracked, though compliance is optional for sites.",
+            technicalHelp: "Reads navigator.doNotTrack preference flag.",
+        },
+        {
+            id: "adblock",
+            fieldId: "privacy",
+            category: "privacy",
+            icon: ShieldAlert,
+            simpleLabel: "Ad Blocker Extension",
+            technicalLabel: "Content Blocking Heuristic",
+            value: loading ? "Checking…" : stats?.adBlocker,
+            simpleHelp: "Strict content blockers can occasionally hide checkout buttons or video players on support pages.",
+            technicalHelp: "DOM bait & network script probe check for active ad-blocking filters.",
+        },
+        {
+            id: "vpn_check",
+            fieldId: "privacy",
+            category: "privacy",
+            icon: ShieldCheck,
+            simpleLabel: "VPN / Cloud Proxy Flag",
+            technicalLabel: "ISP Hosting / Datacenter Heuristic",
+            value: ipLoading
+                ? "Scanning…"
+                : stats?.vpnDetected
+                ? "VPN / Datacenter Range"
+                : "Standard Home / Mobile ISP",
+            simpleHelp: "Indicates whether your IP belongs to a known VPN provider, proxy, or datacenter network.",
+            technicalHelp: "Evaluates ASN/ISP organization keywords for commercial VPN and cloud hosting ranges.",
+            status: stats?.vpnDetected ? "warn" : "neutral",
+            statusLabel: stats?.vpnDetected ? "VPN / Cloud" : undefined,
+        },
     ];
 
-    const tabSections: { id: TabType; label: string; content: React.ReactNode; fieldIds: FieldId[] }[] = [
-        { id: "network",  label: "Network",  content: networkCards,  fieldIds: ["ip", "isp", "location", "webrtc", "latency"] },
-        { id: "browser",  label: "Browser",  content: browserCards,  fieldIds: ["browser", "os", "language", "js", "userAgent", "privacy", "cookies"] },
-        { id: "hardware", label: "Hardware", content: hardwareCards, fieldIds: ["viewport", "screen", "hardware", "gpu", "battery", "clock"] },
-        { id: "privacy",  label: "Privacy",  content: privacyCards,  fieldIds: ["webrtc", "ip", "privacy"] },
+    const visibleRows = metricRows.filter((row) => {
+        if (isCapturing) {
+            return !row.fieldId || visibleFields.has(row.fieldId);
+        }
+        if (activeTab === "overview") return row.featuredOnOverview;
+        return row.category === activeTab;
+    });
+
+    const tabs: { id: TabType; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
+        { id: "overview", label: "Key Summary", icon: Activity },
+        { id: "network", label: "Network & IP", icon: Wifi },
+        { id: "browser", label: "Browser & OS", icon: Globe },
+        { id: "hardware", label: "Hardware", icon: Cpu },
+        { id: "privacy", label: "Privacy", icon: ShieldCheck },
     ];
+
+    const statusBadgeClass = (s?: MetricRowDef["status"]) => {
+        if (s === "good") return "bg-secondary/10 text-secondary border-secondary/30";
+        if (s === "warn") return "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30";
+        if (s === "bad") return "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30";
+        return "bg-well text-muted border-line";
+    };
+
+    const humanVerdict = loading
+        ? "Scanning your browser, operating system, screen size, and network connection locally…"
+        : `You are using ${stats?.browserName} ${stats?.browserVersion} on ${stats?.osName} (${stats?.resolution}), routed through ${
+              ipLoading ? "your network" : stats?.ispName || "your ISP"
+          } with ${stats?.latency !== "N/A" ? `${stats?.latency} response time` : "active connectivity"} and ${
+              webrtcLoading ? "an active WebRTC check" : webrtcSafe ? "no WebRTC IP leak" : "a visible WebRTC candidate"
+          }.`;
 
     return (
         <>
@@ -1105,49 +1233,12 @@ export default function Home() {
                     __html: JSON.stringify({
                         "@context": "https://schema.org",
                         "@type": "FAQPage",
-                        "mainEntity": [
-                            {
-                                "@type": "Question",
-                                "name": "Why do support technicians need my browser version and operating system?",
-                                "acceptedAnswer": {
-                                    "@type": "Answer",
-                                    "text": "Web browsers render HTML, CSS, and JavaScript differently across operating systems. A bug affecting Safari on macOS might look completely fine in Google Chrome on Windows. Knowing your exact browser version and OS allows developers to reproduce the issue in an identical environment."
-                                }
-                            },
-                            {
-                                "@type": "Question",
-                                "name": "How does MySupportInfo detect my graphics card (GPU) and hardware specs?",
-                                "acceptedAnswer": {
-                                    "@type": "Answer",
-                                    "text": "MySupportInfo utilizes standard browser APIs: the WebGL debug renderer info extension queries your graphics hardware string, the Device Memory API provides memory estimations, and navigator.hardwareConcurrency detects available CPU thread cores."
-                                }
-                            },
-                            {
-                                "@type": "Question",
-                                "name": "What is a WebRTC leak and how does it compromise my VPN?",
-                                "acceptedAnswer": {
-                                    "@type": "Answer",
-                                    "text": "WebRTC allows video calls and peer-to-peer data in browsers. Even when using a VPN, WebRTC can communicate with STUN servers and expose your real public or local network IP address. MySupportInfo scans your browser's active ICE candidates to ensure no leaks exist."
-                                }
-                            },
-                            {
-                                "@type": "Question",
-                                "name": "Is my personal data stored or logged when using this tool?",
-                                "acceptedAnswer": {
-                                    "@type": "Answer",
-                                    "text": "Never. All detection occurs client-side in your local browser sandbox. We do not store IP addresses in databases, use no tracking cookies, and never build user profiles. All data disappears the moment you close your browser tab."
-                                }
-                            },
-                            {
-                                "@type": "Question",
-                                "name": "How can I test my network for gaming and video call lag?",
-                                "acceptedAnswer": {
-                                    "@type": "Answer",
-                                    "text": "Head to our Bufferbloat Test tool (/bufferbloat). It simulates real download and upload loads to measure whether your router buffers packets and spikes latency, assigning you an official Quality of Experience grade from A to F."
-                                }
-                            }
-                        ]
-                    })
+                        mainEntity: HOME_FAQS.map((f) => ({
+                            "@type": "Question",
+                            name: f.q,
+                            acceptedAnswer: { "@type": "Answer", text: f.a },
+                        })),
+                    }),
                 }}
             />
             <script
@@ -1156,710 +1247,690 @@ export default function Home() {
                     __html: JSON.stringify({
                         "@context": "https://schema.org",
                         "@type": "HowTo",
-                        "name": "How to Check Your Browser, IP and System Specs with MySupportInfo",
-                        "description": "Step-by-step guide to discovering your full browser version, operating system, public IP, and hardware specifications for tech support.",
-                        "step": [
+                        name: "How to Check Your Browser, IP and System Specs with MySupportInfo",
+                        description:
+                            "Step-by-step guide to discovering your full browser version, operating system, public IP, and hardware specifications for tech support.",
+                        step: [
                             {
                                 "@type": "HowToStep",
-                                "name": "Open MySupportInfo",
-                                "text": "Navigate to https://mysupportinfo.com on any computer, tablet, or phone without installing software.",
-                                "url": "https://mysupportinfo.com/#main-content"
+                                name: "Open MySupportInfo",
+                                text: "Navigate to https://mysupportinfo.com on any computer, tablet, or phone without installing software.",
+                                url: "https://mysupportinfo.com/#main-content",
                             },
                             {
                                 "@type": "HowToStep",
-                                "name": "Review System Diagnostics",
-                                "text": "Your browser version, operating system, public IP address, screen resolution, GPU, RAM, and WebRTC privacy status load instantly in under 3 seconds.",
-                                "url": "https://mysupportinfo.com"
+                                name: "Review System Diagnostics",
+                                text: "Your browser version, operating system, public IP address, screen resolution, GPU, RAM, and WebRTC privacy status load instantly in under 3 seconds.",
+                                url: "https://mysupportinfo.com",
                             },
                             {
                                 "@type": "HowToStep",
-                                "name": "Export or Share Diagnostic Data",
-                                "text": "Click 'Copy All Info' to copy raw text, 'Screenshot Report' to download a clean visual PNG card, or 'Export CSV' for IT ticketing systems.",
-                                "url": "https://mysupportinfo.com"
-                            }
-                        ]
-                    })
+                                name: "Export or Share Diagnostic Data",
+                                text: "Click 'Copy All Info' to copy raw text, or open 'Screenshot Report' to customize fields and export as a PNG image, PDF document, or CSV spreadsheet.",
+                                url: "https://mysupportinfo.com",
+                            },
+                        ],
+                    }),
                 }}
             />
-            <div className="min-h-screen bg-background text-foreground selection:bg-primary/40 font-sans pb-24">
 
-            {/* ── Shared Remote Report Notification Banner ──────────── */}
-            {sharedReport && (
-                <div className="max-w-site mx-auto px-6 pt-6">
-                    <div className="bg-secondary text-white p-4 sm:p-5 rounded-3xl border-2 border-background-dark shadow-block-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3.5">
-                            <div className="p-2.5 rounded-2xl bg-white text-secondary flex-shrink-0 shadow-sm">
-                                <ShieldCheck size={22} />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-serif font-bold text-lg sm:text-xl text-white">Viewing Shared Diagnostic Report</span>
-                                    <span className="text-4xs font-mono font-black uppercase tracking-wider bg-white/20 text-white px-2 py-0.5 rounded-full">Remote Device</span>
-                                </div>
-                                <p className="text-xs text-white/85 mt-0.5 leading-relaxed font-medium">
-                                    Snapshot recorded on {new Date(sharedReport.timestamp).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}. Showing sender&#39;s exact browser, OS, and hardware specifications.
-                                </p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={switchToMyDevice}
-                            className="flex-shrink-0 px-4 py-2 bg-white text-background-dark font-extrabold text-xs uppercase tracking-wider rounded-xl border-2 border-background-dark shadow-block-sm hover:bg-accent transition-all cursor-pointer"
-                        >
-                            Inspect My Own Device
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* ── Hero ──────────────────────────────────────────────── */}
-            <div className="text-center px-6 pt-16 pb-10">
-                <h1 className="font-serif leading-none mb-6 select-none">
-                    <span className="block text-4xl sm:text-5xl md:text-7xl lg:text-display font-light text-background-dark tracking-tight">
-                        What Is My
-                    </span>
-                    <span className="block text-4xl sm:text-6xl md:text-8xl lg:text-display-lg font-bold text-primary italic tracking-tight -mt-2">
-                        Browser & IP?
-                    </span>
-                </h1>
-                <p className="text-sm md:text-base text-background-dark/75 max-w-xl mx-auto mb-10 leading-relaxed font-medium">
-                    My Support Info provides one link to diagnose any device. Instant browser, IP, OS, hardware, and network latency diagnostics for remote teams and IT helpdesks — 100% in-browser with zero tracking.
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
-                    <button
-                        onClick={() => setIsScreenshotModalOpen(true)}
-                        disabled={loading || downloading}
-                        aria-label="Customize and download screenshot report card"
-                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-background-dark border-2 border-background-dark shadow-block rounded-xl text-sm font-black hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-50 cursor-pointer"
-                    >
-                        <Download size={16} aria-hidden="true" />
-                        <span>{downloading ? "Generating…" : "Screenshot Report"}</span>
-                    </button>
-                    <button
-                        onClick={copyAllInfo}
-                        aria-label="Copy All Info to clipboard"
-                        className="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-background-dark text-white border-2 border-background-dark shadow-block-sm hover:bg-foreground active:translate-x-px active:translate-y-px active:shadow-none transition-all rounded-xl text-xs sm:text-sm font-bold cursor-pointer"
-                    >
-                        <Copy size={14} aria-hidden="true" />
-                        <span>{copied ? "Copied!" : "Copy All Info"}</span>
-                    </button>
-                    <button
-                        onClick={handleExportCSV}
-                        disabled={loading}
-                        aria-label="Export CSV spreadsheet"
-                        className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2.5 bg-white text-background-dark border-2 border-background-dark/30 hover:border-background-dark hover:bg-accent/20 active:translate-x-px active:translate-y-px transition-all rounded-xl text-xs sm:text-sm font-bold disabled:opacity-50 cursor-pointer"
-                    >
-                        <FileSpreadsheet size={14} aria-hidden="true" />
-                        <span>{csvExported ? "Exported!" : "CSV"}</span>
-                    </button>
-                    <button
-                        onClick={shareLink}
-                        aria-label="Share Link with IT support"
-                        className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2.5 bg-white text-background-dark border-2 border-background-dark/30 hover:border-background-dark hover:bg-accent/20 active:translate-x-px active:translate-y-px transition-all rounded-xl text-xs sm:text-sm font-bold cursor-pointer"
-                    >
-                        <Share2 size={14} aria-hidden="true" />
-                        <span>Share Link</span>
-                    </button>
-                </div>
-
-                {/* Spot an incorrect spec button */}
-                <div className="flex items-center justify-center gap-1.5 text-xs text-background-dark/70 dark:text-white/70 mt-4">
-                    <span>Notice an incorrect spec?</span>
-                    <button
-                        type="button"
-                        onClick={() => setIsReportErrorOpen(true)}
-                        className="font-bold underline underline-offset-2 hover:text-primary transition-colors cursor-pointer text-background-dark dark:text-accent"
-                    >
-                        Report a detection error
-                    </button>
-                </div>
-
-                {/* Accessible Screen Reader Status Region */}
-                <div className="sr-only" role="status" aria-live="polite">
-                    {copied && "All device specifications copied to clipboard."}
-                    {csvExported && "Diagnostic specifications exported as CSV spreadsheet."}
-                </div>
-            </div>
-
-            {/* ── Report wrapper (screenshot capture area) ──────────── */}
-            <div ref={reportRef} className={`bg-background w-full ${isCapturing ? "px-6 sm:px-12 py-10" : "px-6 py-4"}`}>
-
-                {/* ── Official Branded Report Header (Screenshot Capture Only) ──── */}
-                {isCapturing && (
-                    <div className="max-w-6xl mx-auto mb-10 p-6 sm:p-8 rounded-3xl bg-background-dark text-white border-3 border-background-dark shadow-block">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-5 border-b border-white/10">
-                            <div className="flex items-center gap-4">
-                                <div className="w-13 h-13 rounded-2xl bg-primary border-2 border-white/20 shadow-block-sm flex items-center justify-center flex-shrink-0 text-background-dark">
-                                    <Activity size={26} strokeWidth={2.5} />
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2.5 flex-wrap">
-                                        <span className="font-black text-2xl tracking-tight text-white font-sans leading-none">
-                                            MySupport<span className="text-primary italic font-serif ml-0.5">Info</span>
-                                        </span>
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-4xs font-mono font-black uppercase tracking-wider bg-white/10 text-accent border border-white/20">
-                                            Official Diagnostic Report
-                                        </span>
-                                        {[...SENSITIVE_FIELD_IDS].every(f => !visibleFields.has(f)) && (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-4xs font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30">
-                                                <span>&#10003;</span> PII Masked
-                                            </span>
-                                        )}
+            <div className="bg-canvas text-ink pb-20">
+                {/* Shared Remote Report Notification Banner */}
+                {sharedReport && (
+                    <div className="max-w-site mx-auto px-5 sm:px-6 pt-6">
+                        <div className="bg-brand text-white p-4 sm:p-5 rounded-2xl border border-line-strong flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className="flex items-start gap-3">
+                                <ShieldCheck size={20} className="text-primary flex-shrink-0 mt-0.5" aria-hidden="true" />
+                                <div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-bold text-base text-white">Viewing Shared Device Snapshot</span>
+                                        <span className="text-3xs font-mono uppercase bg-white/15 px-2 py-0.5 rounded">Remote Report</span>
                                     </div>
-                                    <p className="text-xs text-white/80 font-medium font-sans">
-                                        Client-side device, browser, network &amp; hardware specifications generated at{" "}
-                                        <strong className="text-accent underline underline-offset-2">https://mysupportinfo.com</strong>
+                                    <p className="text-xs text-white/80 mt-0.5">
+                                        Recorded {new Date(sharedReport.timestamp).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}. Displaying the sender&apos;s exact browser, OS, and screen setup.
                                     </p>
                                 </div>
                             </div>
-
-                            <div className="flex flex-col sm:items-start md:items-end gap-1 text-xs font-mono">
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-accent font-bold">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                                    <span>Verified In-Browser Session</span>
-                                </div>
-                                <div className="text-white/60 text-3xs">
-                                    Generated: {new Date().toUTCString()}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="pt-4 flex flex-wrap items-center justify-between gap-3 text-3xs font-mono text-white/70">
-                            <div className="flex items-center gap-3.5 flex-wrap">
-                                <span className="inline-flex items-center gap-1.5">
-                                    <span className="text-primary">&#10003;</span> Zero Database Logs
-                                </span>
-                                <span className="text-white/25">&#183;</span>
-                                <span className="inline-flex items-center gap-1.5">
-                                    <span className="text-primary">&#10003;</span> 100% In-Browser Execution
-                                </span>
-                                <span className="text-white/25">&#183;</span>
-                                <span className="inline-flex items-center gap-1.5">
-                                    <span className="text-primary">&#10003;</span> Encrypted TLS Transmission
-                                </span>
-                            </div>
-                            <div className="text-accent font-bold">
-                                Audit Source: mysupportinfo.com
-                            </div>
+                            <button
+                                type="button"
+                                onClick={switchToMyDevice}
+                                className="flex-shrink-0 px-4 py-2 bg-primary text-foreground font-bold text-xs rounded-lg hover:bg-primary-dark transition-colors cursor-pointer"
+                            >
+                                Inspect My Own Device
+                            </button>
                         </div>
                     </div>
                 )}
 
-                {/* Orb */}
-                <div className="flex justify-center px-4 mb-14">
-                    <div className="relative w-full max-w-orb aspect-square rounded-full flex flex-col items-center justify-center overflow-hidden bg-background-dark border-4 border-accent/25 shadow-block p-6 sm:p-10">
-                        <div className="absolute inset-4 rounded-full border-2 border-dashed border-accent/15 pointer-events-none" />
-                        <div className="relative z-10 flex flex-col items-center text-center w-full">
-                            <span className="text-4xs text-accent/75 uppercase tracking-ui-widest font-bold mb-3 sm:mb-4">Main Browser</span>
-                            <h2 className="font-serif font-bold text-white mb-4 sm:mb-6 w-full" style={{ fontSize: "clamp(1.5rem, 7vw, 3.75rem)", lineHeight: 1.08 }}>
-                                {loading ? "…" : (isCapturing && !visibleFields.has("browser") ? "Browser Masked" : `${stats?.browserName} ${stats?.browserVersion}`)}
-                            </h2>
-                            <div className="flex items-center justify-center gap-6 sm:gap-10 mb-5 sm:mb-6">
-                                <div className="text-center">
-                                    <p className="text-5xs text-accent/85 uppercase tracking-ui-wider font-bold mb-1">OS Environment</p>
-                                    <p className="text-sm sm:text-base font-semibold text-accent">
-                                        {loading ? "…" : (isCapturing && !visibleFields.has("os") ? "Hidden" : stats?.osName)}
-                                    </p>
+                {/* ── Band 1: Asymmetric Signature Cockpit (Verdict + Preserved Circular Orb) ── */}
+                <section className="max-w-site mx-auto px-5 sm:px-6 pt-10 pb-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                        {/* Left Column: Plain-English Hero + Actions */}
+                        <div className="lg:col-span-7 space-y-6">
+                            <div className="space-y-3">
+                                <div className="inline-flex items-center gap-2 text-xs font-semibold text-secondary">
+                                    <span className="size-2 rounded-full bg-secondary" aria-hidden="true" />
+                                    <span>Runs locally in your browser &middot; Zero stored logs</span>
                                 </div>
-                                <div className="w-px h-8 bg-accent/25 self-center flex-shrink-0" />
-                                <div className="text-center">
-                                    <p className="text-5xs text-accent/85 uppercase tracking-ui-wider font-bold mb-1">Global IP</p>
-                                    <p className="text-xs sm:text-sm font-semibold text-accent font-mono tabular-nums break-all">
-                                        {ipLoading ? "…" : (isCapturing && !visibleFields.has("ip") ? "[Masked for Privacy]" : stats?.ip)}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="text-5xs uppercase tracking-ui-wider font-mono text-accent/85">
-                                mysupportinfo.com
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── Tabs / Capture area ───────────────────────────── */}
-                <div className="max-w-6xl mx-auto">
-                    {isCapturing ? (
-                        // Full-page capture mode: all selected sections stacked, no tab bar
-                        <div className="space-y-10">
-                            {tabSections.map(section => {
-                                const hasVisibleCard = section.fieldIds.some(f => visibleFields.has(f));
-                                if (!hasVisibleCard) return null;
-                                return (
-                                    <div key={section.id}>
-                                        <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-background-dark/10">
-                                            {React.createElement(tabConfig.find(t => t.id === section.id)?.icon || Globe, {
-                                                size: 16,
-                                                className: "text-primary",
-                                            })}
-                                            <span className="text-2xs font-bold text-background-dark uppercase tracking-ui-wide">
-                                                {section.label}
-                                            </span>
-                                        </div>
-                                        {section.content}
-                                    </div>
-                                );
-                            })}
-                            {/* ── Branded Promotional & Referral Banner (Viral Loop for IT Support & Teams) ── */}
-                            <div className="mt-12 p-8 rounded-3xl bg-white dark:bg-[#062b24] border-3 border-background-dark dark:border-accent/40 shadow-block text-background-dark dark:text-white">
-                                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b-2 border-background-dark/10 dark:border-white/10">
-                                    <div className="space-y-2.5 max-w-2xl">
-                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-3xs font-black uppercase tracking-wider bg-primary/20 dark:bg-primary/25 text-background-dark dark:text-accent border border-background-dark/20 dark:border-primary/40 font-mono">
-                                            <span>Free System Diagnostics for Remote Teams &amp; IT Helpdesks</span>
-                                        </div>
-                                        <h3 className="font-serif text-2xl font-black text-background-dark dark:text-white tracking-tight">
-                                            Need Diagnostic Details From Your Own Clients or Teammates?
-                                        </h3>
-                                        <p className="text-xs text-background-dark/80 dark:text-white/80 leading-relaxed font-medium">
-                                            Direct them to <strong className="text-background-dark dark:text-primary font-black underline decoration-primary decoration-2">https://mysupportinfo.com</strong>.
-                                            Users don&#39;t need to install any software or configure anything. They can view, copy, or screenshot their full browser version, operating system, public IP, screen resolution, WebRTC leak status, and network latency in under 3 seconds.
-                                        </p>
-                                    </div>
-
-                                    <div className="flex flex-col sm:flex-row lg:flex-col items-stretch gap-3 flex-shrink-0 w-full lg:w-auto">
-                                        <div className="px-6 py-4 rounded-2xl bg-background-dark text-white border-2 border-background-dark shadow-block-sm flex items-center justify-between gap-5">
-                                            <div>
-                                                <span className="block text-4xs uppercase tracking-widest text-accent font-bold">Test Any Device</span>
-                                                <span className="text-base font-black font-mono text-primary">mysupportinfo.com</span>
-                                            </div>
-                                            <div className="w-8 h-8 rounded-xl bg-primary text-background-dark flex items-center justify-center font-bold text-sm">
-                                                &rarr;
-                                            </div>
-                                        </div>
-                                        <span className="text-4xs text-center text-background-dark/60 dark:text-white/60 font-mono">
-                                            1-Click Link &middot; Visual PNG Card &middot; CSV Export
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Audit trail & copyright */}
-                                <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-3xs text-background-dark/65 dark:text-white/60 font-mono">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-bold text-background-dark dark:text-white">MySupportInfo.com</span>
-                                        <span>&middot;</span>
-                                        <span>Private Client-Side Device Intelligence</span>
-                                    </div>
-                                    <div>
-                                        &copy; {new Date().getFullYear()} MySupportInfo. Built for Helpdesks, Sysadmins &amp; Remote Workers.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        // Normal tab view
-                        <>
-                            {/* Tab bar */}
-                            <div
-                                role="tablist"
-                                aria-label="Device diagnostic categories"
-                                className="flex gap-1 bg-background-dark/5 dark:bg-white/10 border-2 border-background-dark/10 dark:border-white/15 rounded-2xl p-1 mb-8 overflow-x-auto"
-                            >
-                                {tabConfig.map(tab => (
-                                    <button
-                                        key={tab.id}
-                                        id={`tab-${tab.id}`}
-                                        role="tab"
-                                        aria-selected={activeTab === tab.id}
-                                        aria-controls={`tabpanel-${tab.id}`}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        aria-label={`${tab.label} diagnostics tab`}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-2xs font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
-                                            activeTab === tab.id
-                                                ? "bg-background-dark text-white dark:bg-primary dark:text-background-dark shadow-block-sm"
-                                                : "text-background-dark/60 dark:text-accent/80 hover:text-background-dark dark:hover:text-white hover:bg-background-dark/10 dark:hover:bg-white/10"
-                                        }`}
-                                    >
-                                        <tab.icon size={14} aria-hidden="true" />
-                                        <span className="hidden sm:inline">{tab.label}</span>
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Active tab content */}
-                            {tabSections.map(section => (
-                                activeTab === section.id && (
-                                    <div
-                                        key={section.id}
-                                        id={`tabpanel-${section.id}`}
-                                        role="tabpanel"
-                                        aria-labelledby={`tab-${section.id}`}
-                                        tabIndex={0}
-                                        className="focus:outline-none"
-                                    >
-                                        <FadeIn>
-                                            {section.content}
-                                        </FadeIn>
-                                    </div>
-                                )
-                            ))}
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* ── Band 2: Full-Bleed Deep Teal Contrast Strip (Section Rhythm) ── */}
-            <section aria-labelledby="why-msi-heading" className="w-full bg-background-dark text-white border-y-2 border-background-dark dark:border-secondary/30 mt-10 py-12 sm:py-14 px-6">
-                <div className="max-w-6xl mx-auto">
-                    <div className="max-w-2xl mb-8">
-                        <p className="text-3xs font-black uppercase tracking-ui-wider text-primary mb-2">
-                            Designed for Support Clarity
-                        </p>
-                        <h2 id="why-msi-heading" className="font-serif text-2xl sm:text-3xl font-extrabold text-white leading-tight">
-                            Built for clarity, speed, and support workflows
-                        </h2>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="p-5 rounded-2xl bg-white/5 border border-white/15">
-                            <h3 className="text-sm font-extrabold text-accent mb-1.5">Manual Settings Walkthroughs</h3>
-                            <p className="text-xs text-white/80 leading-relaxed">
-                                Guiding non-technical users through OS and browser menus slows down every ticket.
-                            </p>
-                        </div>
-                        <div className="p-5 rounded-2xl bg-white/5 border border-white/15">
-                            <h3 className="text-sm font-extrabold text-accent mb-1.5">Single-Purpose Lookups</h3>
-                            <p className="text-xs text-white/80 leading-relaxed">
-                                Checking browser version, public IP, display scaling, and latency separately takes multiple tabs.
-                            </p>
-                        </div>
-                        <div className="p-5 rounded-2xl bg-primary/15 border-2 border-primary">
-                            <h3 className="text-sm font-extrabold text-accent mb-1.5">One Unified Link</h3>
-                            <p className="text-xs text-white/95 leading-relaxed">
-                                MySupportInfo detects browser, IP, viewport, GPU, and WebRTC status together in your browser.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Band 3: Alternating 50/50 Visual Workflow Splits & Unified Hub ── */}
-            <div className="bg-background w-full px-6 pt-14 pb-4">
-                <div className="max-w-6xl mx-auto space-y-16">
-
-                    {/* Split A: Live IT Helpdesk Output + Real Telemetry Preview */}
-                    <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                        <div className="space-y-4">
-                            <div className="inline-flex items-center gap-2 text-secondary font-black uppercase text-3xs tracking-ui-wide">
-                                <span className="material-symbols-outlined text-sm" aria-hidden="true">support_agent</span>
-                                Helpdesk &amp; QA Intake
-                            </div>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-background-dark font-serif leading-tight">
-                                Share Exact Browser, Display &amp; System Specs in One Click
-                            </h2>
-                            <p className="text-sm text-background-dark/80 leading-relaxed font-medium">
-                                Instead of asking clients for screenshots of their settings, send them <code className="bg-background-dark/10 px-1.5 py-0.5 rounded font-mono text-xs">mysupportinfo.com</code>. Every critical detail runs client-side with zero software installs.
-                            </p>
-                            <ul className="text-xs text-background-dark/75 space-y-2.5 font-medium">
-                                <li className="flex items-start gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
-                                    <span><strong>Copy or Export Anywhere:</strong> Paste formatted text into Jira or Zendesk, export RFC-4180 CSV, or download a PNG card.</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
-                                    <span><strong>Client-Side Execution:</strong> Device telemetry is inspected in-browser memory; short-lived IP lookups use session cache only.</span>
-                                </li>
-                            </ul>
-                            <div className="flex flex-wrap items-center gap-4 pt-2 text-xs font-extrabold">
-                                <Link href="/what-is-my-browser" className="inline-flex items-center gap-1.5 text-secondary hover:underline underline-offset-4">
-                                    <span>Inspect Browser Engine &amp; User-Agent</span>
-                                    <ArrowRight size={13} aria-hidden="true" />
-                                </Link>
-                                <Link href="/what-is-my-screen-resolution" className="inline-flex items-center gap-1.5 text-background-dark hover:text-primary transition-colors underline underline-offset-4">
-                                    <span>Check Viewport &amp; DPR Scaling</span>
-                                    <ArrowRight size={13} aria-hidden="true" />
-                                </Link>
-                            </div>
-                        </div>
-
-                        <div className="bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block font-mono text-2xs space-y-2 text-background-dark/85">
-                            <div className="flex items-center justify-between border-b border-background-dark/10 pb-2.5 mb-3 font-sans">
-                                <span className="text-3xs uppercase tracking-wider font-black text-primary">
-                                    Live Diagnostic Output
-                                </span>
-                                <span className="text-4xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-secondary/15 text-[#006B37] dark:bg-secondary/25 dark:text-emerald-300">
-                                    Your Current Session
-                                </span>
-                            </div>
-                            <div>Browser: {loading ? "Detecting…" : `${stats?.browserName} ${stats?.browserVersion}`}</div>
-                            <div>OS Platform: {loading ? "Detecting…" : stats?.osName}</div>
-                            <div>Display: {loading ? "Detecting…" : `${stats?.resolution} · Viewport: ${stats?.windowSize} (DPR ${stats?.pixelRatio})`}</div>
-                            <div>Public IP: {ipLoading ? "Scanning…" : `${stats?.ip}${stats?.ipv6 && stats.ipv6 !== "Not Available" ? ` · IPv6 Active` : ""}`}</div>
-                            <div>ISP Network: {ipLoading ? "Scanning…" : stats?.ispName}</div>
-                            <div>WebRTC Leak: {webrtcLoading ? "Scanning…" : webrtcLeak}</div>
-                            <div>Hardware: {loading ? "Detecting…" : `${stats?.cpuCores} Threads · RAM ${stats?.ram}`}</div>
-                        </div>
-                    </section>
-
-                    {/* Split B: Network Latency & Honest Sample Scale */}
-                    <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center pt-8 border-t-2 border-background-dark/10">
-                        <div className="order-2 lg:order-1 bg-white border-2 border-background-dark rounded-2xl p-6 shadow-block space-y-4">
-                            <div className="flex items-center justify-between border-b border-background-dark/10 pb-2.5">
-                                <span className="text-3xs uppercase tracking-wider font-black text-background-dark">
-                                    Sample Bufferbloat Scale (A–F)
-                                </span>
-                                <span className="text-4xs font-mono font-bold text-background-dark/60">
-                                    Live RTT: {loading ? "…" : stats?.latency}
-                                </span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2.5 text-xs font-mono">
-                                <div className="p-3 rounded-xl bg-secondary/10 border border-secondary/25">
-                                    <span className="font-black text-[#006B37] dark:text-emerald-300 block">Grade A / A+</span>
-                                    <span className="text-background-dark/75 text-3xs font-sans">+0–5 ms under load (Ideal)</span>
-                                </div>
-                                <div className="p-3 rounded-xl bg-background-dark/5 border border-background-dark/15">
-                                    <span className="font-black text-background-dark block">Grade B</span>
-                                    <span className="text-background-dark/75 text-3xs font-sans">+6–30 ms (Minor spikes)</span>
-                                </div>
-                                <div className="p-3 rounded-xl bg-primary/15 border border-primary/30">
-                                    <span className="font-black text-background-dark block">Grade C / D</span>
-                                    <span className="text-background-dark/75 text-3xs font-sans">+31–100 ms (Noticeable lag)</span>
-                                </div>
-                                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25">
-                                    <span className="font-black text-red-600 dark:text-red-400 block">Grade F</span>
-                                    <span className="text-background-dark/75 text-3xs font-sans">+100+ ms (Severe queue bloat)</span>
-                                </div>
-                            </div>
-                            <p className="text-3xs text-background-dark/60 font-medium leading-relaxed">
-                                Run the dedicated Bufferbloat Test to saturate download and upload streams and measure your connection&apos;s real grade.
-                            </p>
-                        </div>
-
-                        <div className="order-1 lg:order-2 space-y-4">
-                            <div className="inline-flex items-center gap-2 text-primary font-black uppercase text-3xs tracking-ui-wide">
-                                <span className="material-symbols-outlined text-sm" aria-hidden="true">network_check</span>
-                                Deep Network &amp; Privacy Checks
-                            </div>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-background-dark font-serif leading-tight">
-                                Catch Gaming Lag, Bufferbloat &amp; WebRTC VPN Leaks
-                            </h2>
-                            <p className="text-sm text-background-dark/80 leading-relaxed font-medium">
-                                High download speeds can still stutter on Zoom or games when routers buffer packets under load, or when WebRTC STUN requests leak your real IP behind a VPN. Measure both in seconds.
-                            </p>
-                            <div className="flex flex-wrap items-center gap-3 pt-1">
-                                <Link
-                                    href="/bufferbloat"
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-background-dark rounded-xl font-black text-xs uppercase tracking-wider hover:bg-primary-dark transition-all border-2 border-background-dark shadow-block-sm"
-                                >
-                                    <span>Run Bufferbloat Test</span>
-                                    <ArrowRight size={14} aria-hidden="true" />
-                                </Link>
-                                <Link
-                                    href="/what-is-my-ip"
-                                    className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white text-background-dark rounded-xl font-bold text-xs border-2 border-background-dark/30 hover:border-background-dark transition-all"
-                                >
-                                    <span>Audit IP &amp; WebRTC Leak</span>
-                                    <ArrowRight size={13} aria-hidden="true" />
-                                </Link>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Unified 6-Route Tool Hub (replaces duplicate 6-card grids) */}
-                    <section className="pt-8 border-t-2 border-background-dark/10">
-                        <FadeIn delay={0.2}>
-                            <div className="mb-6">
-                                <p className="text-3xs font-black uppercase tracking-ui-wider text-primary mb-2">Specialized Tools</p>
-                                <h2 className="font-serif text-fluid-h2 font-bold text-background-dark">Explore Diagnostics</h2>
-                                <p className="mt-2 max-w-2xl text-sm text-background-dark/65 font-medium leading-relaxed">
-                                    Open focused diagnostic pages for IP lookups, browser engines, display scaling, loaded latency, privacy documentation, or FAQs.
+                                <h1 className="text-fluid-hero font-extrabold text-ink tracking-tight leading-tight">
+                                    What Is My Browser, IP &amp; System Info?
+                                </h1>
+                                <p className="text-fluid-lead text-muted max-w-xl leading-relaxed">
+                                    One instant page to check your device setup, spot internet leaks, and send clear answers to IT support—built to make sense to anyone.
                                 </p>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-1">
-                                {[
-                                    {
-                                        href: "/bufferbloat",
-                                        title: "Bufferbloat Test",
-                                        desc: "Measure loaded download and upload ping spikes to diagnose lag in gaming and calls.",
-                                        cta: "Run Diagnostic",
-                                        icon: Signal,
-                                        cardClass: "bg-background-dark border-background-dark",
-                                        iconWrapClass: "bg-primary",
-                                        iconClass: "text-background-dark",
-                                        titleClass: "text-white",
-                                        descClass: "text-accent",
-                                        ctaClass: "text-primary",
-                                    },
-                                    {
-                                        href: "/what-is-my-ip",
-                                        title: "What Is My IP Address",
-                                        desc: "Check public IPv4 & IPv6 addresses, ISP routing, approximate city, and WebRTC leaks.",
-                                        cta: "Inspect IP & WebRTC",
-                                        icon: Wifi,
-                                        cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-secondary/40",
-                                        iconWrapClass: "bg-secondary/15 dark:bg-secondary/25",
-                                        iconClass: "text-secondary dark:text-emerald-300",
-                                        titleClass: "text-background-dark dark:text-white",
-                                        descClass: "text-background-dark/70 dark:text-white/75",
-                                        ctaClass: "text-[#006B37] dark:text-emerald-300",
-                                    },
-                                    {
-                                        href: "/what-is-my-browser",
-                                        title: "What Is My Browser",
-                                        desc: "Detect exact browser version, Blink/Gecko/WebKit engine, Client Hints, and User-Agent.",
-                                        cta: "Check Browser Specs",
-                                        icon: Globe,
-                                        cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-primary/40",
-                                        iconWrapClass: "bg-primary/15 dark:bg-primary/25",
-                                        iconClass: "text-[#B84617] dark:text-primary",
-                                        titleClass: "text-background-dark dark:text-white",
-                                        descClass: "text-background-dark/70 dark:text-white/75",
-                                        ctaClass: "text-[#B84617] dark:text-primary",
-                                    },
-                                    {
-                                        href: "/what-is-my-screen-resolution",
-                                        title: "What Is My Screen Resolution",
-                                        desc: "Measure display size, live CSS viewport pixels on zoom, DPR scaling, and breakpoints.",
-                                        cta: "Measure Display",
-                                        icon: Monitor,
-                                        cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-accent/40",
-                                        iconWrapClass: "bg-background-dark/10 dark:bg-white/10",
-                                        iconClass: "text-background-dark dark:text-accent",
-                                        titleClass: "text-background-dark dark:text-white",
-                                        descClass: "text-background-dark/70 dark:text-white/75",
-                                        ctaClass: "text-background-dark dark:text-accent",
-                                    },
-                                    {
-                                        href: "/privacy",
-                                        title: "Privacy Centre",
-                                        desc: "Review our client-side architecture, session storage TTL, and GDPR/CCPA practices.",
-                                        cta: "View Policy",
-                                        icon: EyeOff,
-                                        cardClass: "bg-accent dark:bg-[#062b24] border-background-dark dark:border-accent/40",
-                                        iconWrapClass: "bg-[#FAF6F0] dark:bg-accent/20 border border-background-dark/15 dark:border-accent/35",
-                                        iconClass: "text-[#00473E] dark:text-accent",
-                                        titleClass: "text-background-dark dark:text-white",
-                                        descClass: "text-background-dark/80 dark:text-white/80",
-                                        ctaClass: "text-background-dark dark:text-accent",
-                                    },
-                                    {
-                                        href: "/faq",
-                                        title: "Knowledge Base",
-                                        desc: "Answers on network testing, hardware estimation limits, and support sharing workflows.",
-                                        cta: "Read FAQ",
-                                        icon: HelpCircle,
-                                        cardClass: "bg-white dark:bg-[#062b24] border-background-dark dark:border-secondary/40",
-                                        iconWrapClass: "bg-secondary/15 dark:bg-secondary/25",
-                                        iconClass: "text-[#006B37] dark:text-emerald-300",
-                                        titleClass: "text-background-dark dark:text-white",
-                                        descClass: "text-background-dark/70 dark:text-white/75",
-                                        ctaClass: "text-background-dark dark:text-emerald-300",
-                                    },
-                                ].map((item) => (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        className={`group relative overflow-hidden rounded-3xl border-2 shadow-block hover:scale-102 transition-all duration-300 ${item.cardClass}`}
-                                    >
-                                        <div className="p-8 flex flex-col justify-between min-h-card">
-                                            <div>
-                                                <div className={`size-12 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 ${item.iconWrapClass}`}>
-                                                    <item.icon size={22} className={item.iconClass} aria-hidden="true" />
-                                                </div>
-                                                <h3 className={`text-lg font-bold mb-2 ${item.titleClass}`}>{item.title}</h3>
-                                                <p className={`text-sm leading-relaxed ${item.descClass}`}>{item.desc}</p>
-                                            </div>
-                                            <div className={`flex items-center gap-1.5 font-bold uppercase tracking-widest text-3xs mt-6 ${item.ctaClass}`}>
-                                                <span>{item.cta}</span>
-                                                <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        </FadeIn>
-                    </section>
 
-                    {/* Homepage FAQ Accordion */}
-                    <section className="pt-8 pb-10 border-t-2 border-background-dark/10">
-                        <div className="text-center max-w-2xl mx-auto mb-10">
-                            <h2 className="text-fluid-h2 font-extrabold text-background-dark font-serif mb-3">
-                                Browser & Support Details FAQ
-                            </h2>
-                            <p className="text-sm text-background-dark/70 font-medium">
-                                Quick answers to common questions about device detection, user-agent data, and privacy protection.
-                            </p>
-                        </div>
-                        <div className="max-w-3xl mx-auto space-y-3">
-                            {[
-                                {
-                                    q: "Why do support technicians need my browser version and operating system?",
-                                    a: "Web browsers render HTML, CSS, and JavaScript differently across operating systems. A bug affecting Safari on macOS might look completely fine in Google Chrome on Windows. Knowing your exact browser version and OS allows developers to reproduce the issue in an identical environment."
-                                },
-                                {
-                                    q: "How does MySupportInfo detect my graphics card (GPU) and hardware specs?",
-                                    a: "MySupportInfo utilizes standard browser APIs: the WebGL debug renderer info extension queries your graphics hardware string, the Device Memory API provides memory estimations, and navigator.hardwareConcurrency detects available CPU thread cores."
-                                },
-                                {
-                                    q: "What is a WebRTC leak and how does it compromise my VPN?",
-                                    a: "WebRTC allows video calls and peer-to-peer data in browsers. Even when using a VPN, WebRTC can communicate with STUN servers and expose your real public or local network IP address. MySupportInfo scans your browser's active ICE candidates to ensure no leaks exist."
-                                },
-                                {
-                                    q: "Is my personal data stored or logged when using this tool?",
-                                    a: "Never. All detection occurs client-side in your local browser sandbox. We do not store IP addresses in databases, use no tracking cookies, and never build user profiles. All data disappears the moment you close your browser tab."
-                                },
-                                {
-                                    q: "How can I test my network for gaming and video call lag?",
-                                    a: "Head to our Bufferbloat Test tool (/bufferbloat). It simulates real download and upload loads to measure whether your router buffers packets and spikes latency, assigning you an official Quality of Experience grade from A to F."
-                                }
-                            ].map((item, idx) => (
-                                <div
-                                    key={item.q}
-                                    className="bg-white border-2 border-background-dark rounded-2xl overflow-hidden shadow-block-sm transition-all duration-200"
-                                >
+                            {/* Plain-English Live Verdict Card */}
+                            <div className="bg-surface border border-line rounded-2xl p-4 sm:p-5 space-y-3">
+                                <div className="flex items-center justify-between gap-2 text-xs">
+                                    <span className="font-bold text-ink">Instant Plain-English Summary</span>
+                                    <span className="font-mono text-2xs text-muted">
+                                        {loading ? "Detecting…" : "Live in memory"}
+                                    </span>
+                                </div>
+                                <p className="text-sm text-ink leading-relaxed font-medium" aria-live="polite">
+                                    {humanVerdict}
+                                </p>
+                            </div>
+
+                            {/* Focused Primary CTA + Compact Actions */}
+                            <div className="space-y-3">
+                                <div className="flex flex-wrap items-center gap-2.5">
                                     <button
-                                        id={`home-faq-btn-${idx}`}
-                                        onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                                        className="w-full p-5 text-left flex justify-between items-center gap-4 hover:bg-background/20 transition-colors cursor-pointer"
-                                        aria-expanded={openFaq === idx}
-                                        aria-controls={`home-faq-${idx}`}
+                                        type="button"
+                                        onClick={() => setIsScreenshotModalOpen(true)}
+                                        disabled={loading || downloading}
+                                        aria-label="Customize and export diagnostic report as PNG image, PDF, or CSV"
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-foreground font-bold text-sm rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 cursor-pointer"
                                     >
-                                        <span className="font-extrabold text-background-dark text-base">{item.q}</span>
-                                        <span className={`material-symbols-outlined transition-transform duration-300 ease-out text-background-dark/60 flex-shrink-0 ml-2 ${openFaq === idx ? "rotate-180 text-primary" : ""}`}>
-                                            expand_more
+                                        <Download size={16} aria-hidden="true" />
+                                        <span>
+                                            {downloading
+                                                ? exportingFormat === "pdf"
+                                                    ? "Generating PDF…"
+                                                    : "Generating…"
+                                                : "Screenshot Report"}
                                         </span>
                                     </button>
-                                    <div
-                                        id={`home-faq-${idx}`}
-                                        role="region"
-                                        aria-labelledby={`home-faq-btn-${idx}`}
-                                        className={`grid transition-[grid-template-rows] duration-300 ease-out ${openFaq === idx ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                                    <button
+                                        type="button"
+                                        onClick={copyAllInfo}
+                                        aria-label="Copy All Info to clipboard"
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand text-white font-semibold text-sm rounded-xl hover:opacity-95 transition-opacity cursor-pointer"
                                     >
-                                        <div className="overflow-hidden">
-                                            <div className={`px-5 pb-5 pt-1 text-sm text-background-dark/75 leading-relaxed font-medium border-t border-background-dark/10 transition-opacity duration-200 ${openFaq === idx ? "opacity-100" : "opacity-0"}`}>
-                                                {item.a}
-                                            </div>
+                                        {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
+                                        <span>{copied ? "Copied Info" : "Copy All Info"}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsShareModalOpen(true)}
+                                        aria-label="Share Link with IT support"
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-surface text-ink border border-line-strong hover:bg-hover transition-colors rounded-xl text-xs sm:text-sm font-semibold cursor-pointer"
+                                    >
+                                        <Share2 size={14} aria-hidden="true" />
+                                        <span>Share Link</span>
+                                    </button>
+                                </div>
+
+                                <div className="text-xs text-muted flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    <span>Exports PNG image, PDF &amp; CSV inside Screenshot Report.</span>
+                                    <span aria-hidden="true">&middot;</span>
+                                    <span>
+                                        Wrong detail?{" "}
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsReportErrorOpen(true)}
+                                            className="font-semibold text-ink underline underline-offset-4 hover:text-primary transition-colors cursor-pointer"
+                                        >
+                                            Report a detection issue
+                                        </button>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="sr-only" role="status" aria-live="polite">
+                                {copied && "All device specifications copied to clipboard."}
+                            </div>
+                        </div>
+
+                        {/* Right Column: Preserved Signature Circular Diagnostic Orb */}
+                        <div className="lg:col-span-5 flex justify-center">
+                            <div className="relative w-full max-w-[380px] sm:max-w-orb aspect-square rounded-full flex flex-col items-center justify-center overflow-hidden bg-brand border-2 border-accent/25 shadow-brand-ring p-7 sm:p-10">
+                                <div className="absolute inset-4 rounded-full border border-dashed border-accent/20 pointer-events-none" />
+                                <div className="relative z-10 flex flex-col items-center text-center w-full">
+                                    <span className="text-3xs text-accent/85 uppercase tracking-widest font-bold mb-3">
+                                        Main Browser
+                                    </span>
+                                    <h2
+                                        className="font-sans font-extrabold text-white tracking-tight mb-5 w-full"
+                                        style={{ fontSize: "clamp(1.6rem, 3.6vw, 2.75rem)", lineHeight: 1.08 }}
+                                    >
+                                        {loading
+                                            ? "Detecting…"
+                                            : isCapturing && !visibleFields.has("browser")
+                                            ? "Browser Masked"
+                                            : `${stats?.browserName} ${stats?.browserVersion}`}
+                                    </h2>
+
+                                    <div className="flex items-center justify-center gap-5 sm:gap-8 mb-5">
+                                        <div className="text-center">
+                                            <p className="text-3xs text-accent/75 uppercase tracking-wider font-semibold mb-1 whitespace-nowrap">
+                                                OS Platform
+                                            </p>
+                                            <p className="text-sm sm:text-base font-bold text-white">
+                                                {loading ? "…" : isCapturing && !visibleFields.has("os") ? "Hidden" : stats?.osName}
+                                            </p>
+                                        </div>
+                                        <div className="w-px h-8 bg-white/20 flex-shrink-0" />
+                                        <div className="text-center">
+                                            <p className="text-3xs text-accent/75 uppercase tracking-wider font-semibold mb-1 whitespace-nowrap">
+                                                Public IP
+                                            </p>
+                                            <p className="text-xs sm:text-sm font-semibold text-accent font-mono tabular-nums break-all">
+                                                {ipLoading
+                                                    ? "Scanning…"
+                                                    : isCapturing && !visibleFields.has("ip")
+                                                    ? "[Masked]"
+                                                    : stats?.ip}
+                                            </p>
                                         </div>
                                     </div>
+
+                                    <div className="text-3xs uppercase tracking-widest font-mono text-white/65">
+                                        mysupportinfo.com
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── Band 1B: Interactive Plain-English / Engineer Diagnostic Ledger (also Screenshot Target) ── */}
+                <div ref={reportRef} className={`w-full ${isCapturing ? "py-8 bg-canvas" : "pb-14"}`}>
+                    <div className="max-w-site mx-auto px-5 sm:px-6">
+                        {isCapturing ? (
+                            (() => {
+                                const isMaskedPii = [...SENSITIVE_FIELD_IDS].every((f) => !visibleFields.has(f));
+                                const captureGroups: { title: string; items: MetricRowDef[] }[] = [
+                                    {
+                                        title: "Browser & System",
+                                        items: metricRows.filter((r) => r.category === "browser" && (!r.fieldId || visibleFields.has(r.fieldId))),
+                                    },
+                                    {
+                                        title: "Network & Connection",
+                                        items: metricRows.filter((r) => r.category === "network" && (!r.fieldId || visibleFields.has(r.fieldId))),
+                                    },
+                                    {
+                                        title: "Hardware & Display",
+                                        items: metricRows.filter((r) => r.category === "hardware" && (!r.fieldId || visibleFields.has(r.fieldId))),
+                                    },
+                                    {
+                                        title: "Privacy & Security",
+                                        items: metricRows.filter((r) => r.category === "privacy" && (!r.fieldId || visibleFields.has(r.fieldId))),
+                                    },
+                                ].filter((g) => g.items.length > 0);
+
+                                const leftGroups = captureGroups.filter((_, idx) => idx % 2 === 0);
+                                const rightGroups = captureGroups.filter((_, idx) => idx % 2 === 1);
+
+                                return (
+                                    <div className="rounded-2xl overflow-hidden border border-line-strong bg-surface shadow-subtle">
+                                        {/* Integrated Branded Card Header */}
+                                        <div className="bg-brand text-white px-7 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10">
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center gap-2.5 flex-wrap">
+                                                    <span className="font-extrabold text-xl text-white">
+                                                        MySupport<span className="text-primary">Info</span>
+                                                    </span>
+                                                    <span className="text-white/35 text-sm font-normal" aria-hidden="true">|</span>
+                                                    <span className="text-[11px] font-bold uppercase text-accent">
+                                                        Official Device Report
+                                                    </span>
+                                                    {isMaskedPii && (
+                                                        <>
+                                                            <span className="text-white/35 text-sm font-normal" aria-hidden="true">|</span>
+                                                            <span className="text-[11px] font-bold uppercase text-emerald-300">
+                                                                &#10003; IP Masked
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                                <p className="text-xs text-white/80">
+                                                    Client-side snapshot generated in browser memory at https://mysupportinfo.com
+                                                </p>
+                                            </div>
+                                            <div className="text-xs font-mono text-accent sm:text-right">
+                                                {new Date().toUTCString()}
+                                            </div>
+                                        </div>
+
+                                        {/* At-a-Glance Highlights Strip */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-line bg-well/40 divide-x divide-line">
+                                            <div className="px-5 py-3.5">
+                                                <div className="text-[11px] font-semibold text-muted mb-0.5">Browser</div>
+                                                <div className="text-sm font-bold text-ink">
+                                                    {visibleFields.has("browser") ? `${stats?.browserName || "—"} ${stats?.browserVersion || ""}`.trim() : "Masked"}
+                                                </div>
+                                            </div>
+                                            <div className="px-5 py-3.5">
+                                                <div className="text-[11px] font-semibold text-muted mb-0.5">Platform / OS</div>
+                                                <div className="text-sm font-bold text-ink">
+                                                    {visibleFields.has("os") ? stats?.osName || "—" : "Masked"}
+                                                </div>
+                                            </div>
+                                            <div className="px-5 py-3.5">
+                                                <div className="text-[11px] font-semibold text-muted mb-0.5">Display / Viewport</div>
+                                                <div className="text-sm font-bold text-ink">
+                                                    {visibleFields.has("screen") || visibleFields.has("viewport")
+                                                        ? `${stats?.resolution || "—"} · ${stats?.pixelRatio || "1x"}`
+                                                        : "Masked"}
+                                                </div>
+                                            </div>
+                                            <div className="px-5 py-3.5">
+                                                <div className="text-[11px] font-semibold text-muted mb-0.5">Public IP / Ping</div>
+                                                <div className="text-sm font-bold text-ink break-all leading-normal">
+                                                    {visibleFields.has("ip") ? `${stats?.ip || "—"} (${stats?.latency || "—"})` : `Ping: ${stats?.latency || "—"}`}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Balanced 2-Column Categorized Spec Card */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-line">
+                                            {[leftGroups, rightGroups].map((colGroups, colIdx) => (
+                                                <div key={colIdx} className="divide-y divide-line">
+                                                    {colGroups.map((group) => (
+                                                        <div key={group.title} className="p-5 sm:p-6 space-y-3">
+                                                            <div className="text-xs font-bold uppercase text-secondary border-b border-line pb-1.5">
+                                                                {group.title}
+                                                            </div>
+                                                            <div className="space-y-2.5">
+                                                                {group.items.map((row) => (
+                                                                    <div key={row.id} className="flex items-start justify-between gap-4 text-xs">
+                                                                        <span className="font-medium text-muted leading-snug flex-shrink-0">
+                                                                            {audienceMode === "simple" ? row.simpleLabel : row.technicalLabel}
+                                                                        </span>
+                                                                        <span
+                                                                            className={`font-semibold text-ink leading-snug ${
+                                                                                row.isCode
+                                                                                    ? "font-mono text-[11px] bg-well/60 border border-line px-2.5 py-1.5 rounded max-w-[340px] text-left break-words"
+                                                                                    : "text-right break-words"
+                                                                            }`}
+                                                                        >
+                                                                            {row.value}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Provenance Card Footer */}
+                                        <div className="px-7 py-3 bg-well/50 border-t border-line flex items-center justify-between text-xs text-muted">
+                                            <span>Verified In-Browser &middot; Zero Database Logs &middot; Privacy-First Diagnostics</span>
+                                            <span className="font-semibold text-ink">mysupportinfo.com</span>
+                                        </div>
+                                    </div>
+                                );
+                            })()
+                        ) : (
+                            <div className="bg-surface border border-line rounded-2xl shadow-subtle overflow-hidden">
+                            {/* Toolbar */}
+                            {!isCapturing && (
+                                <div className="px-4 sm:px-6 py-3.5 border-b border-line bg-well/40 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                                    {/* Category Tabs */}
+                                    <div
+                                        role="tablist"
+                                        aria-label="Diagnostic detail categories"
+                                        className="flex flex-wrap items-center gap-1.5"
+                                    >
+                                        {tabs.map((tab) => {
+                                            const active = activeTab === tab.id;
+                                            const Icon = tab.icon;
+                                            return (
+                                                <button
+                                                    key={tab.id}
+                                                    id={`tab-${tab.id}`}
+                                                    role="tab"
+                                                    type="button"
+                                                    aria-selected={active}
+                                                    aria-controls="diagnostic-ledger-panel"
+                                                    onClick={() => setActiveTab(tab.id)}
+                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                                                        active
+                                                            ? "bg-brand text-white dark:bg-primary dark:text-foreground"
+                                                            : "text-muted hover:text-ink hover:bg-hover"
+                                                    }`}
+                                                >
+                                                    <Icon size={14} aria-hidden="true" />
+                                                    <span>{tab.label}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Audience Toggle: Plain English vs Engineer */}
+                                    <div
+                                        role="group"
+                                        aria-label="Detail explanation level"
+                                        className="inline-flex items-center self-start lg:self-auto bg-canvas border border-line rounded-lg p-0.5 text-xs"
+                                    >
+                                        <button
+                                            type="button"
+                                            onClick={() => setAudienceMode("simple")}
+                                            aria-pressed={audienceMode === "simple"}
+                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                                                audienceMode === "simple"
+                                                    ? "bg-surface text-ink shadow-sm border border-line"
+                                                    : "text-muted hover:text-ink"
+                                            }`}
+                                        >
+                                            <User size={12} aria-hidden="true" />
+                                            <span>Plain English</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAudienceMode("technical")}
+                                            aria-pressed={audienceMode === "technical"}
+                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                                                audienceMode === "technical"
+                                                    ? "bg-surface text-ink shadow-sm border border-line"
+                                                    : "text-muted hover:text-ink"
+                                            }`}
+                                        >
+                                            <Wrench size={12} aria-hidden="true" />
+                                            <span>Engineer</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Tabular Diagnostic Ledger */}
+                            <div
+                                id="diagnostic-ledger-panel"
+                                role="tabpanel"
+                                aria-labelledby={isCapturing ? undefined : `tab-${activeTab}`}
+                                className="divide-y divide-line"
+                            >
+                                        {visibleRows.map((row) => {
+                                            const Icon = row.icon;
+                                            const isExpanded = expandedHelpId === row.id;
+                                            const label = audienceMode === "simple" ? row.simpleLabel : row.technicalLabel;
+                                            const helpText = audienceMode === "simple" ? row.simpleHelp : row.technicalHelp;
+
+                                            return (
+                                                <div key={row.id} className="px-4 sm:px-6 py-4 hover:bg-hover/65 transition-colors">
+                                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 items-start md:items-center">
+                                                        {/* Label + Optional Explanation Trigger */}
+                                                        <div className="md:col-span-4 flex items-center gap-2.5 min-w-0">
+                                                            <Icon size={15} className="text-secondary flex-shrink-0" aria-hidden="true" />
+                                                            <span className="text-sm font-semibold text-ink leading-normal break-words">
+                                                                {label}
+                                                            </span>
+                                                            {!isCapturing && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setExpandedHelpId(isExpanded ? null : row.id)}
+                                                                    aria-expanded={isExpanded}
+                                                                    aria-label={`Explain ${label}`}
+                                                                    className={`text-muted hover:text-ink transition-colors p-0.5 rounded cursor-pointer flex-shrink-0 ${
+                                                                        isExpanded ? "text-primary" : ""
+                                                                    }`}
+                                                                >
+                                                                    <HelpCircle size={14} aria-hidden="true" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Detected Value */}
+                                                        <div className="md:col-span-6 min-w-0">
+                                                            {row.isCode ? (
+                                                                <div className="font-mono text-xs text-ink bg-well/70 border border-line px-3 py-2 rounded-lg break-all leading-relaxed">
+                                                                    {row.value}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-sm sm:text-base font-bold text-ink tabular-nums break-words">
+                                                                    {row.value}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Right Status / Action */}
+                                                        <div className="md:col-span-2 flex items-center md:justify-end gap-2 flex-wrap">
+                                                            {row.statusLabel && (
+                                                                <span
+                                                                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-semibold border ${statusBadgeClass(
+                                                                        row.status
+                                                                    )}`}
+                                                                >
+                                                                    {row.statusLabel}
+                                                                </span>
+                                                            )}
+                                                            {row.action}
+                                                            {!isCapturing && row.copyText && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleCopySingleValue(row.id, row.copyText!)}
+                                                                    aria-label={`Copy ${label}`}
+                                                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-line text-2xs font-semibold text-muted hover:text-ink hover:border-line-strong transition-colors cursor-pointer"
+                                                                >
+                                                                    {copiedFieldId === row.id ? (
+                                                                        <>
+                                                                            <Check size={12} className="text-secondary" aria-hidden="true" />
+                                                                            <span>Copied</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Copy size={12} aria-hidden="true" />
+                                                                            <span>Copy</span>
+                                                                        </>
+                                                                    )}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Accessible Plain-English Expandable Explanation */}
+                                                    {isExpanded && (
+                                                        <p className="mt-2.5 md:ml-6 text-xs text-muted bg-well/50 border border-line rounded-lg px-3.5 py-2.5 max-w-3xl leading-relaxed">
+                                                            {helpText}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                            </div>
+
+                            {/* Footer note inside workbench */}
+                            {!isCapturing && (
+                                <div className="px-4 sm:px-6 py-3 bg-well/30 border-t border-line flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted">
+                                    <span>
+                                        Showing {visibleRows.length} items in <strong>{audienceMode === "simple" ? "Plain English" : "Engineer"}</strong> mode. Use the category tabs above to inspect all {metricRows.length} metrics.
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setAudienceMode(audienceMode === "simple" ? "technical" : "simple")}
+                                        className="font-semibold text-secondary hover:underline underline-offset-4 w-fit cursor-pointer"
+                                    >
+                                        Switch to {audienceMode === "simple" ? "Engineer Mode" : "Plain English"}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* ── Band 2: Full-Bleed Deep Teal Tool Hub (Elastic Path Contrast Rhythm) ── */}
+                <section aria-labelledby="specialized-tools-heading" className="w-full bg-brand text-white border-y border-white/10 py-14">
+                    <div className="max-w-site mx-auto px-5 sm:px-6 space-y-8">
+                        <div className="max-w-2xl space-y-2">
+                            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                                Dedicated Diagnostic Tools
+                            </p>
+                            <h2 id="specialized-tools-heading" className="text-fluid-h2 font-extrabold text-white tracking-tight">
+                                Focused checks for sluggish lag, IP privacy, browsers, and displays
+                            </h2>
+                            <p className="text-sm text-white/80 leading-relaxed">
+                                Jump directly to a single tool instead of digging through operating system menus or ad-heavy lookup pages.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border border-white/15 rounded-2xl overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-white/15 bg-black/15">
+                            {STANDALONE_TOOLS.map((tool) => (
+                                <Link
+                                    key={tool.href}
+                                    href={tool.href}
+                                    className="group p-6 flex flex-col justify-between gap-6 hover:bg-white/5 transition-colors"
+                                >
+                                    <div className="space-y-2">
+                                        <h3 className="text-base font-bold text-white group-hover:text-primary transition-colors">
+                                            {tool.title}
+                                        </h3>
+                                        <p className="text-xs text-white/80 leading-relaxed">
+                                            {tool.desc}
+                                        </p>
+                                    </div>
+                                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary">
+                                        <span>{tool.cta}</span>
+                                        <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+                                    </span>
+                                </Link>
                             ))}
                         </div>
-                    </section>
+
+                        <div className="flex flex-wrap items-center justify-between gap-4 pt-2 text-xs text-white/80 border-t border-white/10">
+                            <div className="flex items-center gap-6 flex-wrap">
+                                <Link href="/privacy" className="hover:text-primary transition-colors inline-flex items-center gap-1.5 font-semibold">
+                                    <span>Privacy Centre — Zero server logging</span>
+                                    <ArrowRight size={12} aria-hidden="true" />
+                                </Link>
+                                <Link href="/faq" className="hover:text-primary transition-colors inline-flex items-center gap-1.5 font-semibold">
+                                    <span>Knowledge Base (FAQ)</span>
+                                    <ArrowRight size={12} aria-hidden="true" />
+                                </Link>
+                            </div>
+                            <span className="font-mono text-2xs text-accent">
+                                No software installs required
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── Band 3: Real Interactive Support Ticket Builder ── */}
+                <section aria-labelledby="ticket-builder-heading" className="max-w-site mx-auto px-5 sm:px-6 py-16">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+                        <div className="lg:col-span-5 space-y-5">
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold uppercase tracking-wider text-secondary">
+                                    Ready For Any Helpdesk
+                                </p>
+                                <h2 id="ticket-builder-heading" className="text-fluid-h2 font-extrabold text-ink tracking-tight">
+                                    Send exact specs in one clean block
+                                </h2>
+                                <p className="text-sm text-muted leading-relaxed">
+                                    Stop typing browser versions or taking blurry phone pictures of settings screens. Copy a clean ticket snippet with optional IP redaction.
+                                </p>
+                            </div>
+
+                            <ol className="space-y-3 text-sm text-ink">
+                                <li className="flex items-start gap-3">
+                                    <span className="size-6 rounded-full bg-well border border-line text-xs font-mono font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        1
+                                    </span>
+                                    <span className="text-muted">
+                                        Toggle <strong className="text-ink">Mask IP &amp; ISP</strong> if you are posting publicly in GitHub or Discord.
+                                    </span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="size-6 rounded-full bg-well border border-line text-xs font-mono font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        2
+                                    </span>
+                                    <span className="text-muted">
+                                        Paste directly into Zendesk, Jira, email, or live support chat.
+                                    </span>
+                                </li>
+                            </ol>
+
+                            <div className="flex flex-wrap items-center gap-4 pt-1 text-xs font-semibold">
+                                <Link href="/what-is-my-browser" className="text-secondary hover:underline underline-offset-4 inline-flex items-center gap-1">
+                                    <span>Inspect Browser Engine</span>
+                                    <ArrowRight size={13} aria-hidden="true" />
+                                </Link>
+                                <Link href="/what-is-my-screen-resolution" className="text-ink hover:text-primary transition-colors underline underline-offset-4 inline-flex items-center gap-1">
+                                    <span>Check Viewport Scaling</span>
+                                    <ArrowRight size={13} aria-hidden="true" />
+                                </Link>
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-7 bg-surface border border-line rounded-2xl overflow-hidden shadow-subtle">
+                            <div className="px-4 sm:px-5 py-3 bg-well/50 border-b border-line flex items-center justify-between gap-3 flex-wrap">
+                                <span className="text-xs font-bold text-ink">
+                                    Live Support Ticket Snippet
+                                </span>
+                                <div className="flex items-center gap-3">
+                                    <label className="inline-flex items-center gap-2 text-xs font-medium text-ink cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={maskTicketIp}
+                                            onChange={(e) => setMaskTicketIp(e.target.checked)}
+                                            className="size-3.5 rounded accent-secondary"
+                                        />
+                                        <span>Mask IP &amp; ISP</span>
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyTicketSnippet}
+                                        disabled={loading}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand text-white text-xs font-semibold hover:opacity-95 transition-opacity disabled:opacity-50 cursor-pointer"
+                                    >
+                                        {ticketCopied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
+                                        <span>{ticketCopied ? "Copied Ticket" : "Copy Ticket"}</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <pre className="p-4 sm:p-5 text-xs font-mono text-ink leading-relaxed whitespace-pre-wrap break-all bg-surface">
+                                {buildSupportSummaryText(maskTicketIp)}
+                            </pre>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── Band 4: FAQ Accordion ── */}
+                <div className="max-w-site mx-auto px-5 sm:px-6 pt-4">
+                    <DiagnosticFaqSection title="Common Questions & Support Details" items={HOME_FAQS} />
                 </div>
+
+                {/* Modals */}
+                <ScreenshotModal
+                    isOpen={isScreenshotModalOpen}
+                    onClose={() => setIsScreenshotModalOpen(false)}
+                    onCapture={async (selected, format) => {
+                        setIsScreenshotModalOpen(false);
+                        await performCapture(selected, format);
+                    }}
+                    stats={stats}
+                    webrtcLeak={webrtcLeak}
+                    currentTime={currentTime}
+                    downloading={downloading}
+                    exportingFormat={exportingFormat}
+                />
+
+                <ShareModal
+                    isOpen={isShareModalOpen}
+                    onClose={() => setIsShareModalOpen(false)}
+                    stats={stats}
+                />
+
+                <ReportErrorModal
+                    isOpen={isReportErrorOpen}
+                    onClose={() => setIsReportErrorOpen(false)}
+                    systemStats={stats}
+                />
             </div>
-
-            {/* ── Screenshot Options & Privacy Modal ──────────────── */}
-            <ScreenshotModal
-                isOpen={isScreenshotModalOpen}
-                onClose={() => setIsScreenshotModalOpen(false)}
-                onCapture={handleCaptureFromModal}
-                stats={stats}
-                webrtcLeak={webrtcLeak}
-                currentTime={currentTime}
-                downloading={downloading}
-            />
-
-            {/* ── Share Diagnostic Report Modal ───────────────────── */}
-            <ShareModal
-                isOpen={isShareModalOpen}
-                onClose={() => setIsShareModalOpen(false)}
-                stats={stats}
-            />
-
-            {/* ── Report a Detection Error Modal ─────────────────── */}
-            <ReportErrorModal
-                isOpen={isReportErrorOpen}
-                onClose={() => setIsReportErrorOpen(false)}
-                systemStats={stats}
-            />
-        </div>
         </>
     );
 }

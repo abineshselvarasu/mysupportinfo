@@ -1,21 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Cormorant_Garamond } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Analytics } from "@vercel/analytics/react";
 
-const inter = Inter({
-  variable: "--font-inter",
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
 });
 
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "700"],
-  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -101,8 +99,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
+        <meta name="color-scheme" content="light dark" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -122,13 +121,6 @@ export default function RootLayout({
         />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-icon.svg" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        />
         <link rel="preconnect" href="https://ipapi.co" />
         <link rel="dns-prefetch" href="https://ipapi.co" />
         <link rel="preconnect" href="https://api64.ipify.org" />
@@ -147,7 +139,7 @@ export default function RootLayout({
                 "Device Info Checker",
                 "Bufferbloat Latency Test",
                 "IP Address Checker",
-                "Browser Privacy Checker"
+                "Browser Privacy Checker",
               ],
               url: "https://mysupportinfo.com",
               description:
@@ -177,7 +169,7 @@ export default function RootLayout({
                 "Hardware profiling — logical CPU cores, RAM estimate, WebGL GPU renderer",
                 "Display specifications — screen resolution, viewport size, DPR scaling, color depth",
                 "WebRTC leak detection & privacy posture auditing",
-                "Client-side downloadable PNG screenshot card for technical support tickets",
+                "Client-side downloadable PNG image, PDF report, and CSV export for technical support tickets",
                 "GDPR and CCPA compliant, zero data logging or tracking cookies",
               ],
               publisher: {
@@ -196,11 +188,11 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className={`${inter.variable} ${cormorant.variable} antialiased bg-background font-sans text-foreground selection:bg-primary/40 flex flex-col min-h-screen`}
+        className={`${plusJakarta.variable} ${jetbrainsMono.variable} antialiased bg-canvas font-sans text-ink selection:bg-primary/30 flex flex-col min-h-screen`}
       >
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-background-dark focus:font-black focus:rounded-xl focus:border-2 focus:border-background-dark focus:shadow-block"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-foreground focus:font-bold focus:rounded-lg focus:border focus:border-foreground focus:shadow-elevated"
         >
           Skip to main content
         </a>

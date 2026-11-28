@@ -35,7 +35,7 @@ export default function ThemeToggle({
         const handleSync = () => {
             try {
                 const stored = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
-                if (stored) setTheme(stored);
+                if (stored && ["light", "dark", "system"].includes(stored)) setTheme(stored);
             } catch { /* ignore */ }
         };
 
@@ -49,31 +49,12 @@ export default function ThemeToggle({
             localStorage.setItem(THEME_STORAGE_KEY, mode);
             const mql = window.matchMedia("(prefers-color-scheme: dark)");
             const isDark = mode === "dark" || (mode === "system" && mql.matches);
-            if (isDark) {
-                document.documentElement.classList.add("dark");
-            } else {
-                document.documentElement.classList.remove("dark");
-            }
+            document.documentElement.classList.toggle("dark", isDark);
             window.dispatchEvent(new CustomEvent("theme-changed", { detail: mode }));
         } catch {
             // ignore
         }
     };
-
-    if (!mounted) {
-        // Render placeholder to avoid layout shift during SSR hydration
-        return (
-            <div
-                className={`inline-flex items-center gap-1 p-1 rounded-xl h-8 w-24 ${
-                    variant === "dark"
-                        ? "bg-white/10 border border-white/20"
-                        : variant === "light"
-                        ? "bg-background-dark/5 border border-background-dark/15"
-                        : "bg-background-dark/5 dark:bg-white/10 border border-background-dark/15 dark:border-white/20"
-                } ${className}`}
-            />
-        );
-    }
 
     const options: { mode: ThemeMode; label: string; icon: LucideIcon }[] = [
         { mode: "light", label: "Light", icon: Sun },
@@ -81,32 +62,36 @@ export default function ThemeToggle({
         { mode: "dark", label: "Dark", icon: Moon },
     ];
 
-    // Styling variants
-    // variant === "dark": For consistently dark surfaces (like the footer), regardless of active HTML theme
-    // variant === "light": For consistently light surfaces
-    // variant === "auto": Follows active document theme (light on light header, dark on dark header)
     const containerClasses =
         variant === "dark"
-            ? "bg-white/10 border-2 border-white/20 text-white shadow-sm"
+            ? "bg-white/10 border border-white/15 text-white"
             : variant === "light"
-            ? "bg-background-dark/5 border-2 border-background-dark/25 text-background-dark shadow-sm"
-            : "bg-background-dark/5 dark:bg-white/10 border-2 border-background-dark/25 dark:border-white/20 text-background-dark dark:text-white transition-colors shadow-sm";
+            ? "bg-[#F2ECE1] border border-foreground/15 text-foreground"
+            : "bg-well border border-line text-ink";
+
+    if (!mounted) {
+        return (
+            <div
+                aria-hidden="true"
+                className={`inline-flex items-center p-0.5 rounded-lg h-8 ${compact ? "w-[78px]" : "w-[90px]"} ${containerClasses} ${className}`}
+            />
+        );
+    }
 
     const getButtonClasses = (isSelected: boolean) => {
         if (variant === "dark") {
             return isSelected
-                ? "bg-primary text-background-dark shadow-block-sm scale-102 font-black"
-                : "text-accent/80 hover:text-white hover:bg-white/10";
+                ? "bg-primary text-foreground font-bold"
+                : "text-white/75 hover:text-white hover:bg-white/10 font-medium";
         }
         if (variant === "light") {
             return isSelected
-                ? "bg-background-dark text-white shadow-block-sm scale-102 font-extrabold"
-                : "text-background-dark/75 hover:text-background-dark hover:bg-background-dark/10";
+                ? "bg-background-dark text-white font-bold"
+                : "text-foreground/75 hover:text-foreground hover:bg-foreground/5 font-medium";
         }
-        // auto variant
         return isSelected
-            ? "bg-background-dark text-white dark:bg-primary dark:text-background-dark shadow-block-sm scale-102 font-extrabold"
-            : "text-background-dark/75 dark:text-accent/80 hover:text-background-dark dark:hover:text-white hover:bg-background-dark/10 dark:hover:bg-white/10";
+            ? "bg-brand text-white dark:bg-primary dark:text-foreground font-bold"
+            : "text-muted hover:text-ink hover:bg-hover font-medium";
     };
 
     const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
@@ -133,7 +118,7 @@ export default function ThemeToggle({
         <div
             role="radiogroup"
             aria-label="Color theme selector"
-            className={`inline-flex items-center gap-0.5 p-1 rounded-xl transition-colors ${containerClasses} ${className}`}
+            className={`inline-flex items-center gap-0.5 p-0.5 rounded-lg ${containerClasses} ${className}`}
         >
             {options.map((opt, i) => {
                 const Icon = opt.icon;
@@ -149,12 +134,11 @@ export default function ThemeToggle({
                         aria-label={`${opt.label} theme`}
                         title={`${opt.label} theme`}
                         onClick={() => applyTheme(opt.mode)}
-                        className={`flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg text-3xs uppercase tracking-wider transition-all cursor-pointer ${getButtonClasses(
-                            isSelected
-                        )}`}
+                        className={`inline-flex items-center justify-center rounded-md transition-colors cursor-pointer ${
+                            compact ? "p-1" : "p-1.5"
+                        } ${getButtonClasses(isSelected)}`}
                     >
-                        <Icon size={13} strokeWidth={2.4} />
-                        {!compact && <span className="hidden sm:inline font-bold">{opt.label}</span>}
+                        <Icon size={compact ? 13 : 14} strokeWidth={2.2} aria-hidden="true" />
                     </button>
                 );
             })}

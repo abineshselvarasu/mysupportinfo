@@ -4,7 +4,8 @@ import React, { useState, useEffect, useId } from "react";
 import {
     Download, X, Shield, Check, Globe, Wifi, Monitor,
     HardDrive, Cpu, Palette, Lock, EyeOff, Terminal,
-    Activity, Clock, AlertTriangle, CheckSquare, FileSpreadsheet
+    Activity, Clock, AlertTriangle, CheckSquare, FileSpreadsheet,
+    FileText,
 } from "lucide-react";
 import { generateDiagnosticCSV, downloadCSV } from "@/lib/export-csv";
 
@@ -46,6 +47,7 @@ export interface SystemStatsSummary {
     windowSize?: string;
     pixelRatio?: string;
     colorDepth?: string;
+    orientation?: string;
     cpuCores?: number | string;
     ram?: string;
     webglVendor?: string;
@@ -55,6 +57,7 @@ export interface SystemStatsSummary {
     persistence?: string;
     doNotTrack?: string;
     adBlocker?: string;
+    vpnDetected?: boolean;
     userAgent?: string;
     timezone?: string;
 }
@@ -69,7 +72,6 @@ export interface ScreenshotFieldDef {
 }
 
 export const SCREENSHOT_FIELDS: ScreenshotFieldDef[] = [
-    // Browser & System
     {
         id: "browser",
         title: "Browser & Version",
@@ -98,8 +100,6 @@ export const SCREENSHOT_FIELDS: ScreenshotFieldDef[] = [
         icon: Terminal,
         getPreview: () => "Enabled (Active)",
     },
-
-    // Network & Location (Sensitive PII)
     {
         id: "ip",
         title: "Public IP (IPv4 & IPv6)",
@@ -129,54 +129,53 @@ export const SCREENSHOT_FIELDS: ScreenshotFieldDef[] = [
         title: "Latency & Speed",
         category: "network",
         icon: Activity,
-        getPreview: (s) => s?.latency ? `${s.latency} RTT` : "Measuring…",
+        getPreview: (s) => (s?.latency ? `${s.latency} RTT` : "Measuring…"),
     },
-
-    // Hardware & Display
     {
         id: "screen",
         title: "Screen Resolution & Colors",
         category: "hardware",
         icon: Monitor,
-        getPreview: (s) => s?.resolution ? `${s.resolution} (${s.colorDepth || "24-bit"})` : "Detecting…",
+        getPreview: (s) => (s?.resolution ? `${s.resolution} (${s.colorDepth || "24-bit"})` : "Detecting…"),
     },
     {
         id: "viewport",
         title: "Viewport & Pixel Ratio",
         category: "hardware",
         icon: Monitor,
-        getPreview: (s) => s?.windowSize ? `${s.windowSize} (DPR: ${s.pixelRatio || "1x"})` : "Detecting…",
+        getPreview: (s) => (s?.windowSize ? `${s.windowSize} (DPR: ${s.pixelRatio || "1x"})` : "Detecting…"),
     },
     {
         id: "hardware",
         title: "CPU Threads & RAM",
         category: "hardware",
         icon: Cpu,
-        getPreview: (s) => s ? `${s.cpuCores || "Unknown"} cores · ${s.ram || "Unknown"}` : "Detecting…",
+        getPreview: (s) => (s ? `${s.cpuCores || "Unknown"} cores · ${s.ram || "Unknown"}` : "Detecting…"),
     },
     {
         id: "gpu",
         title: "GPU / WebGL Graphics",
         category: "hardware",
         icon: Palette,
-        getPreview: (s) => s?.webglVendor ? `${s.webglVendor.slice(0, 24)}…` : "Detecting…",
+        getPreview: (s) => (s?.webglVendor ? `${s.webglVendor.slice(0, 24)}…` : "Detecting…"),
     },
     {
         id: "battery",
         title: "Battery & Touch",
         category: "hardware",
         icon: Activity,
-        getPreview: (s) => s?.batteryLevel && s.batteryLevel !== "N/A" ? `${s.batteryLevel} (${s.batteryCharging})` : "Desktop / Touch: " + (s?.touchSupport || "No"),
+        getPreview: (s) =>
+            s?.batteryLevel && s.batteryLevel !== "N/A"
+                ? `${s.batteryLevel} (${s.batteryCharging})`
+                : `Desktop · Touch: ${s?.touchSupport || "No"}`,
     },
     {
         id: "clock",
         title: "Timezone & System Clock",
         category: "hardware",
         icon: Clock,
-        getPreview: (s, _, time) => s?.timezone ? `${s.timezone} · ${time || ""}`.trim() : "Detecting…",
+        getPreview: (s, _, time) => (s?.timezone ? `${s.timezone} · ${time || ""}`.trim() : "Detecting…"),
     },
-
-    // Privacy & Security
     {
         id: "webrtc",
         title: "WebRTC Leak Protection",
@@ -197,7 +196,7 @@ export const SCREENSHOT_FIELDS: ScreenshotFieldDef[] = [
         title: "Do Not Track & Ad Blocker",
         category: "privacy",
         icon: EyeOff,
-        getPreview: (s) => s ? `DNT: ${s.doNotTrack || "Off"} · Ads: ${s.adBlocker || "Off"}` : "Detecting…",
+        getPreview: (s) => (s ? `DNT: ${s.doNotTrack || "Off"} · Ads: ${s.adBlocker || "Off"}` : "Detecting…"),
     },
     {
         id: "userAgent",
@@ -205,7 +204,7 @@ export const SCREENSHOT_FIELDS: ScreenshotFieldDef[] = [
         category: "privacy",
         isSensitive: true,
         icon: Terminal,
-        getPreview: (s) => s?.userAgent ? `${s.userAgent.slice(0, 32)}…` : "Detecting…",
+        getPreview: (s) => (s?.userAgent ? `${s.userAgent.slice(0, 32)}…` : "Detecting…"),
     },
 ];
 
@@ -213,17 +212,17 @@ export const ALL_FIELD_IDS: FieldId[] = SCREENSHOT_FIELDS.map((f) => f.id);
 export const SENSITIVE_FIELD_IDS: Set<FieldId> = new Set(
     SCREENSHOT_FIELDS.filter((f) => f.isSensitive).map((f) => f.id)
 );
-
 export const DEFAULT_SELECTED_FIELDS = new Set<FieldId>(ALL_FIELD_IDS);
 
 export interface ScreenshotModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onCapture: (selectedFields: Set<FieldId>) => Promise<void>;
+    onCapture: (selectedFields: Set<FieldId>, format: "png" | "pdf") => Promise<void>;
     stats: SystemStatsSummary | null;
     webrtcLeak?: string;
     currentTime?: string;
     downloading: boolean;
+    exportingFormat?: "png" | "pdf" | null;
 }
 
 export default function ScreenshotModal({
@@ -234,31 +233,22 @@ export default function ScreenshotModal({
     webrtcLeak,
     currentTime,
     downloading,
+    exportingFormat = null,
 }: ScreenshotModalProps) {
-    const [selectedFields, setSelectedFields] = useState<Set<FieldId>>(
-        new Set<FieldId>(ALL_FIELD_IDS)
-    );
+    const [selectedFields, setSelectedFields] = useState<Set<FieldId>>(new Set<FieldId>(ALL_FIELD_IDS));
     const [csvExported, setCsvExported] = useState(false);
     const titleId = useId();
 
-    // Prevent body scrolling when open
     useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "";
-        }
+        document.body.style.overflow = isOpen ? "hidden" : "";
         return () => {
             document.body.style.overflow = "";
         };
     }, [isOpen]);
 
-    // Handle Escape key
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape" && isOpen && !downloading) {
-                onClose();
-            }
+            if (e.key === "Escape" && isOpen && !downloading) onClose();
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
@@ -270,7 +260,6 @@ export default function ScreenshotModal({
         setSelectedFields((prev) => {
             const next = new Set(prev);
             if (next.has(id)) {
-                // Ensure at least one field remains selected
                 if (next.size > 1) next.delete(id);
             } else {
                 next.add(id);
@@ -279,75 +268,42 @@ export default function ScreenshotModal({
         });
     };
 
-    // Preset 1: Mask Sensitive IP & Geolocation (Safe for Support Tickets)
     const applyMaskSensitive = () => {
-        const safe = new Set<FieldId>(
-            ALL_FIELD_IDS.filter((id) => !SENSITIVE_FIELD_IDS.has(id))
-        );
-        setSelectedFields(safe);
+        setSelectedFields(new Set<FieldId>(ALL_FIELD_IDS.filter((id) => !SENSITIVE_FIELD_IDS.has(id))));
     };
-
-    // Preset 2: Select All Fields
-    const applySelectAll = () => {
-        setSelectedFields(new Set<FieldId>(ALL_FIELD_IDS));
-    };
-
-    // Preset 3: Web Dev Quick Bug Report (Browser, OS, Screen, Viewport, JS, Cookies)
+    const applySelectAll = () => setSelectedFields(new Set<FieldId>(ALL_FIELD_IDS));
     const applyWebDevBasics = () => {
-        setSelectedFields(
-            new Set<FieldId>(["browser", "os", "screen", "viewport", "js", "cookies", "language"])
-        );
+        setSelectedFields(new Set<FieldId>(["browser", "os", "screen", "viewport", "js", "cookies", "language"]));
     };
-
-    // Handle capture submission
-    const handleDownload = async () => {
-        await onCapture(selectedFields);
-    };
-
-    interface CategoryDef {
-        id: "system" | "network" | "hardware" | "privacy";
-        name: string;
-        description: string;
-        badge?: string;
-    }
-
-    const categories: CategoryDef[] = [
-        {
-            id: "system",
-            name: "Browser & System",
-            description: "Core browser engine, host platform, and runtime environment",
-        },
-        {
-            id: "network",
-            name: "Network & Connection",
-            description: "IP routing, ISP carrier, speed and latency metrics",
-            badge: "Contains Sensitive PII",
-        },
-        {
-            id: "hardware",
-            name: "Display & Hardware",
-            description: "Screen resolution, viewport dimensions, processor and memory",
-        },
-        {
-            id: "privacy",
-            name: "Privacy & Security",
-            description: "WebRTC leak posture, cookies, ad blocker and browser identifiers",
-        },
-    ];
 
     const isSensitiveMasked = [...SENSITIVE_FIELD_IDS].every((id) => !selectedFields.has(id));
 
     const handleExportCSV = () => {
         if (!stats) return;
-        const csv = generateDiagnosticCSV(stats as Record<string, unknown>, isSensitiveMasked, selectedFields);
+        const csv = generateDiagnosticCSV(
+            {
+                ...(stats as Record<string, unknown>),
+                cookiesEnabled: stats.persistence === "ENABLED",
+                webrtcLeak: webrtcLeak || "No Leak",
+            },
+            isSensitiveMasked,
+            selectedFields
+        );
         downloadCSV(csv);
         setCsvExported(true);
         setTimeout(() => setCsvExported(false), 2200);
     };
 
+    const categories: { id: "system" | "network" | "hardware" | "privacy"; name: string; badge?: string }[] = [
+        { id: "system", name: "Browser & System" },
+        { id: "network", name: "Network & Connection", badge: "Includes IP / Location" },
+        { id: "hardware", name: "Display & Hardware" },
+        { id: "privacy", name: "Privacy & Security" },
+    ];
+
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-background-dark/75 backdrop-blur-sm overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm overflow-y-auto"
             onClick={(e) => {
                 if (e.target === e.currentTarget && !downloading) onClose();
             }}
@@ -355,108 +311,101 @@ export default function ScreenshotModal({
             aria-modal="true"
             aria-labelledby={titleId}
         >
-            <div className="relative w-full max-w-3xl bg-background border-2 border-background-dark shadow-block rounded-3xl flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
-                {/* ── Header ────────────────────────────────────────── */}
-                <div className="flex items-start justify-between p-5 sm:p-6 border-b-2 border-background-dark/10 bg-white/70">
-                    <div className="flex items-start gap-3.5">
-                        <div className="p-2.5 rounded-2xl bg-primary border-2 border-background-dark text-background-dark shadow-block-sm flex-shrink-0 mt-0.5">
-                            <Download size={20} />
+            <div className="relative w-full max-w-3xl bg-surface text-ink border border-line-strong shadow-elevated rounded-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto">
+                {/* Header */}
+                <div className="flex items-start justify-between p-5 sm:p-6 border-b border-line bg-well/40">
+                    <div className="flex items-start gap-3">
+                        <div className="size-10 rounded-xl bg-primary text-foreground flex items-center justify-center flex-shrink-0">
+                            <Download size={18} aria-hidden="true" />
                         </div>
                         <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <h3 id={titleId} className="font-serif text-xl sm:text-2xl font-bold text-background-dark">
-                                    Screenshot Options
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                <h3 id={titleId} className="text-lg sm:text-xl font-bold text-ink">
+                                    Customize Diagnostic Report Card
                                 </h3>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-3xs font-extrabold uppercase tracking-wider bg-background-dark text-white font-mono">
-                                    {selectedFields.size} / {ALL_FIELD_IDS.length} Included
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-semibold bg-brand text-white">
+                                    {selectedFields.size}/{ALL_FIELD_IDS.length} fields
                                 </span>
                             </div>
-                            <p className="text-xs text-background-dark/70 mt-1 leading-relaxed font-medium">
-                                Choose which diagnostic cards appear on your downloaded PNG card. Each report automatically includes your official <strong className="text-background-dark font-bold">MySupportInfo.com</strong> provenance header and promotional referral banner.
+                            <p className="text-xs text-muted mt-1 leading-relaxed">
+                                Choose which device details appear in your downloaded PNG image, PDF document, or CSV spreadsheet. Hide IP and location if posting in a public thread.
                             </p>
                         </div>
                     </div>
                     <button
+                        type="button"
                         onClick={onClose}
                         disabled={downloading}
                         aria-label="Close screenshot options"
-                        className="p-1.5 rounded-xl border-2 border-background-dark/20 text-background-dark/70 hover:text-background-dark hover:border-background-dark hover:bg-background-dark/5 transition-all flex-shrink-0 disabled:opacity-40"
+                        className="p-1.5 rounded-lg border border-line text-muted hover:text-ink hover:border-line-strong transition-colors flex-shrink-0 cursor-pointer disabled:opacity-40"
                     >
-                        <X size={18} />
+                        <X size={18} aria-hidden="true" />
                     </button>
                 </div>
 
-                {/* ── Presets Toolbar ───────────────────────────────── */}
-                <div className="px-5 sm:px-6 py-3 bg-background-dark/5 border-b-2 border-background-dark/10 flex flex-wrap items-center justify-between gap-2.5">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-4xs font-bold uppercase tracking-wider text-background-dark/60 mr-1 hidden sm:inline">
-                            Quick Presets:
-                        </span>
+                {/* Presets */}
+                <div className="px-5 sm:px-6 py-3 bg-well/60 border-b border-line flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-semibold text-muted mr-1 hidden sm:inline">Presets:</span>
                         <button
                             type="button"
                             onClick={applyMaskSensitive}
                             disabled={downloading}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-3xs font-bold transition-all border-2 ${
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
                                 isSensitiveMasked
-                                    ? "bg-secondary text-white border-background-dark shadow-block-sm"
-                                    : "bg-white text-background-dark border-background-dark/30 hover:border-background-dark hover:bg-white"
+                                    ? "bg-secondary text-white border-secondary"
+                                    : "bg-surface text-ink border-line hover:border-line-strong"
                             }`}
                         >
-                            <Shield size={12} className={isSensitiveMasked ? "text-white" : "text-secondary"} />
-                            <span>Mask IP &amp; Location (Safe)</span>
+                            <Shield size={13} aria-hidden="true" />
+                            <span>Hide IP &amp; Location</span>
                         </button>
-
                         <button
                             type="button"
                             onClick={applyWebDevBasics}
                             disabled={downloading}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-3xs font-bold bg-white text-background-dark border-2 border-background-dark/30 hover:border-background-dark hover:bg-white transition-all"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface text-ink border border-line hover:border-line-strong transition-colors cursor-pointer"
                         >
-                            <Monitor size={12} className="text-primary" />
-                            <span>Web Dev Basics</span>
+                            <Monitor size={13} className="text-primary" aria-hidden="true" />
+                            <span>Browser &amp; Screen Only</span>
                         </button>
-
                         <button
                             type="button"
                             onClick={applySelectAll}
                             disabled={downloading}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-3xs font-bold bg-white text-background-dark border-2 border-background-dark/30 hover:border-background-dark hover:bg-white transition-all"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface text-ink border border-line hover:border-line-strong transition-colors cursor-pointer"
                         >
-                            <CheckSquare size={12} className="text-background-dark/70" />
+                            <CheckSquare size={13} className="text-muted" aria-hidden="true" />
                             <span>Select All</span>
                         </button>
                     </div>
-
                     {isSensitiveMasked && (
-                        <div className="inline-flex items-center gap-1.5 text-4xs font-bold uppercase tracking-wider text-secondary bg-secondary/10 px-2 py-1 rounded-lg border border-secondary/20">
-                            <span>&#10003;</span>
-                            <span>PII Protected</span>
-                        </div>
+                        <span className="text-xs font-semibold text-secondary">
+                            &#10003; Personal IP &amp; location hidden
+                        </span>
                     )}
                 </div>
 
-                {/* ── Checkbox Items Body (Scrollable) ─────────────── */}
+                {/* Body */}
                 <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
                     {categories.map((category) => {
-                        const fieldsInCategory = SCREENSHOT_FIELDS.filter(
-                            (f) => f.category === category.id
-                        );
+                        const fieldsInCategory = SCREENSHOT_FIELDS.filter((f) => f.category === category.id);
                         return (
                             <div key={category.id} className="space-y-2.5">
-                                <div className="flex items-center justify-between pb-1 border-b border-background-dark/10">
+                                <div className="flex items-center justify-between pb-1.5 border-b border-line">
                                     <div className="flex items-center gap-2">
-                                        <h4 className="text-xs font-bold uppercase tracking-ui-wide text-background-dark">
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-ink">
                                             {category.name}
                                         </h4>
                                         {category.badge && (
-                                            <span className="inline-flex items-center gap-1 text-5xs font-black uppercase tracking-wider bg-yellow-100 text-yellow-800 border border-yellow-300 px-2 py-0.5 rounded-full">
-                                                <AlertTriangle size={9} />
+                                            <span className="inline-flex items-center gap-1 text-2xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-md">
+                                                <AlertTriangle size={10} aria-hidden="true" />
                                                 {category.badge}
                                             </span>
                                         )}
                                     </div>
-                                    <span className="text-4xs text-background-dark/50 font-medium">
-                                        {fieldsInCategory.filter((f) => selectedFields.has(f.id)).length} of {fieldsInCategory.length} on
+                                    <span className="text-xs text-muted font-mono">
+                                        {fieldsInCategory.filter((f) => selectedFields.has(f.id)).length}/{fieldsInCategory.length}
                                     </span>
                                 </div>
 
@@ -472,51 +421,36 @@ export default function ScreenshotModal({
                                                 type="button"
                                                 onClick={() => toggleField(field.id)}
                                                 disabled={downloading}
-                                                className={`group p-3 rounded-2xl border-2 text-left flex flex-col justify-between transition-all duration-150 ${
+                                                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-colors cursor-pointer ${
                                                     isSelected
-                                                        ? "bg-white border-background-dark shadow-block-sm hover:translate-x-px hover:translate-y-px"
-                                                        : "bg-background-dark/5 border-background-dark/15 opacity-60 hover:opacity-90 hover:border-background-dark/40"
+                                                        ? "bg-surface border-line-strong"
+                                                        : "bg-well/40 border-line opacity-65 hover:opacity-100"
                                                 }`}
                                             >
                                                 <div className="flex items-start justify-between gap-2 mb-2 w-full">
-                                                    <div className="flex items-center gap-2">
-                                                        <div
-                                                            className={`p-1 rounded-lg ${
-                                                                isSelected
-                                                                    ? field.isSensitive
-                                                                        ? "bg-yellow-100 text-yellow-800"
-                                                                        : "bg-primary/10 text-primary"
-                                                                    : "bg-background-dark/10 text-background-dark/40"
-                                                            }`}
-                                                        >
-                                                            <Icon size={13} />
-                                                        </div>
-                                                        <span className="text-3xs font-bold text-background-dark leading-tight">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <Icon
+                                                            size={14}
+                                                            className={isSelected ? (field.isSensitive ? "text-amber-600 dark:text-amber-400" : "text-secondary") : "text-muted"}
+                                                            aria-hidden="true"
+                                                        />
+                                                        <span className="text-xs font-semibold text-ink truncate">
                                                             {field.title}
                                                         </span>
                                                     </div>
-
                                                     <div
-                                                        className={`w-4 h-4 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${
+                                                        className={`size-4 rounded border flex items-center justify-center flex-shrink-0 ${
                                                             isSelected
                                                                 ? "bg-secondary border-secondary text-white"
-                                                                : "border-background-dark/30 bg-white"
+                                                                : "border-line-strong bg-canvas"
                                                         }`}
                                                         aria-hidden="true"
                                                     >
                                                         {isSelected && <Check size={11} strokeWidth={3} />}
                                                     </div>
                                                 </div>
-
-                                                <div className="mt-auto pt-1 w-full">
-                                                    <div className="font-mono text-3xs text-background-dark/75 truncate font-medium bg-background-dark/5 px-2 py-0.5 rounded border border-background-dark/5">
-                                                        {isSelected ? preview : "(Hidden / Excluded)"}
-                                                    </div>
-                                                    {field.isSensitive && (
-                                                        <span className="inline-block mt-1 text-5xs font-bold uppercase tracking-wider text-amber-700">
-                                                            &#9888; Personal Info
-                                                        </span>
-                                                    )}
+                                                <div className="font-mono text-2xs text-muted truncate w-full bg-well/60 px-2 py-1 rounded">
+                                                    {isSelected ? preview : "Hidden"}
                                                 </div>
                                             </button>
                                         );
@@ -527,46 +461,40 @@ export default function ScreenshotModal({
                     })}
                 </div>
 
-                {/* ── Footer ────────────────────────────────────────── */}
-                <div className="p-4 sm:p-5 border-t-2 border-background-dark/10 bg-white/70 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div className="flex flex-col sm:flex-row items-center gap-2">
-                        <p className="text-3xs text-background-dark/65 font-medium text-center sm:text-left">
-                            {isSensitiveMasked ? (
-                                <span className="text-secondary font-bold inline-flex items-center gap-1">
-                                    <span>&#10003;</span> IP address, location, and ISP will be omitted from the screenshot.
-                                </span>
-                            ) : (
-                                <span className="inline-flex items-center gap-1">
-                                    <span className="text-amber-600 font-bold">&#9888;</span> Your public IP address is currently included in the screenshot.
-                                </span>
-                            )}
-                        </p>
-                        <span className="hidden sm:inline text-background-dark/20">&#183;</span>
-                        <span className="text-4xs font-mono text-secondary font-bold inline-flex items-center gap-1 bg-secondary/10 px-2 py-0.5 rounded-lg border border-secondary/20">
-                            <span>&#10003;</span> Includes mysupportinfo.com provenance &amp; helpdesk promo
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap justify-end">
+                {/* Footer */}
+                <div className="px-5 sm:px-6 py-4 border-t border-line bg-well/40 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <p className="text-xs text-muted text-center lg:text-left">
+                        {isSensitiveMasked
+                            ? "IP address, location, and ISP will be omitted from all exports."
+                            : "Full diagnostics including IP will be captured cleanly inside your browser."}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-center lg:justify-end flex-shrink-0">
                         <button
                             type="button"
                             onClick={handleExportCSV}
                             disabled={downloading || selectedFields.size === 0}
-                            aria-label="Export selected metrics as CSV spreadsheet"
-                            className="px-4 py-2.5 rounded-xl border-2 border-background-dark/30 text-background-dark font-bold text-xs hover:border-background-dark hover:bg-background-dark/5 transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                            className="px-3.5 py-2 rounded-lg border border-line-strong bg-surface text-ink font-semibold text-xs hover:bg-hover transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-40 cursor-pointer"
                         >
-                            <FileSpreadsheet size={14} />
-                            <span>{csvExported ? "Exported CSV!" : "Export CSV"}</span>
+                            <FileSpreadsheet size={14} aria-hidden="true" />
+                            <span>{csvExported ? "Exported CSV" : "Export CSV"}</span>
                         </button>
                         <button
                             type="button"
-                            onClick={handleDownload}
+                            onClick={() => onCapture(selectedFields, "pdf")}
                             disabled={downloading || selectedFields.size === 0}
-                            aria-label="Download customized screenshot report card as PNG"
-                            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 bg-primary border-2 border-background-dark shadow-block-sm text-background-dark font-black uppercase tracking-wider rounded-xl text-xs hover:bg-primary-dark active:translate-x-px active:translate-y-px active:shadow-none transition-all disabled:opacity-40 cursor-pointer"
+                            className="px-4 py-2 rounded-lg border border-line-strong bg-surface text-ink font-semibold text-xs hover:bg-hover transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-40 cursor-pointer"
                         >
-                            <Download size={14} />
-                            <span>{downloading ? "Generating PNG…" : "Download PNG Card"}</span>
+                            <FileText size={14} aria-hidden="true" />
+                            <span>{exportingFormat === "pdf" ? "Rendering PDF…" : "Download PDF"}</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onCapture(selectedFields, "png")}
+                            disabled={downloading || selectedFields.size === 0}
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-primary text-foreground font-bold rounded-lg text-xs hover:bg-primary-dark transition-colors whitespace-nowrap disabled:opacity-40 cursor-pointer"
+                        >
+                            <Download size={14} aria-hidden="true" />
+                            <span>{downloading && exportingFormat !== "pdf" ? "Rendering PNG…" : "Download PNG"}</span>
                         </button>
                     </div>
                 </div>

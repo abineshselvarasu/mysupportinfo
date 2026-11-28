@@ -1,227 +1,86 @@
 import Link from "next/link";
+import { ChevronRight, ArrowLeft } from "lucide-react";
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <section className="mb-10">
-        <h2 className="text-lg font-bold text-background-dark mb-3 flex items-center gap-2">
-            <span className="w-1 h-5 bg-primary rounded-full flex-shrink-0" />
-            {title}
-        </h2>
-        <div className="text-foreground/75 text-sm leading-relaxed space-y-3">{children}</div>
+    <section className="space-y-3 pb-8 border-b border-line last:border-b-0">
+        <h2 className="text-lg font-bold text-ink">{title}</h2>
+        <div className="text-muted text-sm leading-relaxed space-y-3">{children}</div>
     </section>
 );
 
 export default function TermsPage() {
     return (
-        <div className="min-h-screen bg-background pb-24">
-            {/* Header */}
-            <div className="bg-background-dark border-b-2 border-background-dark px-6 py-16">
-                <div className="max-w-3xl mx-auto">
-                    <nav aria-label="Breadcrumb" className="flex items-center gap-2 mb-6">
-                        <Link href="/" className="text-accent/60 text-sm font-semibold hover:text-accent transition-colors">Home</Link>
-                        <span className="material-symbols-outlined text-sm text-accent/40">chevron_right</span>
-                        <span className="text-accent text-sm font-extrabold" aria-current="page">Terms of Use</span>
+        <div className="bg-canvas text-ink pb-20">
+            <div className="bg-brand text-white border-b border-white/10 py-12 sm:py-14">
+                <div className="max-w-site mx-auto px-5 sm:px-6 space-y-4">
+                    <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-white/75 font-medium">
+                        <Link href="/" className="hover:text-white transition-colors">Overview</Link>
+                        <ChevronRight size={14} aria-hidden="true" />
+                        <span className="text-white font-semibold" aria-current="page">Terms of Use</span>
                     </nav>
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="p-3 bg-primary rounded-2xl">
-                            <span className="material-symbols-outlined text-background-dark text-2xl">gavel</span>
-                        </div>
-                        <div>
-                            <h1 className="text-3xl md:text-4xl font-bold text-white">Terms of Use</h1>
-                            <p className="text-accent/70 text-sm mt-1">Last updated: May 2026</p>
-                        </div>
+                    <div className="space-y-2">
+                        <h1 className="text-fluid-hero font-extrabold text-white tracking-tight">Terms of Use</h1>
+                        <p className="text-xs font-mono text-accent">Last updated: May 2026</p>
+                        <p className="text-sm sm:text-base text-white/80 leading-relaxed max-w-xl">
+                            MySupportInfo is a free, informational client-side utility provided &ldquo;as is&rdquo; with zero account requirements or personal data collection.
+                        </p>
                     </div>
-                    <p className="text-accent/80 text-sm leading-relaxed max-w-xl">
-                        By using MySupportInfo, you agree to these terms. The short version: this tool is free, informational, collects no data, and is provided as-is.
-                    </p>
                 </div>
             </div>
 
-            {/* Content */}
-            <div className="max-w-3xl mx-auto px-6 py-14">
-
-                {/* Quick summary */}
-                <div className="bg-accent/25 border-2 border-background-dark rounded-2xl p-6 mb-12">
-                    <p className="text-4xs text-background-dark/60 uppercase tracking-ui-wide font-bold mb-3">Plain-English Summary</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {[
-                            { icon: "lock", label: "No Data Collected", desc: "All diagnostics run in your browser. Nothing is stored or transmitted to our servers." },
-                            { icon: "volunteer_activism", label: "Free Forever", desc: "MySupportInfo is and will remain a free tool. No accounts, no subscriptions." },
-                            { icon: "info", label: "Informational Only", desc: "Results are estimates for diagnostic purposes. Do not use them for legal or medical decisions." },
-                        ].map(item => (
-                            <div key={item.label} className="flex flex-col gap-2">
-                                <span className="material-symbols-outlined text-primary text-2xl">{item.icon}</span>
-                                <p className="text-background-dark font-bold text-sm">{item.label}</p>
-                                <p className="text-foreground/65 text-xs leading-relaxed">{item.desc}</p>
-                            </div>
-                        ))}
-                    </div>
+            <div className="max-w-site mx-auto px-5 sm:px-6 py-12 space-y-10">
+                <div className="bg-surface border border-line rounded-2xl divide-y sm:divide-y-0 sm:divide-x divide-line grid grid-cols-1 sm:grid-cols-3">
+                    {[
+                        { label: "No Server Logs", desc: "Diagnostics run locally inside your browser." },
+                        { label: "Free Utility", desc: "Free for personal and team support use with no sign-up." },
+                        { label: "Informational Only", desc: "Browser API estimates intended for troubleshooting." },
+                    ].map((item) => (
+                        <div key={item.label} className="p-5 space-y-1">
+                            <p className="font-bold text-sm text-ink">{item.label}</p>
+                            <p className="text-xs text-muted leading-relaxed">{item.desc}</p>
+                        </div>
+                    ))}
                 </div>
 
-                <Section title="1. Acceptance of Terms">
-                    <p>
-                        By accessing or using <strong>MySupportInfo</strong> at <code className="bg-background-dark/8 px-1.5 py-0.5 rounded text-background-dark font-mono text-xs">mysupportinfo.com</code> (the &ldquo;Service&rdquo;), you agree to be bound by these Terms of Use. If you do not agree, please do not use the Service.
-                    </p>
-                    <p>
-                        These terms apply to all visitors and users of the Service. We reserve the right to update these terms at any time. Continued use of the Service after changes constitutes acceptance of the updated terms.
-                    </p>
-                </Section>
+                <div className="space-y-8">
+                    <Section title="1. Acceptance & Scope">
+                        <p>
+                            By accessing MySupportInfo at <code className="px-1.5 py-0.5 rounded bg-well border border-line font-mono text-xs text-ink">mysupportinfo.com</code>, you agree to these Terms of Use. The Service operates as a read-only browser diagnostic utility for troubleshooting device, browser, display, and network conditions.
+                        </p>
+                    </Section>
 
-                <Section title="2. Description of Service">
-                    <p>
-                        MySupportInfo is a <strong>free, read-only diagnostic tool</strong> that detects and displays technical information about your device, browser, and network connection. This includes data such as your IP address, browser version, operating system, screen resolution, and connection quality metrics.
-                    </p>
-                    <p>
-                        All detection runs <strong>entirely within your browser</strong>. MySupportInfo does not operate any servers that collect, store, or process your personal data. Your IP address is retrieved from a third-party API (ipapi.co) solely to display it to you within your browser session.
-                    </p>
-                </Section>
+                    <Section title="2. Accuracy & Browser Estimates">
+                        <p>
+                            Browser vendors intentionally limit or round certain system APIs (such as RAM memory buckets, User-Agent freeze policies, or mobile-only network estimates) for user privacy. Output should be treated as informational diagnostic guidance rather than legal or hardware-verified certification.
+                        </p>
+                    </Section>
 
-                <Section title="3. Permitted Use">
-                    <p>You may use MySupportInfo for:</p>
-                    <ul className="list-none space-y-2 mt-2">
-                        {[
-                            "Personal technical diagnostics and troubleshooting",
-                            "Sharing your device information with technical support teams",
-                            "Educational and informational purposes",
-                            "Network quality research and testing",
-                        ].map(item => (
-                            <li key={item} className="flex items-start gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-2 flex-shrink-0" />
-                                {item}
-                            </li>
-                        ))}
-                    </ul>
-                    <p className="mt-3">
-                        You may <strong>not</strong> use MySupportInfo to misrepresent device or network information, to engage in any unlawful activity, or to systematically scrape or automate requests in a manner that places unreasonable load on the Service.
-                    </p>
-                </Section>
+                    <Section title="3. Permitted Use & Third-Party Lookups">
+                        <p>
+                            You are welcome to copy, export PNG images, PDFs, or CSV spreadsheets, and share links generated from your own device. Automated scraping or abusive load against upstream IP or STUN endpoints (<code className="px-1.5 py-0.5 rounded bg-well border border-line font-mono text-xs text-ink">ipapi.co</code>, <code className="px-1.5 py-0.5 rounded bg-well border border-line font-mono text-xs text-ink">api64.ipify.org</code>, <code className="px-1.5 py-0.5 rounded bg-well border border-line font-mono text-xs text-ink">stun.l.google.com</code>) is prohibited.
+                        </p>
+                    </Section>
 
-                <Section title="4. No Data Collection or Storage">
-                    <p>
-                        MySupportInfo is designed with privacy as a core principle. We do <strong>not</strong>:
-                    </p>
-                    <ul className="list-none space-y-2 mt-2">
-                        {[
-                            "Store your IP address, device data, or any diagnostic results on our servers",
-                            "Use cookies for tracking or analytics (Vercel Analytics is used in aggregate, anonymised form only)",
-                            "Share any information with third parties for advertising purposes",
-                            "Require you to create an account or provide personal information",
-                        ].map(item => (
-                            <li key={item} className="flex items-start gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-                                {item}
-                            </li>
-                        ))}
-                    </ul>
-                    <p className="mt-3">
-                        For full details, see our <Link href="/privacy" className="text-secondary font-semibold hover:underline">Privacy Centre</Link>.
-                    </p>
-                </Section>
+                    <Section title="4. Disclaimers & Contact">
+                        <p>
+                            The Service is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo; without warranties of any kind. For privacy details see our{" "}
+                            <Link href="/privacy" className="text-secondary font-semibold hover:underline">Privacy Policy</Link>. Contact{" "}
+                            <a href="mailto:contact@mysupportinfo.com" className="text-secondary font-semibold hover:underline">contact@mysupportinfo.com</a> or{" "}
+                            <a href="mailto:report@mysupportinfo.com" className="text-secondary font-semibold hover:underline">report@mysupportinfo.com</a>.
+                        </p>
+                    </Section>
+                </div>
 
-                <Section title="5. Accuracy of Information">
-                    <p>
-                        All metrics displayed by MySupportInfo are <strong>estimates and approximations</strong> derived from browser APIs. They are intended for informational and diagnostic purposes only.
-                    </p>
-                    <p>
-                        Values such as RAM, connection speed, and IP geolocation may not reflect exact system specifications. Browser security restrictions (fingerprinting protections, VPNs, proxies) may cause some values to be inaccurate, rounded, or unavailable.
-                    </p>
-                    <p>
-                        <strong>Do not rely on this information for legal, medical, financial, or contractual purposes.</strong>
-                    </p>
-                </Section>
-
-                <Section title="6. Third-Party Services">
-                    <p>
-                        MySupportInfo uses the following third-party APIs to retrieve certain data:
-                    </p>
-                    <ul className="list-none space-y-2 mt-2">
-                        {[
-                            { name: "ipapi.co", desc: "Used to retrieve your public IP address, ISP, and approximate geolocation." },
-                            { name: "api64.ipify.org", desc: "Used to detect IPv6 connectivity." },
-                            { name: "stun.l.google.com", desc: "Google's STUN server, used for WebRTC leak detection." },
-                            { name: "Vercel Analytics", desc: "Aggregate, anonymised page view analytics with no personal data." },
-                        ].map(item => (
-                            <li key={item.name} className="flex items-start gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-background-dark/40 mt-2 flex-shrink-0" />
-                                <span><code className="bg-background-dark/8 px-1.5 py-0.5 rounded text-background-dark font-mono text-xs">{item.name}</code> — {item.desc}</span>
-                            </li>
-                        ))}
-                    </ul>
-                    <p className="mt-3">
-                        These services are subject to their own terms and privacy policies. We are not responsible for their content or data practices.
-                    </p>
-                </Section>
-
-                <Section title="7. Intellectual Property">
-                    <p>
-                        The design, content, branding, and code of MySupportInfo are the intellectual property of the site owner. You may not reproduce, redistribute, or create derivative works without explicit written permission.
-                    </p>
-                    <p>
-                        The diagnostic data displayed to you (your IP, browser info, etc.) belongs to you. You are free to copy, download, and share your own diagnostic report.
-                    </p>
-                </Section>
-
-                <Section title="8. Disclaimer of Warranties">
-                    <p>
-                        The Service is provided <strong>&ldquo;as is&rdquo;</strong> and <strong>&ldquo;as available&rdquo;</strong> without warranties of any kind, either express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
-                    </p>
-                    <p>
-                        We do not warrant that the Service will be uninterrupted, error-free, or that results will be accurate or reliable.
-                    </p>
-                </Section>
-
-                <Section title="9. Limitation of Liability">
-                    <p>
-                        To the fullest extent permitted by applicable law, MySupportInfo and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of, or inability to use, the Service.
-                    </p>
-                    <p>
-                        This includes but is not limited to loss of data, loss of profits, or damages resulting from reliance on information provided by the Service.
-                    </p>
-                </Section>
-
-                <Section title="10. Governing Law">
-                    <p>
-                        These terms are governed by and construed in accordance with applicable laws. Any disputes arising from these terms or your use of the Service shall be subject to the exclusive jurisdiction of the appropriate courts.
-                    </p>
-                </Section>
-
-                <Section title="11. Contact">
-                    <p>
-                        If you have questions about these Terms of Use, service inquiries, or legal notifications, please contact our team:
-                    </p>
-                    <ul className="list-none space-y-1.5 mt-2 font-medium">
-                        <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />
-                            <span>Detection Error &amp; Technical Reports: <a href="mailto:report@mysupportinfo.com" className="text-secondary font-bold hover:underline">report@mysupportinfo.com</a></span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />
-                            <span>General &amp; Business Inquiries: <a href="mailto:contact@mysupportinfo.com" className="text-secondary font-bold hover:underline">contact@mysupportinfo.com</a></span>
-                        </li>
-                    </ul>
-                </Section>
-
-                {/* Footer links */}
-                <div className="border-t-2 border-background-dark/10 pt-10 mt-4 flex flex-wrap gap-4">
-                    <Link
-                        href="/privacy"
-                        className="flex items-center gap-2 px-5 py-2.5 bg-background-dark text-white border-2 border-background-dark rounded-xl text-sm font-bold hover:bg-foreground shadow-block-sm transition-all"
-                    >
-                        <span className="material-symbols-outlined text-sm">shield_person</span>
-                        Privacy Centre
+                <div className="pt-4 flex flex-wrap gap-3">
+                    <Link href="/privacy" className="px-4 py-2 bg-brand text-white rounded-lg text-xs font-semibold hover:opacity-95 transition-opacity">
+                        Privacy Policy
                     </Link>
-                    <Link
-                        href="/faq"
-                        className="flex items-center gap-2 px-5 py-2.5 bg-white text-background-dark border-2 border-background-dark rounded-xl text-sm font-bold hover:bg-accent/20 shadow-block-sm transition-all"
-                    >
-                        <span className="material-symbols-outlined text-sm">help</span>
+                    <Link href="/faq" className="px-4 py-2 bg-surface border border-line-strong text-ink rounded-lg text-xs font-semibold hover:bg-hover transition-colors">
                         FAQ
                     </Link>
-                    <Link
-                        href="/"
-                        className="flex items-center gap-2 px-5 py-2.5 bg-white text-background-dark border-2 border-background-dark rounded-xl text-sm font-bold hover:bg-accent/20 shadow-block-sm transition-all"
-                    >
-                        <span className="material-symbols-outlined text-sm">arrow_back</span>
-                        Back to Dashboard
+                    <Link href="/" className="inline-flex items-center gap-1.5 px-4 py-2 bg-surface border border-line-strong text-ink rounded-lg text-xs font-semibold hover:bg-hover transition-colors">
+                        <ArrowLeft size={13} aria-hidden="true" />
+                        <span>Back to Overview</span>
                     </Link>
                 </div>
             </div>
