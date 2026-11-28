@@ -219,6 +219,7 @@ export const SENSITIVE_FIELD_IDS: Set<FieldId> = new Set(
 );
 export const IP_PRIVACY_FIELD_IDS: FieldId[] = ["ip", "isp", "location"];
 export const NETWORK_PII_FIELD_IDS: Set<FieldId> = new Set<FieldId>(["ip", "isp", "location", "webrtc"]);
+export const BROWSER_SCREEN_FIELD_IDS: FieldId[] = ["browser", "os", "screen", "viewport", "js", "cookies", "language"];
 export const DEFAULT_SELECTED_FIELDS = new Set<FieldId>(ALL_FIELD_IDS);
 
 export interface ScreenshotModalProps {
@@ -245,11 +246,16 @@ export default function ScreenshotModal({
     senderMasked = false,
 }: ScreenshotModalProps) {
     const [selectedFields, setSelectedFields] = useState<Set<FieldId>>(new Set<FieldId>(ALL_FIELD_IDS));
+    const [preMaskSelection, setPreMaskSelection] = useState<Set<FieldId> | null>(null);
     const [csvExported, setCsvExported] = useState(false);
     const titleId = useId();
 
     useEffect(() => {
-        if (isOpen && senderMasked) {
+        if (!isOpen) {
+            setPreMaskSelection(null);
+            return;
+        }
+        if (senderMasked) {
             setSelectedFields((prev) => {
                 const next = new Set(prev);
                 NETWORK_PII_FIELD_IDS.forEach((id) => next.delete(id));
@@ -275,8 +281,19 @@ export default function ScreenshotModal({
 
     if (!isOpen) return null;
 
+    const availableAllIds = senderMasked
+        ? ALL_FIELD_IDS.filter((id) => !NETWORK_PII_FIELD_IDS.has(id))
+        : ALL_FIELD_IDS;
+    const isSensitiveMasked = [...SENSITIVE_FIELD_IDS].every((id) => !selectedFields.has(id));
+    const isWebDevBasics =
+        selectedFields.size === BROWSER_SCREEN_FIELD_IDS.length &&
+        BROWSER_SCREEN_FIELD_IDS.every((id) => selectedFields.has(id));
+    const isAllSelected = selectedFields.size === availableAllIds.length;
+    const isIpPrivacyMasked = Boolean(senderMasked) || IP_PRIVACY_FIELD_IDS.every((id) => !selectedFields.has(id));
+
     const toggleField = (id: FieldId) => {
         if (senderMasked && NETWORK_PII_FIELD_IDS.has(id)) return;
+        setPreMaskSelection(null);
         setSelectedFields((prev) => {
             const next = new Set(prev);
             if (next.has(id)) {
@@ -288,20 +305,42 @@ export default function ScreenshotModal({
         });
     };
 
-    const applyMaskSensitive = () => {
-        setSelectedFields(new Set<FieldId>(ALL_FIELD_IDS.filter((id) => !SENSITIVE_FIELD_IDS.has(id))));
+    const toggleMaskSensitive = () => {
+        if (isSensitiveMasked) {
+            if (preMaskSelection) {
+                const restored = new Set<FieldId>(preMaskSelection);
+                if (senderMasked) NETWORK_PII_FIELD_IDS.forEach((id) => restored.delete(id));
+                setSelectedFields(restored);
+            } else {
+                setSelectedFields((prev) => {
+                    const next = new Set(prev);
+                    SENSITIVE_FIELD_IDS.forEach((id) => {
+                        if (!senderMasked || !NETWORK_PII_FIELD_IDS.has(id)) next.add(id);
+                    });
+                    return next;
+                });
+            }
+            setPreMaskSelection(null);
+            return;
+        }
+
+        setPreMaskSelection(new Set(selectedFields));
+        setSelectedFields((prev) => {
+            const next = new Set(prev);
+            SENSITIVE_FIELD_IDS.forEach((id) => next.delete(id));
+            return next.size > 0
+                ? next
+                : new Set<FieldId>(ALL_FIELD_IDS.filter((id) => !SENSITIVE_FIELD_IDS.has(id)));
+        });
     };
     const applySelectAll = () => {
-        setSelectedFields(
-            new Set<FieldId>(senderMasked ? ALL_FIELD_IDS.filter((id) => !NETWORK_PII_FIELD_IDS.has(id)) : ALL_FIELD_IDS)
-        );
+        setPreMaskSelection(null);
+        setSelectedFields(new Set<FieldId>(availableAllIds));
     };
     const applyWebDevBasics = () => {
-        setSelectedFields(new Set<FieldId>(["browser", "os", "screen", "viewport", "js", "cookies", "language"]));
+        setPreMaskSelection(null);
+        setSelectedFields(new Set<FieldId>(BROWSER_SCREEN_FIELD_IDS));
     };
-
-    const isSensitiveMasked = [...SENSITIVE_FIELD_IDS].every((id) => !selectedFields.has(id));
-    const isIpPrivacyMasked = Boolean(senderMasked) || IP_PRIVACY_FIELD_IDS.every((id) => !selectedFields.has(id));
 
     const handleExportCSV = () => {
         if (!stats) return;
@@ -374,7 +413,8 @@ export default function ScreenshotModal({
                         <span className="text-xs font-semibold text-muted mr-1 hidden sm:inline">Presets:</span>
                         <button
                             type="button"
-                            onClick={applyMaskSensitive}
+                            onClick={toggleMaskSensitive}
+                            aria-pressed={isSensitiveMasked}
                             disabled={downloading}
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
                                 isSensitiveMasked
@@ -388,8 +428,13 @@ export default function ScreenshotModal({
                         <button
                             type="button"
                             onClick={applyWebDevBasics}
+                            aria-pressed={isWebDevBasics}
                             disabled={downloading}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface text-ink border border-line hover:border-line-strong transition-colors cursor-pointer"
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                                isWebDevBasics
+                                    ? "bg-brand text-white border-brand"
+                                    : "bg-surface text-ink border-line hover:border-line-strong"
+                            }`}
                         >
                             <Monitor size={13} className="text-primary" aria-hidden="true" />
                             <span>Browser &amp; Screen Only</span>
@@ -397,10 +442,15 @@ export default function ScreenshotModal({
                         <button
                             type="button"
                             onClick={applySelectAll}
+                            aria-pressed={isAllSelected}
                             disabled={downloading}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface text-ink border border-line hover:border-line-strong transition-colors cursor-pointer"
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                                isAllSelected
+                                    ? "bg-brand text-white border-brand"
+                                    : "bg-surface text-ink border-line hover:border-line-strong"
+                            }`}
                         >
-                            <CheckSquare size={13} className="text-muted" aria-hidden="true" />
+                            <CheckSquare size={13} className={isAllSelected ? "text-accent" : "text-muted"} aria-hidden="true" />
                             <span>Select All</span>
                         </button>
                     </div>
